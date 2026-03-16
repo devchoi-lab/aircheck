@@ -8,25 +8,25 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.rememberNavController
+import dagger.hilt.android.AndroidEntryPoint
+import seriouschoi.aircheck.feature.weather.navigation.WeatherRoute
+import seriouschoi.aircheck.feature.weather.navigation.weatherScreen
 import seriouschoi.aircheck.ui.theme.AirCheckTheme
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             AirCheckTheme {
-                val vm: MainViewModel = viewModel()
-                val uiState by vm.uiState.collectAsStateWithLifecycle()
-
+                val navController = rememberNavController()
+                
                 val permissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions()
-                ) { grants ->
-                    if (grants.values.any { it }) vm.load()
-                }
+                ) { /* 권한 결과는 WeatherViewModel에서 위치 요청 시 처리 */ }
 
                 LaunchedEffect(Unit) {
                     permissionLauncher.launch(
@@ -37,10 +37,12 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                AirCheckScreen(
-                    uiState = uiState,
-                    onRefresh = { vm.load() }
-                )
+                NavHost(
+                    navController = navController,
+                    startDestination = WeatherRoute.Main
+                ) {
+                    weatherScreen()
+                }
             }
         }
     }
