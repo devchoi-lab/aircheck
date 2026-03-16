@@ -4,13 +4,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
-// ── 에어코리아 API 응답 모델 ──────────────────────────────────────────────────
+// ── 에어코리아 응답 모델 ──────────────────────────────────────────────────────
 
 @Serializable
 data class AirKoreaResponse(val response: AirKoreaBody? = null)
@@ -28,32 +25,8 @@ data class AirKoreaItem(
     val dataTime: String = "",
     val pm10Value: String = "-",
     val pm25Value: String = "-",
-    val khaiValue: String = "-",     // 통합대기환경지수
-    val khaiGrade: String = "0"      // 1=좋음 2=보통 3=나쁨 4=매우나쁨
-)
-
-// TM 기준좌표 조회 응답
-@Serializable
-data class TmCoordResponse(val response: AirKoreaBody? = null)
-
-@Serializable
-data class TmCoordItem(
-    val tmX: String = "",
-    val tmY: String = "",
-    val umdName: String = "",
-    val sggName: String = "",
-    val sidoName: String = ""
-)
-
-// 근접측정소 응답
-@Serializable
-data class NearbyStationResponse(val response: AirKoreaBody? = null)
-
-@Serializable
-data class NearbyStationItem(
-    val stationName: String = "",
-    val addr: String = "",
-    val tm: String = ""      // 거리(km)
+    val khaiValue: String = "-",
+    val khaiGrade: String = "0"
 )
 
 // ── Nominatim 역지오코딩 모델 ─────────────────────────────────────────────────
@@ -80,11 +53,11 @@ data class AirQuality(
     val aqi: Int,
     val pm25: Double?,
     val pm10: Double?,
-    val pm25Level: AqiLevel,   // WHO 기준 PM2.5 등급
-    val pm10Level: AqiLevel,   // WHO 기준 PM10 등급
+    val pm25Level: AqiLevel,
+    val pm10Level: AqiLevel,
     val stationName: String,
     val updatedAt: String,
-    val level: AqiLevel        // 에어코리아 통합대기환경지수
+    val level: AqiLevel
 )
 
 enum class AqiLevel(val label: String, val emoji: String, val colorHex: Long) {
@@ -97,33 +70,17 @@ enum class AqiLevel(val label: String, val emoji: String, val colorHex: Long) {
     UNKNOWN("알 수 없음", "❓", 0xFF9E9E9E);
 
     companion object {
-        /** 에어코리아 khaiGrade (1~4) 기반 */
         fun fromKhaiGrade(grade: String): AqiLevel = when (grade) {
-            "1" -> GOOD
-            "2" -> MODERATE
-            "3" -> UNHEALTHY
-            "4" -> VERY_UNHEALTHY
+            "1" -> GOOD; "2" -> MODERATE; "3" -> UNHEALTHY; "4" -> VERY_UNHEALTHY
             else -> UNKNOWN
         }
-
-        /** PM2.5 WHO 기준 (μg/m³) */
         fun fromPm25(v: Double): AqiLevel = when {
-            v <= 15.0  -> GOOD
-            v <= 25.0  -> MODERATE
-            v <= 37.5  -> SENSITIVE
-            v <= 75.0  -> UNHEALTHY
-            v <= 150.0 -> VERY_UNHEALTHY
-            else       -> HAZARDOUS
+            v <= 15.0 -> GOOD; v <= 25.0 -> MODERATE; v <= 37.5 -> SENSITIVE
+            v <= 75.0 -> UNHEALTHY; v <= 150.0 -> VERY_UNHEALTHY; else -> HAZARDOUS
         }
-
-        /** PM10 WHO 기준 (μg/m³) */
         fun fromPm10(v: Double): AqiLevel = when {
-            v <= 45.0  -> GOOD
-            v <= 90.0  -> MODERATE
-            v <= 180.0 -> SENSITIVE
-            v <= 270.0 -> UNHEALTHY
-            v <= 400.0 -> VERY_UNHEALTHY
-            else       -> HAZARDOUS
+            v <= 45.0 -> GOOD; v <= 90.0 -> MODERATE; v <= 180.0 -> SENSITIVE
+            v <= 270.0 -> UNHEALTHY; v <= 400.0 -> VERY_UNHEALTHY; else -> HAZARDOUS
         }
     }
 }
@@ -136,11 +93,7 @@ class AirQualityRepository {
 
     private val client = OkHttpClient.Builder()
         .addInterceptor { chain ->
-            chain.proceed(
-                chain.request().newBuilder()
-                    .addHeader("User-Agent", "AirCheckApp/1.0")
-                    .build()
-            )
+            chain.proceed(chain.request().newBuilder().addHeader("User-Agent", "AirCheckApp/1.0").build())
         }
         .build()
 
@@ -148,118 +101,85 @@ class AirQualityRepository {
 
     suspend fun fetch(lat: Double, lng: Double): Result<AirQuality> = withContext(Dispatchers.IO) {
         try {
-            // Step 1: Nominatim 역지오코딩 → 읍면동명
-            val (umdName, fallbackSido) = reverseGeocode(lat, lng)
+            // Step 1: Nominatim → 시도명 + 지역 키워드 목록
+            val (sidoName, keywords) = reverseGeocode(lat, lng)
                 ?: return@withContext Result.failure(Exception("위치 정보를 확인할 수 없어요"))
 
-            // Step 2: 읍면동명 → TM 좌표
-            val (tmX, tmY) = getTmCoords(umdName)
-                ?: run {
-                    // TM 좌표 조회 실패 시 시/도 전체에서 첫 번째 측정소로 폴백
-                    return@withContext fetchBySido(fallbackSido)
-                }
+            // Step 2: 해당 시/도 전체 측정소 조회
+            val allItems = fetchSidoItems(sidoName)
+                ?: return@withContext Result.failure(Exception("$sidoName 측정 데이터를 가져올 수 없어요"))
 
-            // Step 3: TM 좌표 → 가장 가까운 측정소명
-            val stationName = getNearestStation(tmX, tmY)
-                ?: return@withContext fetchBySido(fallbackSido)
+            // Step 3: 지역 키워드로 가장 가까운 측정소 선택
+            val matched = findBestMatch(allItems, keywords)
+                ?: allItems.firstOrNull { it.pm25Value != "-" && it.pm25Value.isNotEmpty() }
+                ?: allItems.firstOrNull()
+                ?: return@withContext Result.failure(Exception("$sidoName 측정 데이터가 없어요"))
 
-            // Step 4: 측정소별 실시간 데이터 조회
-            fetchByStation(stationName)
+            Result.success(toAirQuality(matched))
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    /** Nominatim 역지오코딩 → (읍면동명, 시도명) */
-    private fun reverseGeocode(lat: Double, lng: Double): Pair<String, String>? = try {
+    /**
+     * Nominatim 역지오코딩 → (시도명, 지역 키워드 목록)
+     * 키워드: 세부 행정구역(동/구) 이름들. 측정소 이름 매칭에 사용.
+     * ex) 부천시 중동 → sidoName="경기", keywords=["중동","원미","부천"]
+     */
+    private fun reverseGeocode(lat: Double, lng: Double): Pair<String, List<String>>? = try {
         val url = "https://nominatim.openstreetmap.org/reverse" +
                 "?lat=$lat&lon=$lng&format=json&accept-language=ko&addressdetails=1"
         val body = get(url)
         val response = json.decodeFromString<NominatimResponse>(body)
         val addr = response.address ?: return null
 
-        // 읍면동 추출: suburb > quarter > city_district > neighbourhood > village > town > city
-        val umd = listOfNotNull(
-            addr.suburb, addr.quarter, addr.city_district,
-            addr.neighbourhood, addr.village, addr.town, addr.city
-        ).firstOrNull { it.isNotBlank() }?.replace(Regex("[시군구]$"), "") ?: return null
-
         val sido = koreanSidoName(addr.state)
-        Pair(umd, sido)
+
+        // 키워드: 세부→광역 순으로 모든 행정구역명 수집 (suffix 제거 포함)
+        val rawNames = listOfNotNull(
+            addr.quarter, addr.suburb, addr.neighbourhood,
+            addr.city_district, addr.village, addr.town, addr.city, addr.county
+        ).filter { it.isNotBlank() }
+
+        val keywords = rawNames.flatMap { name ->
+            listOf(
+                name,                                               // 원본: 중동, 원미구
+                name.replace(Regex("[시군구동읍면리]$"), "").trim()  // suffix 제거: 원미구→원미
+            )
+        }.filter { it.length >= 2 }.distinct()
+
+        Pair(sido, keywords)
     } catch (e: Exception) {
         null
     }
 
-    /** 읍면동명 → TM 좌표 (에어코리아 getTMStdrCrdnt) */
-    private fun getTmCoords(umdName: String): Pair<Double, Double>? = try {
-        val url = "https://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getTMStdrCrdnt" +
-                "?umdName=${java.net.URLEncoder.encode(umdName, "UTF-8")}" +
-                "&pageNo=1&numOfRows=5&returnType=json" +
-                "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}"
-        val body = get(url)
-        // 응답이 items 배열이지만 AirKoreaBody 재사용 불가 → raw parse
-        val jsonObj = json.parseToJsonElement(body)
-        val items = jsonObj
-            .jsonObject["response"]?.jsonObject
-            ?.get("body")?.jsonObject
-            ?.get("items")?.jsonArray
-        val first = items?.firstOrNull()?.jsonObject ?: return null
-        val x = first["tmX"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: return null
-        val y = first["tmY"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: return null
-        Pair(x, y)
-    } catch (e: Exception) {
-        null
-    }
-
-    /** TM 좌표 → 가장 가까운 측정소명 (에어코리아 getNearbyMsrstnList) */
-    private fun getNearestStation(tmX: Double, tmY: Double): String? = try {
-        val url = "https://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getNearbyMsrstnList" +
-                "?tmX=$tmX&tmY=$tmY" +
-                "&pageNo=1&numOfRows=3&returnType=json" +
-                "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}"
-        val body = get(url)
-        val jsonObj = json.parseToJsonElement(body)
-        val items = jsonObj
-            .jsonObject["response"]?.jsonObject
-            ?.get("body")?.jsonObject
-            ?.get("items")?.jsonArray
-        items?.firstOrNull()?.jsonObject?.get("stationName")?.jsonPrimitive?.content
-    } catch (e: Exception) {
-        null
-    }
-
-    /** 측정소명으로 실시간 데이터 조회 */
-    private fun fetchByStation(stationName: String): Result<AirQuality> = try {
-        val url = "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty" +
-                "?stationName=${java.net.URLEncoder.encode(stationName, "UTF-8")}" +
-                "&dataTerm=DAILY&pageNo=1&numOfRows=1&returnType=json" +
-                "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}" +
-                "&ver=1.0"
-        val body = get(url)
-        val response = json.decodeFromString<AirKoreaResponse>(body)
-        val item = response.response?.body?.items?.firstOrNull()
-            ?: return Result.failure(Exception("$stationName 측정소 데이터가 없어요"))
-        Result.success(toAirQuality(item))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    /** 시/도 전체로 폴백 */
-    private fun fetchBySido(sidoName: String): Result<AirQuality> = try {
+    /** 시/도 전체 측정소 실시간 데이터 (최대 100개) */
+    private fun fetchSidoItems(sidoName: String): List<AirKoreaItem>? = try {
         val url = "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty" +
                 "?sidoName=${java.net.URLEncoder.encode(sidoName, "UTF-8")}" +
-                "&pageNo=1&numOfRows=10&returnType=json" +
+                "&pageNo=1&numOfRows=100&returnType=json" +
                 "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}" +
                 "&ver=1.0"
         val body = get(url)
-        val response = json.decodeFromString<AirKoreaResponse>(body)
-        val item = response.response?.body?.items
-            ?.firstOrNull { it.pm25Value != "-" && it.pm25Value.isNotEmpty() }
-            ?: response.response?.body?.items?.firstOrNull()
-            ?: return Result.failure(Exception("$sidoName 측정 데이터를 찾을 수 없어요"))
-        Result.success(toAirQuality(item))
+        json.decodeFromString<AirKoreaResponse>(body).response?.body?.items
     } catch (e: Exception) {
-        Result.failure(e)
+        null
+    }
+
+    /**
+     * 측정소 목록에서 지역 키워드로 가장 잘 맞는 측정소 선택
+     * 매칭: stationName에 keyword가 포함되거나 keyword에 stationName이 포함
+     * ex) keywords=["중동","원미","부천"] + stationName="송내대로(중동)" → "중동" 포함 → 매칭
+     */
+    private fun findBestMatch(items: List<AirKoreaItem>, keywords: List<String>): AirKoreaItem? {
+        // 키워드 앞쪽(세부)이 더 정확 → 순서대로 탐색
+        for (keyword in keywords) {
+            val match = items.firstOrNull { item ->
+                item.stationName.contains(keyword) || keyword.contains(item.stationName)
+            }
+            if (match != null) return match
+        }
+        return null
     }
 
     private fun toAirQuality(item: AirKoreaItem): AirQuality {
@@ -278,16 +198,11 @@ class AirQualityRepository {
     }
 
     private fun koreanSidoName(state: String): String = when {
-        state.contains("서울") -> "서울"
-        state.contains("부산") -> "부산"
-        state.contains("대구") -> "대구"
-        state.contains("인천") -> "인천"
-        state.contains("광주") -> "광주"
-        state.contains("대전") -> "대전"
-        state.contains("울산") -> "울산"
-        state.contains("세종") -> "세종"
-        state.contains("경기") -> "경기"
-        state.contains("강원") -> "강원"
+        state.contains("서울") -> "서울"; state.contains("부산") -> "부산"
+        state.contains("대구") -> "대구"; state.contains("인천") -> "인천"
+        state.contains("광주") -> "광주"; state.contains("대전") -> "대전"
+        state.contains("울산") -> "울산"; state.contains("세종") -> "세종"
+        state.contains("경기") -> "경기"; state.contains("강원") -> "강원"
         state.contains("충청북") || state.contains("충북") -> "충북"
         state.contains("충청남") || state.contains("충남") -> "충남"
         state.contains("전라북") || state.contains("전북") -> "전북"
