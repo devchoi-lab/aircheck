@@ -102,7 +102,7 @@ class WeatherRepository {
                     "?latitude=$lat&longitude=$lng" +
                     "&current=temperature_2m,apparent_temperature,precipitation,weathercode,cloudcover,is_day" +
                     "&hourly=temperature_2m,apparent_temperature,precipitation_probability,snowfall,weathercode" +
-                    "&forecast_hours=12" +
+                    "&forecast_hours=48" +
                     "&timezone=auto"
 
             val request = Request.Builder().url(url).build()

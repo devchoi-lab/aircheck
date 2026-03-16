@@ -212,14 +212,14 @@ private fun WeatherCard(weather: WeatherData) {
                 )
             }
             
-            // 시간별 예보 (12시간)
+            // 48시간 예보
             if (weather.hourlyForecast.isNotEmpty()) {
                 Spacer(Modifier.height(16.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
                 Spacer(Modifier.height(12.dp))
                 
                 Text(
-                    text = "시간별 예보",
+                    text = "48시간 예보",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
