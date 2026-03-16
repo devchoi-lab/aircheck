@@ -33,8 +33,8 @@ import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.domain.model.WeatherData
 
 @Composable
-fun WeatherScreen(
-    uiState: MainUiState,
+internal fun WeatherScreen(
+    uiState: WeatherUiState,
     onRefresh: () -> Unit
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }
@@ -66,10 +66,10 @@ fun WeatherScreen(
             contentAlignment = Alignment.Center
         ) {
             when (uiState) {
-                is MainUiState.Idle -> IdleContent(onRefresh)
-                is MainUiState.Loading -> LoadingContent()
-                is MainUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather, onRefresh)
-                is MainUiState.Error -> ErrorContent(uiState.message, onRefresh)
+                is WeatherUiState.Idle -> IdleContent(onRefresh)
+                is WeatherUiState.Loading -> LoadingContent()
+                is WeatherUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather, onRefresh)
+                is WeatherUiState.Error -> ErrorContent(uiState.message, onRefresh)
             }
         }
     }
@@ -103,8 +103,8 @@ private fun LoadingContent() {
 
 @Composable
 private fun SuccessContent(
-    air: DataResult<AirQuality>,
-    weather: DataResult<WeatherData>,
+    air: WeatherDataResult<AirQuality>,
+    weather: WeatherDataResult<WeatherData>,
     onRefresh: () -> Unit
 ) {
     Column(
