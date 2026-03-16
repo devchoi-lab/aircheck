@@ -253,33 +253,55 @@ private fun AirQualityCard(air: AirQuality) {
 
             Spacer(Modifier.height(16.dp))
             HorizontalDivider()
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(12.dp))
 
-            // PM2.5 / PM10
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                PollutantCard(label = "PM2.5", value = air.pm25)
-                PollutantCard(label = "PM10", value = air.pm10)
-            }
+            // PM2.5
+            PollutantRow(
+                label = "PM2.5",
+                value = air.pm25,
+                level = air.pm25Level
+            )
+            Spacer(Modifier.height(8.dp))
+            // PM10
+            PollutantRow(
+                label = "PM10",
+                value = air.pm10,
+                level = air.pm10Level
+            )
         }
     }
 }
 
 @Composable
-private fun PollutantCard(label: String, value: Double?) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = value?.let { "%.1f".format(it) } ?: "-",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "$label (μg/m³)",
-            fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+private fun PollutantRow(label: String, value: Double?, level: AqiLevel) {
+    val color = Color(level.colorHex)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        // 라벨
+        Column {
+            Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                text = value?.let { "%.1f μg/m³".format(it) } ?: "- μg/m³",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        // WHO 등급 칩
+        Box(
+            modifier = Modifier
+                .background(color.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+            Text(
+                text = "${level.emoji} ${level.label}",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = color
+            )
+        }
     }
 }
 
