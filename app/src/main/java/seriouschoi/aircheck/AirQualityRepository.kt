@@ -4,8 +4,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import kotlin.math.*
 
 // ── 에어코리아 응답 모델 ──────────────────────────────────────────────────────
 
@@ -27,6 +31,15 @@ data class AirKoreaItem(
     val pm25Value: String = "-",
     val khaiValue: String = "-",
     val khaiGrade: String = "0"
+)
+
+// ── 측정소 정보 모델 (좌표 포함) ───────────────────────────────────────────────
+
+data class StationInfo(
+    val stationName: String,
+    val addr: String,
+    val dmX: Double,  // 경도 (longitude)
+    val dmY: Double   // 위도 (latitude)
 )
 
 // ── Nominatim 역지오코딩 모델 ─────────────────────────────────────────────────
@@ -99,71 +112,139 @@ class AirQualityRepository {
 
     private val json = Json { 
         ignoreUnknownKeys = true
-        coerceInputValues = true  // null → 기본값으로 변환 (khaiGrade:null → "0")
+        coerceInputValues = true
     }
 
     suspend fun fetch(lat: Double, lng: Double): Result<AirQuality> = withContext(Dispatchers.IO) {
         try {
-            // Step 1: Nominatim → 시도명 + 지역 키워드 목록
-            val (sidoName, keywords) = reverseGeocode(lat, lng)
-                ?: return@withContext Result.failure(Exception("위치 정보를 확인할 수 없어요"))
-
-            // Step 2: 해당 시/도 전체 측정소 조회
-            val allItems = fetchSidoItems(sidoName)
-
-            // Step 3: 지역 키워드로 가장 가까운 측정소 선택
-            val matched = findBestMatch(allItems, keywords)
-                ?: allItems.firstOrNull { it.pm25Value != "-" && it.pm25Value.isNotEmpty() }
-                ?: allItems.firstOrNull()
-                ?: return@withContext Result.failure(Exception("$sidoName 측정 데이터가 없어요"))
-
-            Result.success(toAirQuality(matched))
+            // Step 1: 좌표 기반으로 가장 가까운 측정소 찾기
+            val nearestStation = findNearestStation(lat, lng)
+            
+            if (nearestStation != null) {
+                // Step 2: 해당 측정소의 실시간 데이터 조회
+                return@withContext fetchByStation(nearestStation)
+            }
+            
+            // 좌표 기반 실패 시 → 기존 키워드 매칭 폴백
+            fetchByKeywordMatching(lat, lng)
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
     /**
-     * Nominatim 역지오코딩 → (시도명, 지역 키워드 목록)
-     * 키워드: 세부 행정구역(동/구) 이름들. 측정소 이름 매칭에 사용.
-     * ex) 부천시 중동 → sidoName="경기", keywords=["중동","원미","부천"]
+     * 좌표 기반 가장 가까운 측정소 찾기
+     * getMsrstnList로 전체 측정소 목록 조회 후 Haversine 거리 계산
      */
+    private fun findNearestStation(lat: Double, lng: Double): String? {
+        return try {
+            // 전체 측정소 목록 조회 (좌표 포함, ver=1.1)
+            val url = "https://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getMsrstnList" +
+                    "?pageNo=1&numOfRows=700&returnType=json" +
+                    "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}" +
+                    "&ver=1.1"
+            val body = get(url)
+            
+            // API 에러 체크
+            if (body.startsWith("Forbidden") || body.startsWith("Unauthorized")) {
+                return null
+            }
+            
+            val jsonObj = json.parseToJsonElement(body)
+            val items = jsonObj.jsonObject["response"]?.jsonObject
+                ?.get("body")?.jsonObject
+                ?.get("items")?.jsonArray ?: return null
+            
+            // 각 측정소와의 거리 계산
+            var nearestStation: String? = null
+            var minDistance = Double.MAX_VALUE
+            
+            for (item in items) {
+                val obj = item.jsonObject
+                val stationName = obj["stationName"]?.jsonPrimitive?.content ?: continue
+                // ver 1.1에서는 dmX가 경도(lng), dmY가 위도(lat)
+                val dmX = obj["dmX"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: continue
+                val dmY = obj["dmY"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: continue
+                
+                val distance = haversineDistance(lat, lng, dmY, dmX)
+                if (distance < minDistance) {
+                    minDistance = distance
+                    nearestStation = stationName
+                }
+            }
+            
+            nearestStation
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Haversine 공식으로 두 좌표 간 거리 계산 (km)
+     */
+    private fun haversineDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+        val R = 6371.0 // 지구 반지름 (km)
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLng = Math.toRadians(lng2 - lng1)
+        val a = sin(dLat / 2).pow(2) + 
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(dLng / 2).pow(2)
+        val c = 2 * asin(sqrt(a))
+        return R * c
+    }
+
+    /** 측정소명으로 실시간 데이터 조회 */
+    private fun fetchByStation(stationName: String): Result<AirQuality> = try {
+        val url = "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty" +
+                "?stationName=${java.net.URLEncoder.encode(stationName, "UTF-8")}" +
+                "&dataTerm=DAILY&pageNo=1&numOfRows=1&returnType=json" +
+                "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}" +
+                "&ver=1.0"
+        val body = get(url)
+        val response = json.decodeFromString<AirKoreaResponse>(body)
+        val item = response.response?.body?.items?.firstOrNull()
+            ?: return Result.failure(Exception("$stationName 측정소 데이터가 없어요"))
+        Result.success(toAirQuality(item))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    /** 기존 키워드 매칭 방식 (폴백) */
+    private fun fetchByKeywordMatching(lat: Double, lng: Double): Result<AirQuality> {
+        val (sidoName, keywords) = reverseGeocode(lat, lng)
+            ?: return Result.failure(Exception("위치 정보를 확인할 수 없어요"))
+        
+        val allItems = fetchSidoItems(sidoName)
+        
+        val matched = findBestMatch(allItems, keywords)
+            ?: allItems.firstOrNull { it.pm25Value != "-" && it.pm25Value.isNotEmpty() }
+            ?: allItems.firstOrNull()
+            ?: return Result.failure(Exception("$sidoName 측정 데이터가 없어요"))
+        
+        return Result.success(toAirQuality(matched))
+    }
+
+    /** Nominatim 역지오코딩 → (시도명, 키워드 목록) */
     private fun reverseGeocode(lat: Double, lng: Double): Pair<String, List<String>>? = try {
         val url = "https://nominatim.openstreetmap.org/reverse" +
                 "?lat=$lat&lon=$lng&format=json&accept-language=ko&addressdetails=1"
         val body = get(url)
         val response = json.decodeFromString<NominatimResponse>(body)
         val addr = response.address ?: return null
-
-        // 시/도 추론: state → city → county 순으로 시도
         val sido = inferSidoName(addr)
-
-        // 키워드: 세부→광역 순으로 모든 행정구역명 수집 (suffix 제거 포함)
         val rawNames = listOfNotNull(
             addr.quarter, addr.suburb, addr.neighbourhood,
             addr.city_district, addr.village, addr.town, addr.city, addr.county
         ).filter { it.isNotBlank() }
-
         val keywords = rawNames.flatMap { name ->
-            listOf(
-                name,                                               // 원본: 중동, 원미구
-                name.replace(Regex("[시군구동읍면리]$"), "").trim()  // suffix 제거: 원미구→원미
-            )
+            listOf(name, name.replace(Regex("[시군구동읍면리]$"), "").trim())
         }.filter { it.length >= 2 }.distinct()
-
         Pair(sido, keywords)
     } catch (e: Exception) {
         null
     }
 
-    /** 시/도명 추론: state가 없으면 city/county로 추론 */
     private fun inferSidoName(addr: NominatimAddress): String {
-        // 1. state가 있으면 직접 매핑
-        if (addr.state.isNotBlank()) {
-            return koreanSidoName(addr.state)
-        }
-
-        // 2. city가 광역시/특별시면 직접 사용
+        if (addr.state.isNotBlank()) return koreanSidoName(addr.state)
         val city = addr.city ?: ""
         val directCities = mapOf(
             "서울" to "서울", "부산" to "부산", "대구" to "대구", "인천" to "인천",
@@ -172,8 +253,6 @@ class AirQualityRepository {
         for ((key, value) in directCities) {
             if (city.contains(key)) return value
         }
-
-        // 3. 경기도 주요 도시 매핑 (Nominatim이 state 안 주는 경우 대비)
         val gyeonggiCities = listOf(
             "수원", "성남", "안양", "안산", "부천", "광명", "평택", "과천", "오산", "시흥",
             "군포", "의왕", "하남", "이천", "용인", "파주", "안성", "김포", "화성", "광주",
@@ -183,18 +262,13 @@ class AirQualityRepository {
         for (gc in gyeonggiCities) {
             if (city.contains(gc)) return "경기"
         }
-
-        // 4. county 확인
         val county = addr.county ?: ""
         for (gc in gyeonggiCities) {
             if (county.contains(gc)) return "경기"
         }
-
-        // 5. 기본값 - 경기 (한국 인구 대부분)
         return "경기"
     }
 
-    /** 시/도 전체 측정소 실시간 데이터 (최대 100개) */
     private fun fetchSidoItems(sidoName: String): List<AirKoreaItem> {
         val url = "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty" +
                 "?sidoName=${java.net.URLEncoder.encode(sidoName, "UTF-8")}" +
@@ -202,23 +276,14 @@ class AirQualityRepository {
                 "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}" +
                 "&ver=1.0"
         val body = get(url)
-        
-        // API 에러 체크
         if (body.startsWith("Unauthorized") || body.startsWith("Forbidden")) {
             throw Exception("API 인증 오류: $body")
         }
-        
         return json.decodeFromString<AirKoreaResponse>(body).response?.body?.items
             ?: throw Exception("$sidoName 응답 파싱 실패")
     }
 
-    /**
-     * 측정소 목록에서 지역 키워드로 가장 잘 맞는 측정소 선택
-     * 매칭: stationName에 keyword가 포함되거나 keyword에 stationName이 포함
-     * ex) keywords=["중동","원미","부천"] + stationName="송내대로(중동)" → "중동" 포함 → 매칭
-     */
     private fun findBestMatch(items: List<AirKoreaItem>, keywords: List<String>): AirKoreaItem? {
-        // 키워드 앞쪽(세부)이 더 정확 → 순서대로 탐색
         for (keyword in keywords) {
             val match = items.firstOrNull { item ->
                 item.stationName.contains(keyword) || keyword.contains(item.stationName)
