@@ -97,7 +97,10 @@ class AirQualityRepository {
         }
         .build()
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = Json { 
+        ignoreUnknownKeys = true
+        coerceInputValues = true  // null → 기본값으로 변환 (khaiGrade:null → "0")
+    }
 
     suspend fun fetch(lat: Double, lng: Double): Result<AirQuality> = withContext(Dispatchers.IO) {
         try {
