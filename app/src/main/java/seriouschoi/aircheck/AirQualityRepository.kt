@@ -38,7 +38,8 @@ data class AirKoreaItem(
 /** 좌표 기반 매칭 결과 */
 data class NearestStationInfo(
     val stationName: String,
-    val addr: String  // 주소 (시/도 추출용)
+    val addr: String,     // 주소 (시/도 추출용)
+    val distance: Double  // 거리 (km)
 )
 
 // ── Nominatim 역지오코딩 모델 ─────────────────────────────────────────────────
@@ -67,11 +68,16 @@ data class AirQuality(
     val pm10: Double?,
     val pm25Level: AqiLevel,
     val pm10Level: AqiLevel,
-    val stationName: String,
+    val stationName: String,       // 데이터 제공 측정소 (실제 PM 데이터 출처)
+    val nearestStationName: String?, // 가장 가까운 측정소 (데이터 없어서 다른 곳 사용 시)
     val updatedAt: String,
     val level: AqiLevel,           // 에어코리아 통합대기환경지수
     val worstLevel: AqiLevel       // AQI/PM2.5/PM10 중 최악 등급
-)
+) {
+    /** 가장 가까운 측정소와 데이터 측정소가 다른지 여부 */
+    val usedFallbackStation: Boolean
+        get() = nearestStationName != null && nearestStationName != stationName
+}
 
 enum class AqiLevel(val label: String, val emoji: String, val colorHex: Long) {
     GOOD("좋음", "😊", 0xFF00C8A0),
@@ -117,12 +123,12 @@ class AirQualityRepository {
 
     suspend fun fetch(lat: Double, lng: Double): Result<AirQuality> = withContext(Dispatchers.IO) {
         try {
-            // Step 1: 좌표 기반으로 가장 가까운 측정소 찾기
-            val nearestInfo = findNearestStation(lat, lng)
+            // Step 1: 좌표 기반으로 가까운 측정소들 찾기 (거리순 정렬)
+            val nearbyStations = findNearbyStations(lat, lng)
             
-            if (nearestInfo != null) {
-                // Step 2: 해당 측정소의 실시간 데이터 조회
-                return@withContext fetchByStation(nearestInfo.stationName, nearestInfo.addr)
+            if (nearbyStations.isNotEmpty()) {
+                // Step 2: 가장 가까운 측정소부터 시도, PM 데이터 없으면 다음 측정소
+                return@withContext fetchWithFallback(nearbyStations)
             }
             
             // 좌표 기반 실패 시 → 기존 키워드 매칭 폴백
@@ -131,12 +137,57 @@ class AirQualityRepository {
             Result.failure(e)
         }
     }
+    
+    /** 여러 측정소 중 PM 데이터가 있는 측정소에서 데이터 조회 */
+    private fun fetchWithFallback(stations: List<NearestStationInfo>): Result<AirQuality> {
+        val nearestStation = stations.first()
+        
+        for (station in stations) {
+            val result = fetchByStationWithValidation(station.stationName, station.addr)
+            if (result != null) {
+                // 가장 가까운 측정소가 아닌 다른 측정소에서 데이터를 가져온 경우
+                val isNearestStation = (station == nearestStation)
+                return Result.success(
+                    result.copy(
+                        nearestStationName = if (isNearestStation) null 
+                            else "${nearestStation.stationName} (${extractSidoFromAddr(nearestStation.addr)})"
+                    )
+                )
+            }
+        }
+        
+        return Result.failure(Exception("주변 측정소에서 미세먼지 데이터를 찾을 수 없어요"))
+    }
+    
+    /** 측정소 데이터 조회 + PM 데이터 유효성 검증 */
+    private fun fetchByStationWithValidation(stationName: String, addr: String): AirQuality? {
+        return try {
+            val url = "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty" +
+                    "?stationName=${java.net.URLEncoder.encode(stationName, "UTF-8")}" +
+                    "&dataTerm=DAILY&pageNo=1&numOfRows=1&returnType=json" +
+                    "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}" +
+                    "&ver=1.0"
+            val body = get(url)
+            val response = json.decodeFromString<AirKoreaResponse>(body)
+            val item = response.response?.body?.items?.firstOrNull() ?: return null
+            
+            // PM2.5 또는 PM10 데이터가 있어야 유효
+            val pm25 = item.pm25Value.toDoubleOrNull()
+            val pm10 = item.pm10Value.toDoubleOrNull()
+            if (pm25 == null && pm10 == null) return null
+            
+            val sidoName = extractSidoFromAddr(addr)
+            toAirQuality(item, stationName, sidoName)
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     /**
-     * 좌표 기반 가장 가까운 측정소 찾기
+     * 좌표 기반 가까운 측정소들 찾기 (거리순 정렬, 최대 10개)
      * getMsrstnList로 전체 측정소 목록 조회 후 Haversine 거리 계산
      */
-    private fun findNearestStation(lat: Double, lng: Double): NearestStationInfo? {
+    private fun findNearbyStations(lat: Double, lng: Double): List<NearestStationInfo> {
         return try {
             // 전체 측정소 목록 조회 (좌표 포함, ver=1.1)
             val url = "https://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getMsrstnList" +
@@ -147,17 +198,16 @@ class AirQualityRepository {
             
             // API 에러 체크
             if (body.startsWith("Forbidden") || body.startsWith("Unauthorized")) {
-                return null
+                return emptyList()
             }
             
             val jsonObj = json.parseToJsonElement(body)
             val items = jsonObj.jsonObject["response"]?.jsonObject
                 ?.get("body")?.jsonObject
-                ?.get("items")?.jsonArray ?: return null
+                ?.get("items")?.jsonArray ?: return emptyList()
             
-            // 각 측정소와의 거리 계산
-            var nearestInfo: NearestStationInfo? = null
-            var minDistance = Double.MAX_VALUE
+            // 각 측정소와의 거리 계산 후 정렬
+            val stationList = mutableListOf<NearestStationInfo>()
             
             for (item in items) {
                 val obj = item.jsonObject
@@ -168,15 +218,13 @@ class AirQualityRepository {
                 val dmY = obj["dmY"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: continue
                 
                 val distance = haversineDistance(lat, lng, dmY, dmX)
-                if (distance < minDistance) {
-                    minDistance = distance
-                    nearestInfo = NearestStationInfo(stationName, addr)
-                }
+                stationList.add(NearestStationInfo(stationName, addr, distance))
             }
             
-            nearestInfo
+            // 거리순 정렬 후 상위 10개 반환
+            stationList.sortedBy { it.distance }.take(10)
         } catch (e: Exception) {
-            null
+            emptyList()
         }
     }
 
@@ -350,6 +398,7 @@ class AirQualityRepository {
             pm25Level = pm25Level,
             pm10Level = pm10Level,
             stationName = displayName,
+            nearestStationName = null,  // 폴백 사용 안 함
             updatedAt = item.dataTime,
             level = khaiLevel,
             worstLevel = worstLevel

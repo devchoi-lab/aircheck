@@ -277,6 +277,42 @@ private fun AirQualityCard(air: AirQuality) {
                 value = air.pm10,
                 level = air.pm10Level
             )
+            
+            Spacer(Modifier.height(12.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(8.dp))
+            
+            // 측정소 정보
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "📍 ${air.stationName}",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (air.updatedAt.isNotBlank()) {
+                        Text(
+                            text = air.updatedAt,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                
+                // 폴백 측정소 사용 시 안내
+                if (air.usedFallbackStation && air.nearestStationName != null) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "⚠️ 가장 가까운 ${air.nearestStationName}에서 데이터 없음",
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+            }
         }
     }
 }
