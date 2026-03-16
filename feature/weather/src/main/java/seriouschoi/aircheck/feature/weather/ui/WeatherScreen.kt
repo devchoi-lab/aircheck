@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -40,6 +41,7 @@ internal fun WeatherScreen(
     onRefresh: () -> Unit
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }
+    val isRefreshing = uiState is WeatherUiState.Loading
     
     Scaffold(
         topBar = {
@@ -61,17 +63,24 @@ internal fun WeatherScreen(
         if (showInfoDialog) {
             AirQualityInfoDialog(onDismiss = { showInfoDialog = false })
         }
-        Box(
+        
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            contentAlignment = Alignment.Center
+                .padding(innerPadding)
         ) {
-            when (uiState) {
-                is WeatherUiState.Idle -> IdleContent(onRefresh)
-                is WeatherUiState.Loading -> LoadingContent()
-                is WeatherUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather, onRefresh)
-                is WeatherUiState.Error -> ErrorContent(uiState.message.asString(), onRefresh)
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                when (uiState) {
+                    is WeatherUiState.Idle -> IdleContent(onRefresh)
+                    is WeatherUiState.Loading -> LoadingContent()
+                    is WeatherUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather, onRefresh)
+                    is WeatherUiState.Error -> ErrorContent(uiState.message.asString(), onRefresh)
+                }
             }
         }
     }
