@@ -124,6 +124,11 @@ private fun SuccessContent(
             weather.error != null -> ErrorCard(title = "날씨", message = weather.error, onRetry = onRefresh)
         }
 
+        // ── 추천 아이템 ──────────────────────────────────────
+        if (weather.data != null || air.data != null) {
+            RecommendationCard(weather = weather.data, airQuality = air.data)
+        }
+
         // ── 공기질 카드 ──────────────────────────────────────
         when {
             air.data != null -> AirQualityCard(air.data)
@@ -315,6 +320,93 @@ private fun WeatherStat(emoji: String, label: String, value: String) {
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
         )
+    }
+}
+
+// ── 추천 아이템 카드 ──────────────────────────────────────────────────────────
+
+@Composable
+private fun RecommendationCard(weather: WeatherData?, airQuality: AirQuality?) {
+    val recommendations = mutableListOf<Pair<String, String>>() // emoji to label
+    
+    // 1. 체감온도 기반 옷 추천
+    weather?.feelsLike?.let { temp ->
+        when {
+            temp >= 28 -> {
+                recommendations.add("👕" to "민소매/반팔")
+                recommendations.add("🏖️" to "양산") // 더울 때 양산
+            }
+            temp >= 23 -> recommendations.add("👕" to "반팔")
+            temp >= 17 -> recommendations.add("👔" to "얇은 긴팔")
+            temp >= 12 -> recommendations.add("🧥" to "자켓/가디건")
+            temp >= 6 -> recommendations.add("🧥" to "코트/니트")
+            temp >= 0 -> recommendations.add("🧣" to "패딩/목도리")
+            else -> recommendations.add("🧣" to "두꺼운 패딩")
+        }
+    }
+    
+    // 2. 강수확률 기반 우산 (시간별 예보 중 최대값)
+    weather?.hourlyForecast?.maxOfOrNull { it.precipitationProbability }?.let { maxPrecip ->
+        if (maxPrecip >= 40) {
+            recommendations.add("☂️" to "우산 (${maxPrecip}%)")
+        } else if (maxPrecip >= 20) {
+            recommendations.add("🌂" to "우산 챙기기")
+        }
+    }
+    
+    // 3. 적설량 기반 (시간별 예보 중 합계)
+    weather?.hourlyForecast?.sumOf { it.snowfall }?.let { totalSnow ->
+        if (totalSnow > 0) {
+            recommendations.add("⛄" to "눈 %.1fcm".format(totalSnow))
+        }
+    }
+    
+    // 4. 대기질 나쁨 이하면 마스크
+    airQuality?.worstLevel?.let { level ->
+        if (level.ordinal >= AqiLevel.BAD.ordinal && level != AqiLevel.UNKNOWN) {
+            recommendations.add("😷" to "마스크 (${level.label})")
+        }
+    }
+    
+    if (recommendations.isEmpty()) return
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "🎒 오늘의 추천",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Spacer(Modifier.height(12.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                recommendations.forEach { (emoji, label) ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.weight(1f, fill = false)
+                    ) {
+                        Text(emoji, fontSize = 28.sp)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = label,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
