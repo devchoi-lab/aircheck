@@ -16,14 +16,25 @@ import kotlinx.coroutines.tasks.await
 
 // ── UI State ──────────────────────────────────────────────────────────────────
 
+/**
+ * 날씨/공기질 각각 독립적인 성공/실패 처리
+ * 하나가 실패해도 나머지는 표시
+ */
+data class DataResult<T>(
+    val data: T? = null,
+    val error: String? = null
+) {
+    val isSuccess get() = data != null
+}
+
 sealed interface MainUiState {
     data object Idle : MainUiState
     data object Loading : MainUiState
     data class Success(
-        val airQuality: AirQuality,
-        val weather: WeatherData
+        val airQuality: DataResult<AirQuality>,
+        val weather: DataResult<WeatherData>
     ) : MainUiState
-    data class Error(val message: String) : MainUiState
+    data class Error(val message: String) : MainUiState  // 위치 실패 등 치명적 오류
 }
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
@@ -49,30 +60,29 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 ).await()
 
                 if (location == null) {
-                    _uiState.update { MainUiState.Error("위치를 가져올 수 없어요.\n위치 서비스가 켜져 있는지 확인해주세요.") }
+                    _uiState.update {
+                        MainUiState.Error("위치를 가져올 수 없어요.\n위치 서비스가 켜져 있는지 확인해주세요.")
+                    }
                     return@launch
                 }
 
-                // 공기질 + 날씨 병렬 요청
+                // 공기질 + 날씨 병렬 요청 — 각각 독립 처리
                 val airDeferred = async { airRepo.fetch(location.latitude, location.longitude) }
                 val weatherDeferred = async { weatherRepo.fetch(location.latitude, location.longitude) }
 
                 val airResult = airDeferred.await()
                 val weatherResult = weatherDeferred.await()
 
-                if (airResult.isFailure) {
-                    _uiState.update { MainUiState.Error("공기질 정보 오류: ${airResult.exceptionOrNull()?.message}") }
-                    return@launch
-                }
-                if (weatherResult.isFailure) {
-                    _uiState.update { MainUiState.Error("날씨 정보 오류: ${weatherResult.exceptionOrNull()?.message}") }
-                    return@launch
-                }
-
                 _uiState.update {
                     MainUiState.Success(
-                        airQuality = airResult.getOrThrow(),
-                        weather = weatherResult.getOrThrow()
+                        airQuality = DataResult(
+                            data = airResult.getOrNull(),
+                            error = airResult.exceptionOrNull()?.message
+                        ),
+                        weather = DataResult(
+                            data = weatherResult.getOrNull(),
+                            error = weatherResult.exceptionOrNull()?.message
+                        )
                     )
                 }
 
