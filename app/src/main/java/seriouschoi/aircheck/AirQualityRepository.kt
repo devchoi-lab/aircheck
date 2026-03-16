@@ -81,26 +81,42 @@ data class AirQuality(
 )
 
 enum class AqiLevel(val label: String, val emoji: String, val colorHex: Long) {
+    BEST("최고", "🌟", 0xFF00E5FF),
     GOOD("좋음", "😊", 0xFF00C8A0),
+    FAIR("양호", "🙂", 0xFF8BC34A),
     MODERATE("보통", "😐", 0xFFFFD700),
-    SENSITIVE("민감군 주의", "😷", 0xFFFF8C00),
-    UNHEALTHY("나쁨", "😮", 0xFFFF4500),
-    VERY_UNHEALTHY("매우 나쁨", "🤢", 0xFF9400D3),
-    HAZARDOUS("위험", "☠️", 0xFF7E0023),
+    BAD("나쁨", "😮", 0xFFFF9800),
+    QUITE_BAD("상당히 나쁨", "😷", 0xFFFF5722),
+    VERY_BAD("매우 나쁨", "🤢", 0xFF9400D3),
+    WORST("최악", "☠️", 0xFF7E0023),
     UNKNOWN("알 수 없음", "❓", 0xFF9E9E9E);
 
     companion object {
         fun fromKhaiGrade(grade: String): AqiLevel = when (grade) {
-            "1" -> GOOD; "2" -> MODERATE; "3" -> UNHEALTHY; "4" -> VERY_UNHEALTHY
+            "1" -> GOOD; "2" -> MODERATE; "3" -> BAD; "4" -> VERY_BAD
             else -> UNKNOWN
         }
+        // PM2.5 기준 (μg/m³): 0~5 최고, 6~9 좋음, 10~12 양호, 13~15 보통, 16~37 나쁨, 38~50 상당히 나쁨, 51~75 매우 나쁨, 76~ 최악
         fun fromPm25(v: Double): AqiLevel = when {
-            v <= 15.0 -> GOOD; v <= 25.0 -> MODERATE; v <= 37.5 -> SENSITIVE
-            v <= 75.0 -> UNHEALTHY; v <= 150.0 -> VERY_UNHEALTHY; else -> HAZARDOUS
+            v <= 5.0 -> BEST
+            v <= 9.0 -> GOOD
+            v <= 12.0 -> FAIR
+            v <= 15.0 -> MODERATE
+            v <= 37.0 -> BAD
+            v <= 50.0 -> QUITE_BAD
+            v <= 75.0 -> VERY_BAD
+            else -> WORST
         }
+        // PM10 기준 (μg/m³): 0~10 최고, 11~22 좋음, 23~35 양호, 36~45 보통, 46~75 나쁨, 76~100 상당히 나쁨, 101~150 매우 나쁨, 151~ 최악
         fun fromPm10(v: Double): AqiLevel = when {
-            v <= 45.0 -> GOOD; v <= 90.0 -> MODERATE; v <= 180.0 -> SENSITIVE
-            v <= 270.0 -> UNHEALTHY; v <= 400.0 -> VERY_UNHEALTHY; else -> HAZARDOUS
+            v <= 10.0 -> BEST
+            v <= 22.0 -> GOOD
+            v <= 35.0 -> FAIR
+            v <= 45.0 -> MODERATE
+            v <= 75.0 -> BAD
+            v <= 100.0 -> QUITE_BAD
+            v <= 150.0 -> VERY_BAD
+            else -> WORST
         }
     }
 }

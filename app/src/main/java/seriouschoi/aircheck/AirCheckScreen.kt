@@ -446,39 +446,43 @@ private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
                 
                 HorizontalDivider()
                 
-                // PM2.5 기준 (WHO)
+                // PM2.5 기준 (초미세먼지)
                 Text(
-                    text = "PM2.5 (초미세먼지) - WHO 기준",
+                    text = "PM2.5 (초미세먼지)",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
                 GradeTable(
                     grades = listOf(
-                        Triple("😊 좋음", "0 ~ 15", Color(0xFF00C8A0)),
-                        Triple("😐 보통", "16 ~ 25", Color(0xFFFFD700)),
-                        Triple("😷 민감군 주의", "26 ~ 37.5", Color(0xFFFF8C00)),
-                        Triple("😮 나쁨", "37.6 ~ 75", Color(0xFFFF4500)),
-                        Triple("🤢 매우 나쁨", "76 ~ 150", Color(0xFF9400D3)),
-                        Triple("☠️ 위험", "151+", Color(0xFF7E0023))
+                        Triple("🌟 최고", "0 ~ 5", Color(0xFF00E5FF)),
+                        Triple("😊 좋음", "6 ~ 9", Color(0xFF00C8A0)),
+                        Triple("🙂 양호", "10 ~ 12", Color(0xFF8BC34A)),
+                        Triple("😐 보통", "13 ~ 15", Color(0xFFFFD700)),
+                        Triple("😮 나쁨", "16 ~ 37", Color(0xFFFF9800)),
+                        Triple("😷 상당히 나쁨", "38 ~ 50", Color(0xFFFF5722)),
+                        Triple("🤢 매우 나쁨", "51 ~ 75", Color(0xFF9400D3)),
+                        Triple("☠️ 최악", "76+", Color(0xFF7E0023))
                     )
                 )
                 
                 HorizontalDivider()
                 
-                // PM10 기준 (WHO)
+                // PM10 기준 (미세먼지)
                 Text(
-                    text = "PM10 (미세먼지) - WHO 기준",
+                    text = "PM10 (미세먼지)",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
                 GradeTable(
                     grades = listOf(
-                        Triple("😊 좋음", "0 ~ 45", Color(0xFF00C8A0)),
-                        Triple("😐 보통", "46 ~ 90", Color(0xFFFFD700)),
-                        Triple("😷 민감군 주의", "91 ~ 180", Color(0xFFFF8C00)),
-                        Triple("😮 나쁨", "181 ~ 270", Color(0xFFFF4500)),
-                        Triple("🤢 매우 나쁨", "271 ~ 400", Color(0xFF9400D3)),
-                        Triple("☠️ 위험", "401+", Color(0xFF7E0023))
+                        Triple("🌟 최고", "0 ~ 10", Color(0xFF00E5FF)),
+                        Triple("😊 좋음", "11 ~ 22", Color(0xFF00C8A0)),
+                        Triple("🙂 양호", "23 ~ 35", Color(0xFF8BC34A)),
+                        Triple("😐 보통", "36 ~ 45", Color(0xFFFFD700)),
+                        Triple("😮 나쁨", "46 ~ 75", Color(0xFFFF9800)),
+                        Triple("😷 상당히 나쁨", "76 ~ 100", Color(0xFFFF5722)),
+                        Triple("🤢 매우 나쁨", "101 ~ 150", Color(0xFF9400D3)),
+                        Triple("☠️ 최악", "151+", Color(0xFF7E0023))
                     )
                 )
                 
@@ -494,17 +498,9 @@ private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
                     grades = listOf(
                         Triple("😊 좋음", "0 ~ 50", Color(0xFF00C8A0)),
                         Triple("😐 보통", "51 ~ 100", Color(0xFFFFD700)),
-                        Triple("😮 나쁨", "101 ~ 250", Color(0xFFFF4500)),
+                        Triple("😮 나쁨", "101 ~ 250", Color(0xFFFF9800)),
                         Triple("🤢 매우 나쁨", "251+", Color(0xFF9400D3))
                     )
-                )
-                
-                Spacer(Modifier.height(8.dp))
-                
-                Text(
-                    text = "※ PM2.5/PM10은 WHO 2021 권고 기준을 적용합니다.",
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
         },
