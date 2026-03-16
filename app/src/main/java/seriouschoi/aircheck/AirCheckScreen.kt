@@ -221,14 +221,15 @@ private fun WeatherStat(emoji: String, label: String, value: String) {
 
 @Composable
 private fun AirQualityCard(air: AirQuality) {
-    val levelColor = Color(air.level.colorHex)
+    // 통합 등급: AQI/PM2.5/PM10 중 최악
+    val worstColor = Color(air.worstLevel.colorHex)
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
-            // AQI 요약
+            // 통합 공기질 등급 (최악 기준)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -236,28 +237,24 @@ private fun AirQualityCard(air: AirQuality) {
                 Box(
                     modifier = Modifier
                         .size(64.dp)
-                        .background(levelColor.copy(alpha = 0.15f), RoundedCornerShape(32.dp)),
+                        .background(worstColor.copy(alpha = 0.15f), RoundedCornerShape(32.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = air.aqi.toString(),
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = levelColor
-                        )
-                        Text("AQI", fontSize = 10.sp, color = levelColor)
-                    }
+                    Text(
+                        text = air.worstLevel.emoji,
+                        fontSize = 32.sp
+                    )
                 }
                 Column {
                     Text(
-                        text = "${air.level.emoji} ${air.level.label}",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+                        text = air.worstLevel.label,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = worstColor
                     )
                     Text(
-                        text = "공기질",
-                        fontSize = 12.sp,
+                        text = "통합 공기질 (AQI/PM2.5/PM10 중 최악)",
+                        fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

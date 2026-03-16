@@ -70,7 +70,8 @@ data class AirQuality(
     val pm10Level: AqiLevel,
     val stationName: String,
     val updatedAt: String,
-    val level: AqiLevel
+    val level: AqiLevel,           // 에어코리아 통합대기환경지수
+    val worstLevel: AqiLevel       // AQI/PM2.5/PM10 중 최악 등급
 )
 
 enum class AqiLevel(val label: String, val emoji: String, val colorHex: Long) {
@@ -296,15 +297,24 @@ class AirQualityRepository {
     private fun toAirQuality(item: AirKoreaItem): AirQuality {
         val pm25 = item.pm25Value.toDoubleOrNull()
         val pm10 = item.pm10Value.toDoubleOrNull()
+        val pm25Level = pm25?.let { AqiLevel.fromPm25(it) } ?: AqiLevel.UNKNOWN
+        val pm10Level = pm10?.let { AqiLevel.fromPm10(it) } ?: AqiLevel.UNKNOWN
+        val khaiLevel = AqiLevel.fromKhaiGrade(item.khaiGrade)
+        
+        // AQI / PM2.5 / PM10 중 가장 나쁜 등급 (ordinal 높을수록 나쁨, UNKNOWN 제외)
+        val levels = listOf(khaiLevel, pm25Level, pm10Level).filter { it != AqiLevel.UNKNOWN }
+        val worstLevel = levels.maxByOrNull { it.ordinal } ?: AqiLevel.UNKNOWN
+        
         return AirQuality(
             aqi = item.khaiValue.toIntOrNull() ?: -1,
             pm25 = pm25,
             pm10 = pm10,
-            pm25Level = pm25?.let { AqiLevel.fromPm25(it) } ?: AqiLevel.UNKNOWN,
-            pm10Level = pm10?.let { AqiLevel.fromPm10(it) } ?: AqiLevel.UNKNOWN,
+            pm25Level = pm25Level,
+            pm10Level = pm10Level,
             stationName = "${item.stationName} (${item.sidoName})",
             updatedAt = item.dataTime,
-            level = AqiLevel.fromKhaiGrade(item.khaiGrade)
+            level = khaiLevel,
+            worstLevel = worstLevel
         )
     }
 
