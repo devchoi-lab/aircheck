@@ -8,9 +8,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,11 +29,16 @@ fun AirCheckScreen(
     uiState: MainUiState,
     onRefresh: () -> Unit
 ) {
+    var showInfoDialog by remember { mutableStateOf(false) }
+    
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("에어체크", fontWeight = FontWeight.Bold) },
                 actions = {
+                    IconButton(onClick = { showInfoDialog = true }) {
+                        Icon(Icons.Default.Info, contentDescription = "기준 안내")
+                    }
                     IconButton(onClick = onRefresh) {
                         Icon(Icons.Default.Refresh, contentDescription = "새로고침")
                     }
@@ -36,6 +46,11 @@ fun AirCheckScreen(
             )
         }
     ) { innerPadding ->
+    
+        // 기준 안내 다이얼로그
+        if (showInfoDialog) {
+            AirQualityInfoDialog(onDismiss = { showInfoDialog = false })
+        }
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -397,5 +412,130 @@ private fun ErrorContent(message: String, onRetry: () -> Unit) {
         Text(message, textAlign = TextAlign.Center, fontSize = 14.sp)
         Spacer(Modifier.height(24.dp))
         Button(onClick = onRetry) { Text("다시 시도") }
+    }
+}
+
+// ── 공기질 기준 안내 다이얼로그 ────────────────────────────────────────────────
+
+@Composable
+private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { 
+            Text(
+                text = "공기질 기준 안내",
+                fontWeight = FontWeight.Bold
+            ) 
+        },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // 통합 등급 설명
+                Text(
+                    text = "통합 공기질 등급",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+                Text(
+                    text = "AQI(통합대기환경지수), PM2.5, PM10 중 가장 나쁜 등급을 기준으로 표시합니다.",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                HorizontalDivider()
+                
+                // PM2.5 기준 (WHO)
+                Text(
+                    text = "PM2.5 (초미세먼지) - WHO 기준",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+                GradeTable(
+                    grades = listOf(
+                        Triple("😊 좋음", "0 ~ 15", Color(0xFF00C8A0)),
+                        Triple("😐 보통", "16 ~ 25", Color(0xFFFFD700)),
+                        Triple("😷 민감군 주의", "26 ~ 37.5", Color(0xFFFF8C00)),
+                        Triple("😮 나쁨", "37.6 ~ 75", Color(0xFFFF4500)),
+                        Triple("🤢 매우 나쁨", "76 ~ 150", Color(0xFF9400D3)),
+                        Triple("☠️ 위험", "151+", Color(0xFF7E0023))
+                    )
+                )
+                
+                HorizontalDivider()
+                
+                // PM10 기준 (WHO)
+                Text(
+                    text = "PM10 (미세먼지) - WHO 기준",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+                GradeTable(
+                    grades = listOf(
+                        Triple("😊 좋음", "0 ~ 45", Color(0xFF00C8A0)),
+                        Triple("😐 보통", "46 ~ 90", Color(0xFFFFD700)),
+                        Triple("😷 민감군 주의", "91 ~ 180", Color(0xFFFF8C00)),
+                        Triple("😮 나쁨", "181 ~ 270", Color(0xFFFF4500)),
+                        Triple("🤢 매우 나쁨", "271 ~ 400", Color(0xFF9400D3)),
+                        Triple("☠️ 위험", "401+", Color(0xFF7E0023))
+                    )
+                )
+                
+                HorizontalDivider()
+                
+                // AQI 기준 (에어코리아)
+                Text(
+                    text = "AQI (통합대기환경지수) - 에어코리아",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+                GradeTable(
+                    grades = listOf(
+                        Triple("😊 좋음", "0 ~ 50", Color(0xFF00C8A0)),
+                        Triple("😐 보통", "51 ~ 100", Color(0xFFFFD700)),
+                        Triple("😮 나쁨", "101 ~ 250", Color(0xFFFF4500)),
+                        Triple("🤢 매우 나쁨", "251+", Color(0xFF9400D3))
+                    )
+                )
+                
+                Spacer(Modifier.height(8.dp))
+                
+                Text(
+                    text = "※ PM2.5/PM10은 WHO 2021 권고 기준을 적용합니다.",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("확인")
+            }
+        }
+    )
+}
+
+@Composable
+private fun GradeTable(grades: List<Triple<String, String, Color>>) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        grades.forEach { (label, range, color) ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = label,
+                    fontSize = 12.sp,
+                    color = color
+                )
+                Text(
+                    text = "$range μg/m³",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
