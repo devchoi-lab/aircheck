@@ -71,7 +71,7 @@ internal fun WeatherScreen(
                 is WeatherUiState.Idle -> IdleContent(onRefresh)
                 is WeatherUiState.Loading -> LoadingContent()
                 is WeatherUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather, onRefresh)
-                is WeatherUiState.Error -> ErrorContent(uiState.message, onRefresh)
+                is WeatherUiState.Error -> ErrorContent(uiState.message.asString(), onRefresh)
             }
         }
     }
@@ -134,13 +134,13 @@ private fun SuccessContent(
         // ── 날씨 카드 ────────────────────────────────────────
         when {
             weather.data != null -> WeatherCard(weather.data)
-            weather.error != null -> ErrorCard(title = stringResource(CoreR.string.weather_title), message = weather.error, onRetry = onRefresh)
+            weather.error != null -> ErrorCard(title = stringResource(CoreR.string.weather_title), message = weather.error.asString(), onRetry = onRefresh)
         }
 
         // ── 공기질 카드 ──────────────────────────────────────
         when {
             air.data != null -> AirQualityCard(air.data)
-            air.error != null -> ErrorCard(title = stringResource(CoreR.string.air_quality_title), message = air.error, onRetry = onRefresh)
+            air.error != null -> ErrorCard(title = stringResource(CoreR.string.air_quality_title), message = air.error.asString(), onRetry = onRefresh)
         }
 
         // 업데이트 시간
