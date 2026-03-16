@@ -12,7 +12,8 @@ import okhttp3.Request
 
 @Serializable
 data class OpenMeteoResponse(
-    val current: OpenMeteoCurrent? = null
+    val current: OpenMeteoCurrent? = null,
+    val hourly: OpenMeteoHourly? = null
 )
 
 @Serializable
@@ -25,6 +26,16 @@ data class OpenMeteoCurrent(
     @SerialName("is_day") val isDay: Int = 1
 )
 
+@Serializable
+data class OpenMeteoHourly(
+    val time: List<String> = emptyList(),
+    @SerialName("temperature_2m") val temperature: List<Double> = emptyList(),
+    @SerialName("apparent_temperature") val feelsLike: List<Double> = emptyList(),
+    @SerialName("precipitation_probability") val precipitationProbability: List<Int> = emptyList(),
+    val snowfall: List<Double> = emptyList(),
+    @SerialName("weathercode") val weatherCode: List<Int> = emptyList()
+)
+
 // ── 도메인 모델 ───────────────────────────────────────────────────────────────
 
 data class WeatherData(
@@ -33,7 +44,18 @@ data class WeatherData(
     val precipitation: Double,
     val condition: WeatherCondition,
     val cloudCover: Int,
-    val isDay: Boolean
+    val isDay: Boolean,
+    val hourlyForecast: List<HourlyForecast> = emptyList()
+)
+
+/** 시간별 예보 */
+data class HourlyForecast(
+    val hour: String,              // "14시", "15시" 등
+    val temperature: Double,
+    val feelsLike: Double,
+    val precipitationProbability: Int,  // 강수확률 (%)
+    val snowfall: Double,          // 적설량 (cm)
+    val condition: WeatherCondition
 )
 
 enum class WeatherCondition(val label: String, val emoji: String) {
@@ -79,6 +101,8 @@ class WeatherRepository {
             val url = "https://api.open-meteo.com/v1/forecast" +
                     "?latitude=$lat&longitude=$lng" +
                     "&current=temperature_2m,apparent_temperature,precipitation,weathercode,cloudcover,is_day" +
+                    "&hourly=temperature_2m,apparent_temperature,precipitation_probability,snowfall,weathercode" +
+                    "&forecast_hours=12" +
                     "&timezone=auto"
 
             val request = Request.Builder().url(url).build()
@@ -88,17 +112,47 @@ class WeatherRepository {
                 ?: return@withContext Result.failure(Exception("날씨 데이터 없음"))
 
             val isDay = current.isDay == 1
+            
+            // 시간별 예보 파싱
+            val hourlyForecast = parseHourlyForecast(response.hourly, isDay)
+            
             val weatherData = WeatherData(
                 temperature = current.temperature,
                 feelsLike = current.feelsLike,
                 precipitation = current.precipitation,
                 condition = WeatherCondition.from(current.weatherCode, isDay),
                 cloudCover = current.cloudCover,
-                isDay = isDay
+                isDay = isDay,
+                hourlyForecast = hourlyForecast
             )
             Result.success(weatherData)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+    
+    private fun parseHourlyForecast(hourly: OpenMeteoHourly?, isDay: Boolean): List<HourlyForecast> {
+        if (hourly == null) return emptyList()
+        
+        return hourly.time.mapIndexedNotNull { index, timeStr ->
+            // ISO 8601 형식에서 시간 추출: "2026-03-16T14:00" → "14시"
+            val hour = try {
+                timeStr.substringAfter("T").substringBefore(":").toInt()
+            } catch (e: Exception) {
+                return@mapIndexedNotNull null
+            }
+            
+            HourlyForecast(
+                hour = "${hour}시",
+                temperature = hourly.temperature.getOrNull(index) ?: return@mapIndexedNotNull null,
+                feelsLike = hourly.feelsLike.getOrNull(index) ?: 0.0,
+                precipitationProbability = hourly.precipitationProbability.getOrNull(index) ?: 0,
+                snowfall = hourly.snowfall.getOrNull(index) ?: 0.0,
+                condition = WeatherCondition.from(
+                    hourly.weatherCode.getOrNull(index) ?: 0,
+                    hour in 6..18  // 6시~18시를 낮으로 간주
+                )
+            )
         }
     }
 }
