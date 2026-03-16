@@ -1,3 +1,0 @@
-seriouschoi.aircheck
-string app_name
-style Theme_AirCheck
