@@ -22,9 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import seriouschoi.aircheck.core.resource.R as CoreR
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.HourlyForecast
@@ -42,13 +44,13 @@ internal fun WeatherScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("에어체크", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(CoreR.string.app_name), fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = { showInfoDialog = true }) {
-                        Icon(Icons.Default.Info, contentDescription = "기준 안내")
+                        Icon(Icons.Default.Info, contentDescription = stringResource(CoreR.string.content_description_info))
                     }
                     IconButton(onClick = onRefresh) {
-                        Icon(Icons.Default.Refresh, contentDescription = "새로고침")
+                        Icon(Icons.Default.Refresh, contentDescription = stringResource(CoreR.string.content_description_refresh))
                     }
                 }
             )
@@ -82,9 +84,9 @@ private fun IdleContent(onStart: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("🌬️", fontSize = 64.sp)
         Spacer(Modifier.height(16.dp))
-        Text("현재 위치의 날씨와 공기질을 확인해보세요", fontSize = 16.sp, textAlign = TextAlign.Center)
+        Text(stringResource(CoreR.string.idle_message), fontSize = 16.sp, textAlign = TextAlign.Center)
         Spacer(Modifier.height(24.dp))
-        Button(onClick = onStart) { Text("확인하기") }
+        Button(onClick = onStart) { Text(stringResource(CoreR.string.button_check)) }
     }
 }
 
@@ -95,7 +97,7 @@ private fun LoadingContent() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         CircularProgressIndicator()
         Spacer(Modifier.height(16.dp))
-        Text("날씨 및 공기질 가져오는 중...")
+        Text(stringResource(CoreR.string.loading_message))
     }
 }
 
@@ -132,19 +134,19 @@ private fun SuccessContent(
         // ── 날씨 카드 ────────────────────────────────────────
         when {
             weather.data != null -> WeatherCard(weather.data)
-            weather.error != null -> ErrorCard(title = "날씨", message = weather.error, onRetry = onRefresh)
+            weather.error != null -> ErrorCard(title = stringResource(CoreR.string.weather_title), message = weather.error, onRetry = onRefresh)
         }
 
         // ── 공기질 카드 ──────────────────────────────────────
         when {
             air.data != null -> AirQualityCard(air.data)
-            air.error != null -> ErrorCard(title = "공기질", message = air.error, onRetry = onRefresh)
+            air.error != null -> ErrorCard(title = stringResource(CoreR.string.air_quality_title), message = air.error, onRetry = onRefresh)
         }
 
         // 업데이트 시간
         air.data?.updatedAt?.takeIf { it.isNotEmpty() }?.let {
             Text(
-                text = "공기질 업데이트: $it",
+                text = stringResource(CoreR.string.air_quality_update, it),
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -203,23 +205,23 @@ private fun WeatherCard(weather: WeatherData) {
             ) {
                 WeatherStat(
                     emoji = "🌡️",
-                    label = "기온",
-                    value = "%.1f°C".format(weather.temperature)
+                    label = stringResource(CoreR.string.label_temperature),
+                    value = stringResource(CoreR.string.format_temperature, weather.temperature)
                 )
                 WeatherStat(
                     emoji = "🤔",
-                    label = "체감온도",
-                    value = "%.1f°C".format(weather.feelsLike)
+                    label = stringResource(CoreR.string.label_feels_like),
+                    value = stringResource(CoreR.string.format_temperature, weather.feelsLike)
                 )
                 WeatherStat(
                     emoji = "🌧️",
-                    label = "강수확률",
-                    value = "${weather.precipitationProbability}%"
+                    label = stringResource(CoreR.string.label_precipitation_prob),
+                    value = stringResource(CoreR.string.format_percent, weather.precipitationProbability)
                 )
                 WeatherStat(
                     emoji = "❄️",
-                    label = "강설확률",
-                    value = "${weather.snowfallProbability}%"
+                    label = stringResource(CoreR.string.label_snowfall_prob),
+                    value = stringResource(CoreR.string.format_percent, weather.snowfallProbability)
                 )
             }
             
@@ -503,7 +505,7 @@ private fun AirQualityCard(air: AirQuality) {
                         color = worstColor
                     )
                     Text(
-                        text = "통합 공기질 (AQI/초미세먼지/미세먼지 중 최악)",
+                        text = stringResource(CoreR.string.air_quality_integrated),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -516,14 +518,14 @@ private fun AirQualityCard(air: AirQuality) {
 
             // 초미세먼지 (PM2.5)
             PollutantRow(
-                label = "초미세먼지",
+                label = stringResource(CoreR.string.label_pm25),
                 pmData = air.pm25,
                 mainStationName = air.mainStationName
             )
             Spacer(Modifier.height(8.dp))
             // 미세먼지 (PM10)
             PollutantRow(
-                label = "미세먼지",
+                label = stringResource(CoreR.string.label_pm10),
                 pmData = air.pm10,
                 mainStationName = air.mainStationName
             )
@@ -632,7 +634,7 @@ private fun ErrorCard(title: String, message: String, onRetry: () -> Unit) {
                     modifier = Modifier.padding(top = 2.dp)
                 )
             }
-            TextButton(onClick = onRetry) { Text("재시도") }
+            TextButton(onClick = onRetry) { Text(stringResource(CoreR.string.button_retry)) }
         }
     }
 }
@@ -646,7 +648,7 @@ private fun ErrorContent(message: String, onRetry: () -> Unit) {
         Spacer(Modifier.height(16.dp))
         Text(message, textAlign = TextAlign.Center, fontSize = 14.sp)
         Spacer(Modifier.height(24.dp))
-        Button(onClick = onRetry) { Text("다시 시도") }
+        Button(onClick = onRetry) { Text(stringResource(CoreR.string.button_retry_again)) }
     }
 }
 
@@ -658,7 +660,7 @@ private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
         onDismissRequest = onDismiss,
         title = { 
             Text(
-                text = "공기질 기준 안내",
+                text = stringResource(CoreR.string.dialog_air_quality_title),
                 fontWeight = FontWeight.Bold
             ) 
         },
