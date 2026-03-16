@@ -12,7 +12,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.tasks.await
-import seriouschoi.aircheck.feature.weather.ui.LocationProvider
+import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import javax.inject.Singleton
 
 @Module
