@@ -412,7 +412,7 @@ private fun RecommendationCard(weather: WeatherData?, airQuality: AirQuality?) {
     weather?.hourlyForecast?.take(6)?.maxOfOrNull { it.precipitationProbability }?.let { maxPrecip ->
         when {
             maxPrecip >= 40 -> recommendations.add("☂️" to "우산 (${maxPrecip}%)")
-            maxPrecip >= 20 -> recommendations.add("🌂" to "우산 챙기기")
+            maxPrecip >= 20 -> recommendations.add("🌂" to "우산 챙기기 (${maxPrecip}%)")
             // maxPrecip < 20 → 우산 추천 안 함
         }
     }
