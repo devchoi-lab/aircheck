@@ -4,7 +4,9 @@ package seriouschoi.aircheck
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -43,7 +45,7 @@ fun AirCheckScreen(
             when (uiState) {
                 is MainUiState.Idle -> IdleContent(onRefresh)
                 is MainUiState.Loading -> LoadingContent()
-                is MainUiState.Success -> SuccessContent(uiState.airQuality)
+                is MainUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather)
                 is MainUiState.Error -> ErrorContent(uiState.message, onRefresh)
             }
         }
@@ -57,7 +59,7 @@ private fun IdleContent(onStart: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("🌬️", fontSize = 64.sp)
         Spacer(Modifier.height(16.dp))
-        Text("현재 위치의 공기질을 확인해보세요", fontSize = 16.sp, textAlign = TextAlign.Center)
+        Text("현재 위치의 날씨와 공기질을 확인해보세요", fontSize = 16.sp, textAlign = TextAlign.Center)
         Spacer(Modifier.height(24.dp))
         Button(onClick = onStart) { Text("확인하기") }
     }
@@ -70,109 +72,214 @@ private fun LoadingContent() {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         CircularProgressIndicator()
         Spacer(Modifier.height(16.dp))
-        Text("위치 및 공기질 데이터 가져오는 중...")
+        Text("날씨 및 공기질 가져오는 중...")
     }
 }
 
 // ── Success ───────────────────────────────────────────────────────────────────
 
 @Composable
-private fun SuccessContent(air: AirQuality) {
-    val levelColor = Color(air.level.colorHex)
-
+private fun SuccessContent(air: AirQuality, weather: WeatherData) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // 위치
         Text(
             text = air.stationName,
             fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         )
 
-        Spacer(Modifier.height(16.dp))
+        // ── 날씨 카드 ────────────────────────────────────────
+        WeatherCard(weather)
 
-        // AQI 메인 카드
-        Box(
-            modifier = Modifier
-                .size(200.dp)
-                .background(levelColor.copy(alpha = 0.15f), RoundedCornerShape(100.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(air.level.emoji, fontSize = 48.sp)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = air.aqi.toString(),
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = levelColor
+        // ── 공기질 카드 ──────────────────────────────────────
+        AirQualityCard(air)
+
+        // 업데이트 시간
+        if (air.updatedAt.isNotEmpty()) {
+            Text(
+                text = "공기질 업데이트: ${air.updatedAt}",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
+    }
+}
+
+// ── 날씨 카드 ─────────────────────────────────────────────────────────────────
+
+@Composable
+private fun WeatherCard(weather: WeatherData) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            // 날씨 상태 + 이모지
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(weather.condition.emoji, fontSize = 36.sp)
+                Column {
+                    Text(
+                        text = weather.condition.label,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                    if (weather.precipitation > 0) {
+                        val precipLabel = when (weather.condition) {
+                            WeatherCondition.SNOW, WeatherCondition.SNOW_SHOWER -> "적설 ${weather.precipitation}mm"
+                            else -> "강수량 ${weather.precipitation}mm"
+                        }
+                        Text(
+                            text = precipLabel,
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
+            Spacer(Modifier.height(16.dp))
+
+            // 기온 / 체감온도 / 햇빛
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                WeatherStat(
+                    emoji = "🌡️",
+                    label = "기온",
+                    value = "%.1f°C".format(weather.temperature)
                 )
-                Text("AQI", fontSize = 12.sp, color = levelColor)
+                WeatherStat(
+                    emoji = "🤔",
+                    label = "체감온도",
+                    value = "%.1f°C".format(weather.feelsLike)
+                )
+                WeatherStat(
+                    emoji = if (weather.isDay) "☀️" else "🌙",
+                    label = if (weather.isDay) "햇빛" else "달빛",
+                    value = when {
+                        weather.cloudCover <= 20 -> "강함"
+                        weather.cloudCover <= 50 -> "보통"
+                        weather.cloudCover <= 80 -> "약함"
+                        else -> "없음"
+                    }
+                )
             }
         }
+    }
+}
 
-        Spacer(Modifier.height(16.dp))
+@Composable
+private fun WeatherStat(emoji: String, label: String, value: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(emoji, fontSize = 20.sp)
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = value,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+        )
+    }
+}
 
-        // 레벨 배지
-        Surface(
-            color = levelColor,
-            shape = RoundedCornerShape(20.dp)
-        ) {
-            Text(
-                text = air.level.label,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
-        }
+// ── 공기질 카드 ───────────────────────────────────────────────────────────────
 
-        Spacer(Modifier.height(32.dp))
+@Composable
+private fun AirQualityCard(air: AirQuality) {
+    val levelColor = Color(air.level.colorHex)
 
-        // 상세 수치 (PM2.5 / PM10)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            PollutantCard(label = "PM2.5", value = air.pm25)
-            PollutantCard(label = "PM10", value = air.pm10)
-        }
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Column(modifier = Modifier.padding(20.dp)) {
+            // AQI 요약
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(levelColor.copy(alpha = 0.15f), RoundedCornerShape(32.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = air.aqi.toString(),
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = levelColor
+                        )
+                        Text("AQI", fontSize = 10.sp, color = levelColor)
+                    }
+                }
+                Column {
+                    Text(
+                        text = "${air.level.emoji} ${air.level.label}",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "공기질",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
-        if (air.updatedAt.isNotEmpty()) {
             Spacer(Modifier.height(16.dp))
-            Text(
-                text = "업데이트: ${air.updatedAt}",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            HorizontalDivider()
+            Spacer(Modifier.height(16.dp))
+
+            // PM2.5 / PM10
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                PollutantCard(label = "PM2.5", value = air.pm25)
+                PollutantCard(label = "PM10", value = air.pm10)
+            }
         }
     }
 }
 
 @Composable
 private fun PollutantCard(label: String, value: Double?) {
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        modifier = Modifier.width(120.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = value?.let { "%.1f".format(it) } ?: "-",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text("μg/m³", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = value?.let { "%.1f".format(it) } ?: "-",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = "$label (μg/m³)",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
