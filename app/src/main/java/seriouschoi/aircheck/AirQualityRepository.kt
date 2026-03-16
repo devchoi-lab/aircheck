@@ -33,13 +33,12 @@ data class AirKoreaItem(
     val khaiGrade: String = "0"
 )
 
-// ── 측정소 정보 모델 (좌표 포함) ───────────────────────────────────────────────
+// ── 측정소 정보 모델 ──────────────────────────────────────────────────────────
 
-data class StationInfo(
+/** 좌표 기반 매칭 결과 */
+data class NearestStationInfo(
     val stationName: String,
-    val addr: String,
-    val dmX: Double,  // 경도 (longitude)
-    val dmY: Double   // 위도 (latitude)
+    val addr: String  // 주소 (시/도 추출용)
 )
 
 // ── Nominatim 역지오코딩 모델 ─────────────────────────────────────────────────
@@ -119,11 +118,11 @@ class AirQualityRepository {
     suspend fun fetch(lat: Double, lng: Double): Result<AirQuality> = withContext(Dispatchers.IO) {
         try {
             // Step 1: 좌표 기반으로 가장 가까운 측정소 찾기
-            val nearestStation = findNearestStation(lat, lng)
+            val nearestInfo = findNearestStation(lat, lng)
             
-            if (nearestStation != null) {
+            if (nearestInfo != null) {
                 // Step 2: 해당 측정소의 실시간 데이터 조회
-                return@withContext fetchByStation(nearestStation)
+                return@withContext fetchByStation(nearestInfo.stationName, nearestInfo.addr)
             }
             
             // 좌표 기반 실패 시 → 기존 키워드 매칭 폴백
@@ -137,7 +136,7 @@ class AirQualityRepository {
      * 좌표 기반 가장 가까운 측정소 찾기
      * getMsrstnList로 전체 측정소 목록 조회 후 Haversine 거리 계산
      */
-    private fun findNearestStation(lat: Double, lng: Double): String? {
+    private fun findNearestStation(lat: Double, lng: Double): NearestStationInfo? {
         return try {
             // 전체 측정소 목록 조회 (좌표 포함, ver=1.1)
             val url = "https://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getMsrstnList" +
@@ -157,12 +156,13 @@ class AirQualityRepository {
                 ?.get("items")?.jsonArray ?: return null
             
             // 각 측정소와의 거리 계산
-            var nearestStation: String? = null
+            var nearestInfo: NearestStationInfo? = null
             var minDistance = Double.MAX_VALUE
             
             for (item in items) {
                 val obj = item.jsonObject
                 val stationName = obj["stationName"]?.jsonPrimitive?.content ?: continue
+                val addr = obj["addr"]?.jsonPrimitive?.content ?: ""
                 // ver 1.1에서는 dmX가 경도(lng), dmY가 위도(lat)
                 val dmX = obj["dmX"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: continue
                 val dmY = obj["dmY"]?.jsonPrimitive?.content?.toDoubleOrNull() ?: continue
@@ -170,11 +170,11 @@ class AirQualityRepository {
                 val distance = haversineDistance(lat, lng, dmY, dmX)
                 if (distance < minDistance) {
                     minDistance = distance
-                    nearestStation = stationName
+                    nearestInfo = NearestStationInfo(stationName, addr)
                 }
             }
             
-            nearestStation
+            nearestInfo
         } catch (e: Exception) {
             null
         }
@@ -194,7 +194,7 @@ class AirQualityRepository {
     }
 
     /** 측정소명으로 실시간 데이터 조회 */
-    private fun fetchByStation(stationName: String): Result<AirQuality> = try {
+    private fun fetchByStation(stationName: String, addr: String): Result<AirQuality> = try {
         val url = "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty" +
                 "?stationName=${java.net.URLEncoder.encode(stationName, "UTF-8")}" +
                 "&dataTerm=DAILY&pageNo=1&numOfRows=1&returnType=json" +
@@ -204,9 +204,38 @@ class AirQualityRepository {
         val response = json.decodeFromString<AirKoreaResponse>(body)
         val item = response.response?.body?.items?.firstOrNull()
             ?: return Result.failure(Exception("$stationName 측정소 데이터가 없어요"))
-        Result.success(toAirQuality(item))
+        
+        // 주소에서 시/도 추출 (예: "경기 부천시 소사본동..." → "경기")
+        val sidoName = extractSidoFromAddr(addr)
+        Result.success(toAirQuality(item, stationName, sidoName))
     } catch (e: Exception) {
         Result.failure(e)
+    }
+    
+    /** 주소에서 시/도명 추출 */
+    private fun extractSidoFromAddr(addr: String): String {
+        if (addr.isBlank()) return ""
+        val firstPart = addr.split(" ").firstOrNull() ?: return ""
+        return when {
+            firstPart.contains("서울") -> "서울"
+            firstPart.contains("부산") -> "부산"
+            firstPart.contains("대구") -> "대구"
+            firstPart.contains("인천") -> "인천"
+            firstPart.contains("광주") -> "광주"
+            firstPart.contains("대전") -> "대전"
+            firstPart.contains("울산") -> "울산"
+            firstPart.contains("세종") -> "세종"
+            firstPart.contains("경기") -> "경기"
+            firstPart.contains("강원") -> "강원"
+            firstPart.contains("충북") || firstPart.contains("충청북") -> "충북"
+            firstPart.contains("충남") || firstPart.contains("충청남") -> "충남"
+            firstPart.contains("전북") || firstPart.contains("전라북") -> "전북"
+            firstPart.contains("전남") || firstPart.contains("전라남") -> "전남"
+            firstPart.contains("경북") || firstPart.contains("경상북") -> "경북"
+            firstPart.contains("경남") || firstPart.contains("경상남") -> "경남"
+            firstPart.contains("제주") -> "제주"
+            else -> firstPart
+        }
     }
 
     /** 기존 키워드 매칭 방식 (폴백) */
@@ -294,7 +323,13 @@ class AirQualityRepository {
         return null
     }
 
+    /** API 응답에서 AirQuality 생성 (stationName/sidoName 포함된 경우) */
     private fun toAirQuality(item: AirKoreaItem): AirQuality {
+        return toAirQuality(item, item.stationName, item.sidoName)
+    }
+    
+    /** API 응답에서 AirQuality 생성 (stationName/sidoName 별도 전달) */
+    private fun toAirQuality(item: AirKoreaItem, stationName: String, sidoName: String): AirQuality {
         val pm25 = item.pm25Value.toDoubleOrNull()
         val pm10 = item.pm10Value.toDoubleOrNull()
         val pm25Level = pm25?.let { AqiLevel.fromPm25(it) } ?: AqiLevel.UNKNOWN
@@ -305,13 +340,16 @@ class AirQualityRepository {
         val levels = listOf(khaiLevel, pm25Level, pm10Level).filter { it != AqiLevel.UNKNOWN }
         val worstLevel = levels.maxByOrNull { it.ordinal } ?: AqiLevel.UNKNOWN
         
+        // 표시명: "측정소명 (시/도)"
+        val displayName = if (sidoName.isNotBlank()) "$stationName ($sidoName)" else stationName
+        
         return AirQuality(
             aqi = item.khaiValue.toIntOrNull() ?: -1,
             pm25 = pm25,
             pm10 = pm10,
             pm25Level = pm25Level,
             pm10Level = pm10Level,
-            stationName = "${item.stationName} (${item.sidoName})",
+            stationName = displayName,
             updatedAt = item.dataTime,
             level = khaiLevel,
             worstLevel = worstLevel
