@@ -8,12 +8,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
-import seriouschoi.aircheck.feature.weather.ui.WeatherScreen
-import seriouschoi.aircheck.feature.weather.ui.WeatherViewModel
+import seriouschoi.aircheck.feature.weather.navigation.WeatherRoute
+import seriouschoi.aircheck.feature.weather.navigation.weatherScreen
 import seriouschoi.aircheck.ui.theme.AirCheckTheme
 
 @AndroidEntryPoint
@@ -23,14 +22,11 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AirCheckTheme {
-                val vm: WeatherViewModel = hiltViewModel()
-                val uiState by vm.uiState.collectAsStateWithLifecycle()
-
+                val navController = rememberNavController()
+                
                 val permissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions()
-                ) { grants ->
-                    if (grants.values.any { it }) vm.load()
-                }
+                ) { /* 권한 결과는 WeatherViewModel에서 위치 요청 시 처리 */ }
 
                 LaunchedEffect(Unit) {
                     permissionLauncher.launch(
@@ -41,10 +37,12 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                WeatherScreen(
-                    uiState = uiState,
-                    onRefresh = { vm.load() }
-                )
+                NavHost(
+                    navController = navController,
+                    startDestination = WeatherRoute.Main
+                ) {
+                    weatherScreen()
+                }
             }
         }
     }
