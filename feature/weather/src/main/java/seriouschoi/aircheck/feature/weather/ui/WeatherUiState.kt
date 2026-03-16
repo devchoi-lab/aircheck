@@ -6,7 +6,6 @@ import seriouschoi.aircheck.core.resource.UiText
 
 /** 날씨 화면 UI 상태 */
 internal sealed interface WeatherUiState {
-    data object Idle : WeatherUiState
     data object Loading : WeatherUiState
     data class Success(
         val airQuality: WeatherDataResult<AirQuality>,
