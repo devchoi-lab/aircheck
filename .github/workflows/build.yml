@@ -37,7 +37,7 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew :app:assembleDebug
         env:
-          ANDROID_HOME: ~/android-sdk
+          ANDROID_HOME: /Users/agent/android-sdk
 
       - name: Upload APK (Artifact)
         uses: actions/upload-artifact@v4
