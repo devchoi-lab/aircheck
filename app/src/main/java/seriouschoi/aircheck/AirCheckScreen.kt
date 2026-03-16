@@ -4,6 +4,8 @@ package seriouschoi.aircheck
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -209,6 +211,90 @@ private fun WeatherCard(weather: WeatherData) {
                     }
                 )
             }
+            
+            // 시간별 예보 (12시간)
+            if (weather.hourlyForecast.isNotEmpty()) {
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
+                Spacer(Modifier.height(12.dp))
+                
+                Text(
+                    text = "시간별 예보",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Spacer(Modifier.height(8.dp))
+                
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(weather.hourlyForecast) { forecast ->
+                        HourlyForecastItem(forecast)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HourlyForecastItem(forecast: HourlyForecast) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier
+            .background(
+                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.05f),
+                RoundedCornerShape(8.dp)
+            )
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    ) {
+        // 시간
+        Text(
+            text = forecast.hour,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        Spacer(Modifier.height(4.dp))
+        
+        // 날씨 이모지
+        Text(forecast.condition.emoji, fontSize = 20.sp)
+        Spacer(Modifier.height(4.dp))
+        
+        // 기온
+        Text(
+            text = "%.0f°".format(forecast.temperature),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        
+        // 체감온도
+        Text(
+            text = "체감 %.0f°".format(forecast.feelsLike),
+            fontSize = 10.sp,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+        )
+        
+        // 강수확률 (0%가 아닐 때만)
+        if (forecast.precipitationProbability > 0) {
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "💧${forecast.precipitationProbability}%",
+                fontSize = 10.sp,
+                color = Color(0xFF2196F3)
+            )
+        }
+        
+        // 눈 (0cm가 아닐 때만)
+        if (forecast.snowfall > 0) {
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = "❄️%.1fcm".format(forecast.snowfall),
+                fontSize = 10.sp,
+                color = Color(0xFF64B5F6)
+            )
         }
     }
 }
