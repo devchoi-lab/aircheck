@@ -88,7 +88,7 @@ class AirQualityRepository {
 
     // 에어코리아 API 키 (공공데이터포털 발급)
     // ⚠️ 실제 배포 시 BuildConfig 또는 secrets로 이동 필요
-    private val apiKey = "6e50f6e991e12cdf01168422bc4bea2797b3c044765977f01c210aa4058fe02f"
+    private val apiKey = "34dddd00aa791a78203988d8151ead27a5b0c8c64fc5c0dea94c4b64160b2df5"
 
     private val client = OkHttpClient.Builder()
         .addInterceptor { chain ->
