@@ -76,8 +76,7 @@ internal fun WeatherScreen(
                 contentAlignment = Alignment.Center
             ) {
                 when (uiState) {
-                    is WeatherUiState.Idle -> IdleContent(onRefresh)
-                    is WeatherUiState.Loading -> LoadingContent()
+                    is WeatherUiState.Loading -> { /* PullToRefreshBox가 인디케이터 표시 */ }
                     is WeatherUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather, onRefresh)
                     is WeatherUiState.Error -> ErrorContent(uiState.message.asString(), onRefresh)
                 }
@@ -86,29 +85,7 @@ internal fun WeatherScreen(
     }
 }
 
-// ── Idle ──────────────────────────────────────────────────────────────────────
 
-@Composable
-private fun IdleContent(onStart: () -> Unit) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("🌬️", fontSize = 64.sp)
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(CoreR.string.idle_message), fontSize = 16.sp, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(24.dp))
-        Button(onClick = onStart) { Text(stringResource(CoreR.string.button_check)) }
-    }
-}
-
-// ── Loading ───────────────────────────────────────────────────────────────────
-
-@Composable
-private fun LoadingContent() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        CircularProgressIndicator()
-        Spacer(Modifier.height(16.dp))
-        Text(stringResource(CoreR.string.loading_message))
-    }
-}
 
 // ── Success ───────────────────────────────────────────────────────────────────
 

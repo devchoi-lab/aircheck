@@ -21,8 +21,12 @@ internal class WeatherViewModel @Inject constructor(
     private val locationProvider: LocationProvider
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<WeatherUiState>(WeatherUiState.Idle)
+    private val _uiState = MutableStateFlow<WeatherUiState>(WeatherUiState.Loading)
     val uiState: StateFlow<WeatherUiState> = _uiState.asStateFlow()
+
+    init {
+        load()
+    }
 
     fun load() {
         viewModelScope.launch {
