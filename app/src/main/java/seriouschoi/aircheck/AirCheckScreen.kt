@@ -206,14 +206,14 @@ private fun WeatherCard(weather: WeatherData) {
                     value = "%.1f°C".format(weather.feelsLike)
                 )
                 WeatherStat(
-                    emoji = if (weather.isDay) "☀️" else "🌙",
-                    label = if (weather.isDay) "햇빛" else "달빛",
-                    value = when {
-                        weather.cloudCover <= 20 -> "강함"
-                        weather.cloudCover <= 50 -> "보통"
-                        weather.cloudCover <= 80 -> "약함"
-                        else -> "없음"
-                    }
+                    emoji = "🌧️",
+                    label = "강수확률",
+                    value = "${weather.precipitationProbability}%"
+                )
+                WeatherStat(
+                    emoji = "❄️",
+                    label = "강설확률",
+                    value = "${weather.snowfallProbability}%"
                 )
             }
             
