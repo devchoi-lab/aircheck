@@ -45,7 +45,7 @@ fun AirCheckScreen(
             when (uiState) {
                 is MainUiState.Idle -> IdleContent(onRefresh)
                 is MainUiState.Loading -> LoadingContent()
-                is MainUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather)
+                is MainUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather, onRefresh)
                 is MainUiState.Error -> ErrorContent(uiState.message, onRefresh)
             }
         }
@@ -79,7 +79,11 @@ private fun LoadingContent() {
 // ── Success ───────────────────────────────────────────────────────────────────
 
 @Composable
-private fun SuccessContent(air: AirQuality, weather: WeatherData) {
+private fun SuccessContent(
+    air: DataResult<AirQuality>,
+    weather: DataResult<WeatherData>,
+    onRefresh: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -87,24 +91,32 @@ private fun SuccessContent(air: AirQuality, weather: WeatherData) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        // 위치
-        Text(
-            text = air.stationName,
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
+        // 위치 (공기질 데이터 있을 때만)
+        air.data?.stationName?.let {
+            Text(
+                text = it,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.align(Alignment.CenterHorizontally)
+            )
+        }
 
         // ── 날씨 카드 ────────────────────────────────────────
-        WeatherCard(weather)
+        when {
+            weather.data != null -> WeatherCard(weather.data)
+            weather.error != null -> ErrorCard(title = "날씨", message = weather.error, onRetry = onRefresh)
+        }
 
         // ── 공기질 카드 ──────────────────────────────────────
-        AirQualityCard(air)
+        when {
+            air.data != null -> AirQualityCard(air.data)
+            air.error != null -> ErrorCard(title = "공기질", message = air.error, onRetry = onRefresh)
+        }
 
         // 업데이트 시간
-        if (air.updatedAt.isNotEmpty()) {
+        air.data?.updatedAt?.takeIf { it.isNotEmpty() }?.let {
             Text(
-                text = "공기질 업데이트: ${air.updatedAt}",
+                text = "공기질 업데이트: $it",
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -305,7 +317,42 @@ private fun PollutantRow(label: String, value: Double?, level: AqiLevel) {
     }
 }
 
-// ── Error ─────────────────────────────────────────────────────────────────────
+// ── 부분 오류 카드 (날씨 또는 공기질 하나만 실패) ─────────────────────────────
+
+@Composable
+private fun ErrorCard(title: String, message: String, onRetry: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = "$title 정보를 불러오지 못했어요",
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Text(
+                    text = message,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            TextButton(onClick = onRetry) { Text("재시도") }
+        }
+    }
+}
+
+// ── 전체 오류 (위치 실패 등) ──────────────────────────────────────────────────
 
 @Composable
 private fun ErrorContent(message: String, onRetry: () -> Unit) {

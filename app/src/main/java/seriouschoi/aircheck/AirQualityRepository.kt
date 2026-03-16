@@ -192,7 +192,7 @@ class AirQualityRepository {
 
     /** 읍면동명 → TM 좌표 (에어코리아 getTMStdrCrdnt) */
     private fun getTmCoords(umdName: String): Pair<Double, Double>? = try {
-        val url = "http://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getTMStdrCrdnt" +
+        val url = "https://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getTMStdrCrdnt" +
                 "?umdName=${java.net.URLEncoder.encode(umdName, "UTF-8")}" +
                 "&pageNo=1&numOfRows=5&returnType=json" +
                 "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}"
@@ -213,7 +213,7 @@ class AirQualityRepository {
 
     /** TM 좌표 → 가장 가까운 측정소명 (에어코리아 getNearbyMsrstnList) */
     private fun getNearestStation(tmX: Double, tmY: Double): String? = try {
-        val url = "http://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getNearbyMsrstnList" +
+        val url = "https://apis.data.go.kr/B552584/MsrstnInfoInqireSvc/getNearbyMsrstnList" +
                 "?tmX=$tmX&tmY=$tmY" +
                 "&pageNo=1&numOfRows=3&returnType=json" +
                 "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}"
@@ -230,7 +230,7 @@ class AirQualityRepository {
 
     /** 측정소명으로 실시간 데이터 조회 */
     private fun fetchByStation(stationName: String): Result<AirQuality> = try {
-        val url = "http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty" +
+        val url = "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty" +
                 "?stationName=${java.net.URLEncoder.encode(stationName, "UTF-8")}" +
                 "&dataTerm=DAILY&pageNo=1&numOfRows=1&returnType=json" +
                 "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}" +
@@ -246,7 +246,7 @@ class AirQualityRepository {
 
     /** 시/도 전체로 폴백 */
     private fun fetchBySido(sidoName: String): Result<AirQuality> = try {
-        val url = "http://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty" +
+        val url = "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty" +
                 "?sidoName=${java.net.URLEncoder.encode(sidoName, "UTF-8")}" +
                 "&pageNo=1&numOfRows=10&returnType=json" +
                 "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}" +
