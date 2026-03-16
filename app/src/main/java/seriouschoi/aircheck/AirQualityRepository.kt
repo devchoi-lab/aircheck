@@ -62,22 +62,23 @@ data class NominatimAddress(
 
 // ── 도메인 모델 ───────────────────────────────────────────────────────────────
 
+/** PM 데이터 (값 + 출처 측정소) */
+data class PmData(
+    val value: Double,
+    val level: AqiLevel,
+    val stationName: String,      // 데이터 출처 측정소
+    val isFromFallback: Boolean   // 폴백 측정소에서 가져왔는지
+)
+
 data class AirQuality(
     val aqi: Int,
-    val pm25: Double?,
-    val pm10: Double?,
-    val pm25Level: AqiLevel,
-    val pm10Level: AqiLevel,
-    val stationName: String,       // 데이터 제공 측정소 (실제 PM 데이터 출처)
-    val nearestStationName: String?, // 가장 가까운 측정소 (데이터 없어서 다른 곳 사용 시)
+    val pm25: PmData?,             // PM2.5 데이터 + 출처
+    val pm10: PmData?,             // PM10 데이터 + 출처
+    val mainStationName: String,   // 메인 측정소 (AQI 출처)
     val updatedAt: String,
     val level: AqiLevel,           // 에어코리아 통합대기환경지수
     val worstLevel: AqiLevel       // AQI/PM2.5/PM10 중 최악 등급
-) {
-    /** 가장 가까운 측정소와 데이터 측정소가 다른지 여부 */
-    val usedFallbackStation: Boolean
-        get() = nearestStationName != null && nearestStationName != stationName
-}
+)
 
 enum class AqiLevel(val label: String, val emoji: String, val colorHex: Long) {
     GOOD("좋음", "😊", 0xFF00C8A0),
@@ -127,8 +128,8 @@ class AirQualityRepository {
             val nearbyStations = findNearbyStations(lat, lng)
             
             if (nearbyStations.isNotEmpty()) {
-                // Step 2: 가장 가까운 측정소부터 시도, PM 데이터 없으면 다음 측정소
-                return@withContext fetchWithFallback(nearbyStations)
+                // Step 2: PM2.5/PM10 각각 따로 폴백하여 데이터 수집
+                return@withContext fetchWithSeparateFallback(nearbyStations)
             }
             
             // 좌표 기반 실패 시 → 기존 키워드 매칭 폴백
@@ -138,29 +139,57 @@ class AirQualityRepository {
         }
     }
     
-    /** 여러 측정소 중 PM 데이터가 있는 측정소에서 데이터 조회 */
-    private fun fetchWithFallback(stations: List<NearestStationInfo>): Result<AirQuality> {
-        val nearestStation = stations.first()
+    /** PM2.5/PM10 각각 별도로 폴백하여 데이터 수집 */
+    private fun fetchWithSeparateFallback(stations: List<NearestStationInfo>): Result<AirQuality> {
+        val mainStation = stations.first()
+        val mainDisplayName = "${mainStation.stationName} (${extractSidoFromAddr(mainStation.addr)})"
         
-        for (station in stations) {
-            val result = fetchByStationWithValidation(station.stationName, station.addr)
-            if (result != null) {
-                // 가장 가까운 측정소가 아닌 다른 측정소에서 데이터를 가져온 경우
-                val isNearestStation = (station == nearestStation)
-                return Result.success(
-                    result.copy(
-                        nearestStationName = if (isNearestStation) null 
-                            else "${nearestStation.stationName} (${extractSidoFromAddr(nearestStation.addr)})"
-                    )
-                )
-            }
+        // 메인 측정소 데이터 조회
+        val mainData = fetchStationData(mainStation.stationName)
+            ?: return Result.failure(Exception("${mainStation.stationName} 측정소 데이터가 없어요"))
+        
+        // PM2.5 데이터 수집 (메인에 없으면 폴백)
+        var pm25Data: PmData? = mainData.pm25Value.toDoubleOrNull()?.let { value ->
+            PmData(value, AqiLevel.fromPm25(value), mainDisplayName, isFromFallback = false)
+        }
+        if (pm25Data == null) {
+            pm25Data = findPm25FromFallback(stations.drop(1))
         }
         
-        return Result.failure(Exception("주변 측정소에서 미세먼지 데이터를 찾을 수 없어요"))
+        // PM10 데이터 수집 (메인에 없으면 폴백)
+        var pm10Data: PmData? = mainData.pm10Value.toDoubleOrNull()?.let { value ->
+            PmData(value, AqiLevel.fromPm10(value), mainDisplayName, isFromFallback = false)
+        }
+        if (pm10Data == null) {
+            pm10Data = findPm10FromFallback(stations.drop(1))
+        }
+        
+        // 둘 다 없으면 실패
+        if (pm25Data == null && pm10Data == null) {
+            return Result.failure(Exception("주변 측정소에서 미세먼지 데이터를 찾을 수 없어요"))
+        }
+        
+        val khaiLevel = AqiLevel.fromKhaiGrade(mainData.khaiGrade)
+        val levels = listOfNotNull(
+            khaiLevel.takeIf { it != AqiLevel.UNKNOWN },
+            pm25Data?.level?.takeIf { it != AqiLevel.UNKNOWN },
+            pm10Data?.level?.takeIf { it != AqiLevel.UNKNOWN }
+        )
+        val worstLevel = levels.maxByOrNull { it.ordinal } ?: AqiLevel.UNKNOWN
+        
+        return Result.success(AirQuality(
+            aqi = mainData.khaiValue.toIntOrNull() ?: -1,
+            pm25 = pm25Data,
+            pm10 = pm10Data,
+            mainStationName = mainDisplayName,
+            updatedAt = mainData.dataTime,
+            level = khaiLevel,
+            worstLevel = worstLevel
+        ))
     }
     
-    /** 측정소 데이터 조회 + PM 데이터 유효성 검증 */
-    private fun fetchByStationWithValidation(stationName: String, addr: String): AirQuality? {
+    /** 측정소 원시 데이터 조회 */
+    private fun fetchStationData(stationName: String): AirKoreaItem? {
         return try {
             val url = "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getMsrstnAcctoRltmMesureDnsty" +
                     "?stationName=${java.net.URLEncoder.encode(stationName, "UTF-8")}" +
@@ -168,19 +197,32 @@ class AirQualityRepository {
                     "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}" +
                     "&ver=1.0"
             val body = get(url)
-            val response = json.decodeFromString<AirKoreaResponse>(body)
-            val item = response.response?.body?.items?.firstOrNull() ?: return null
-            
-            // PM2.5 또는 PM10 데이터가 있어야 유효
-            val pm25 = item.pm25Value.toDoubleOrNull()
-            val pm10 = item.pm10Value.toDoubleOrNull()
-            if (pm25 == null && pm10 == null) return null
-            
-            val sidoName = extractSidoFromAddr(addr)
-            toAirQuality(item, stationName, sidoName)
+            json.decodeFromString<AirKoreaResponse>(body).response?.body?.items?.firstOrNull()
         } catch (e: Exception) {
             null
         }
+    }
+    
+    /** PM2.5 데이터 있는 폴백 측정소 찾기 */
+    private fun findPm25FromFallback(stations: List<NearestStationInfo>): PmData? {
+        for (station in stations) {
+            val data = fetchStationData(station.stationName) ?: continue
+            val value = data.pm25Value.toDoubleOrNull() ?: continue
+            val displayName = "${station.stationName} (${extractSidoFromAddr(station.addr)})"
+            return PmData(value, AqiLevel.fromPm25(value), displayName, isFromFallback = true)
+        }
+        return null
+    }
+    
+    /** PM10 데이터 있는 폴백 측정소 찾기 */
+    private fun findPm10FromFallback(stations: List<NearestStationInfo>): PmData? {
+        for (station in stations) {
+            val data = fetchStationData(station.stationName) ?: continue
+            val value = data.pm10Value.toDoubleOrNull() ?: continue
+            val displayName = "${station.stationName} (${extractSidoFromAddr(station.addr)})"
+            return PmData(value, AqiLevel.fromPm10(value), displayName, isFromFallback = true)
+        }
+        return null
     }
 
     /**
@@ -371,34 +413,38 @@ class AirQualityRepository {
         return null
     }
 
-    /** API 응답에서 AirQuality 생성 (stationName/sidoName 포함된 경우) */
+    /** API 응답에서 AirQuality 생성 (stationName/sidoName 포함된 경우) - 키워드 매칭용 */
     private fun toAirQuality(item: AirKoreaItem): AirQuality {
         return toAirQuality(item, item.stationName, item.sidoName)
     }
     
-    /** API 응답에서 AirQuality 생성 (stationName/sidoName 별도 전달) */
+    /** API 응답에서 AirQuality 생성 (stationName/sidoName 별도 전달) - 키워드 매칭용 */
     private fun toAirQuality(item: AirKoreaItem, stationName: String, sidoName: String): AirQuality {
-        val pm25 = item.pm25Value.toDoubleOrNull()
-        val pm10 = item.pm10Value.toDoubleOrNull()
-        val pm25Level = pm25?.let { AqiLevel.fromPm25(it) } ?: AqiLevel.UNKNOWN
-        val pm10Level = pm10?.let { AqiLevel.fromPm10(it) } ?: AqiLevel.UNKNOWN
-        val khaiLevel = AqiLevel.fromKhaiGrade(item.khaiGrade)
-        
-        // AQI / PM2.5 / PM10 중 가장 나쁜 등급 (ordinal 높을수록 나쁨, UNKNOWN 제외)
-        val levels = listOf(khaiLevel, pm25Level, pm10Level).filter { it != AqiLevel.UNKNOWN }
-        val worstLevel = levels.maxByOrNull { it.ordinal } ?: AqiLevel.UNKNOWN
-        
-        // 표시명: "측정소명 (시/도)"
         val displayName = if (sidoName.isNotBlank()) "$stationName ($sidoName)" else stationName
+        
+        val pm25Value = item.pm25Value.toDoubleOrNull()
+        val pm10Value = item.pm10Value.toDoubleOrNull()
+        
+        val pm25Data = pm25Value?.let { 
+            PmData(it, AqiLevel.fromPm25(it), displayName, isFromFallback = false)
+        }
+        val pm10Data = pm10Value?.let { 
+            PmData(it, AqiLevel.fromPm10(it), displayName, isFromFallback = false)
+        }
+        
+        val khaiLevel = AqiLevel.fromKhaiGrade(item.khaiGrade)
+        val levels = listOfNotNull(
+            khaiLevel.takeIf { it != AqiLevel.UNKNOWN },
+            pm25Data?.level?.takeIf { it != AqiLevel.UNKNOWN },
+            pm10Data?.level?.takeIf { it != AqiLevel.UNKNOWN }
+        )
+        val worstLevel = levels.maxByOrNull { it.ordinal } ?: AqiLevel.UNKNOWN
         
         return AirQuality(
             aqi = item.khaiValue.toIntOrNull() ?: -1,
-            pm25 = pm25,
-            pm10 = pm10,
-            pm25Level = pm25Level,
-            pm10Level = pm10Level,
-            stationName = displayName,
-            nearestStationName = null,  // 폴백 사용 안 함
+            pm25 = pm25Data,
+            pm10 = pm10Data,
+            mainStationName = displayName,
             updatedAt = item.dataTime,
             level = khaiLevel,
             worstLevel = worstLevel
