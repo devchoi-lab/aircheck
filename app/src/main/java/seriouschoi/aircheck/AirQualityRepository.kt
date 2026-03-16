@@ -80,9 +80,11 @@ data class AirQuality(
     val aqi: Int,
     val pm25: Double?,
     val pm10: Double?,
+    val pm25Level: AqiLevel,   // WHO 기준 PM2.5 등급
+    val pm10Level: AqiLevel,   // WHO 기준 PM10 등급
     val stationName: String,
     val updatedAt: String,
-    val level: AqiLevel
+    val level: AqiLevel        // 에어코리아 통합대기환경지수
 )
 
 enum class AqiLevel(val label: String, val emoji: String, val colorHex: Long) {
@@ -95,12 +97,33 @@ enum class AqiLevel(val label: String, val emoji: String, val colorHex: Long) {
     UNKNOWN("알 수 없음", "❓", 0xFF9E9E9E);
 
     companion object {
+        /** 에어코리아 khaiGrade (1~4) 기반 */
         fun fromKhaiGrade(grade: String): AqiLevel = when (grade) {
             "1" -> GOOD
             "2" -> MODERATE
             "3" -> UNHEALTHY
             "4" -> VERY_UNHEALTHY
             else -> UNKNOWN
+        }
+
+        /** PM2.5 WHO 기준 (μg/m³) */
+        fun fromPm25(v: Double): AqiLevel = when {
+            v <= 15.0  -> GOOD
+            v <= 25.0  -> MODERATE
+            v <= 37.5  -> SENSITIVE
+            v <= 75.0  -> UNHEALTHY
+            v <= 150.0 -> VERY_UNHEALTHY
+            else       -> HAZARDOUS
+        }
+
+        /** PM10 WHO 기준 (μg/m³) */
+        fun fromPm10(v: Double): AqiLevel = when {
+            v <= 45.0  -> GOOD
+            v <= 90.0  -> MODERATE
+            v <= 180.0 -> SENSITIVE
+            v <= 270.0 -> UNHEALTHY
+            v <= 400.0 -> VERY_UNHEALTHY
+            else       -> HAZARDOUS
         }
     }
 }
@@ -239,14 +262,20 @@ class AirQualityRepository {
         Result.failure(e)
     }
 
-    private fun toAirQuality(item: AirKoreaItem) = AirQuality(
-        aqi = item.khaiValue.toIntOrNull() ?: -1,
-        pm25 = item.pm25Value.toDoubleOrNull(),
-        pm10 = item.pm10Value.toDoubleOrNull(),
-        stationName = "${item.stationName} (${item.sidoName})",
-        updatedAt = item.dataTime,
-        level = AqiLevel.fromKhaiGrade(item.khaiGrade)
-    )
+    private fun toAirQuality(item: AirKoreaItem): AirQuality {
+        val pm25 = item.pm25Value.toDoubleOrNull()
+        val pm10 = item.pm10Value.toDoubleOrNull()
+        return AirQuality(
+            aqi = item.khaiValue.toIntOrNull() ?: -1,
+            pm25 = pm25,
+            pm10 = pm10,
+            pm25Level = pm25?.let { AqiLevel.fromPm25(it) } ?: AqiLevel.UNKNOWN,
+            pm10Level = pm10?.let { AqiLevel.fromPm10(it) } ?: AqiLevel.UNKNOWN,
+            stationName = "${item.stationName} (${item.sidoName})",
+            updatedAt = item.dataTime,
+            level = AqiLevel.fromKhaiGrade(item.khaiGrade)
+        )
+    }
 
     private fun koreanSidoName(state: String): String = when {
         state.contains("서울") -> "서울"
