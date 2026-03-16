@@ -28,6 +28,7 @@ android {
 }
 
 dependencies {
+    api(project(":core:resource"))
     implementation(project(":core:domain"))
     
     implementation(platform(libs.compose.bom))
