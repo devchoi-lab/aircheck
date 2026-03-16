@@ -1,4 +1,4 @@
-name: Build Debug APK
+name: Build & Deploy
 
 on:
   push:
@@ -29,12 +29,30 @@ jobs:
           key: gradle-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
           restore-keys: gradle-
 
+      - name: Decode Keystore
+        if: github.event_name == 'push'
+        run: |
+          echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | base64 -d > app/debug.keystore
+
       - name: Build Debug APK
         run: ./gradlew :app:assembleDebug
 
-      - name: Upload APK
+      - name: Upload APK (Artifact)
         uses: actions/upload-artifact@v4
         with:
           name: aircheck-debug
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
+
+      - name: Deploy to Firebase App Distribution
+        if: github.event_name == 'push'
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          serviceCredentialsFileContent: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          groups: testers
+          file: app/build/outputs/apk/debug/app-debug.apk
+          releaseNotes: |
+            Branch: ${{ github.ref_name }}
+            Commit: ${{ github.sha }}
+            Message: ${{ github.event.head_commit.message }}
