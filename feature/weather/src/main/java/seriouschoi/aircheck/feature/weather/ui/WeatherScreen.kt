@@ -167,6 +167,15 @@ private fun WeatherCard(weather: WeatherData) {
         )
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
+            // 현재 날씨 라벨
+            Text(
+                text = "🌤️ 현재 날씨",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+            )
+            Spacer(Modifier.height(8.dp))
+            
             // 날씨 상태 + 이모지
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -354,7 +363,7 @@ private fun getOutfitRecommendation(feelsLike: Double): Pair<String, String> = w
     feelsLike >= 17 -> "👔" to "긴팔"
     feelsLike >= 12 -> "🧥" to "자켓"
     feelsLike >= 6 -> "🧥" to "코트"
-    feelsLike >= 0 -> "🧣" to "패딩"
+    feelsLike >= 0 -> "🧥" to "패딩"
     else -> "🧣" to "두꺼운패딩"
 }
 
@@ -394,17 +403,17 @@ private fun RecommendationCard(weather: WeatherData?, airQuality: AirQuality?) {
             temp >= 17 -> recommendations.add("👔" to "얇은 긴팔")
             temp >= 12 -> recommendations.add("🧥" to "자켓/가디건")
             temp >= 6 -> recommendations.add("🧥" to "코트/니트")
-            temp >= 0 -> recommendations.add("🧣" to "패딩/목도리")
+            temp >= 0 -> recommendations.add("🧥" to "패딩/목도리")
             else -> recommendations.add("🧣" to "두꺼운 패딩")
         }
     }
     
-    // 2. 강수확률 기반 우산 (시간별 예보 중 최대값)
-    weather?.hourlyForecast?.maxOfOrNull { it.precipitationProbability }?.let { maxPrecip ->
-        if (maxPrecip >= 40) {
-            recommendations.add("☂️" to "우산 (${maxPrecip}%)")
-        } else if (maxPrecip >= 20) {
-            recommendations.add("🌂" to "우산 챙기기")
+    // 2. 강수확률 기반 우산 (6시간 내 최대값)
+    weather?.hourlyForecast?.take(6)?.maxOfOrNull { it.precipitationProbability }?.let { maxPrecip ->
+        when {
+            maxPrecip >= 40 -> recommendations.add("☂️" to "우산 (${maxPrecip}%)")
+            maxPrecip >= 20 -> recommendations.add("🌂" to "우산 챙기기 (${maxPrecip}%)")
+            // maxPrecip < 20 → 우산 추천 안 함
         }
     }
     
