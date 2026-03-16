@@ -107,7 +107,6 @@ class AirQualityRepository {
 
             // Step 2: 해당 시/도 전체 측정소 조회
             val allItems = fetchSidoItems(sidoName)
-                ?: return@withContext Result.failure(Exception("$sidoName 측정 데이터를 가져올 수 없어요"))
 
             // Step 3: 지역 키워드로 가장 가까운 측정소 선택
             val matched = findBestMatch(allItems, keywords)
@@ -193,16 +192,21 @@ class AirQualityRepository {
     }
 
     /** 시/도 전체 측정소 실시간 데이터 (최대 100개) */
-    private fun fetchSidoItems(sidoName: String): List<AirKoreaItem>? = try {
+    private fun fetchSidoItems(sidoName: String): List<AirKoreaItem> {
         val url = "https://apis.data.go.kr/B552584/ArpltnInforInqireSvc/getCtprvnRltmMesureDnsty" +
                 "?sidoName=${java.net.URLEncoder.encode(sidoName, "UTF-8")}" +
                 "&pageNo=1&numOfRows=100&returnType=json" +
                 "&serviceKey=${java.net.URLEncoder.encode(apiKey, "UTF-8")}" +
                 "&ver=1.0"
         val body = get(url)
-        json.decodeFromString<AirKoreaResponse>(body).response?.body?.items
-    } catch (e: Exception) {
-        null
+        
+        // API 에러 체크
+        if (body.startsWith("Unauthorized") || body.startsWith("Forbidden")) {
+            throw Exception("API 인증 오류: $body")
+        }
+        
+        return json.decodeFromString<AirKoreaResponse>(body).response?.body?.items
+            ?: throw Exception("$sidoName 응답 파싱 실패")
     }
 
     /**
