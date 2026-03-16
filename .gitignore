@@ -11,3 +11,6 @@ local.properties
 *.jks
 *.keystore
 *.hprof
+gradle/gradle-daemon-jvm.properties
+.kotlin/**
+.gradle/**
