@@ -92,7 +92,7 @@ private fun SuccessContent(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // 위치 (공기질 데이터 있을 때만)
-        air.data?.stationName?.let {
+        air.data?.mainStationName?.let {
             Text(
                 text = it,
                 fontSize = 14.sp,
@@ -267,15 +267,15 @@ private fun AirQualityCard(air: AirQuality) {
             // PM2.5
             PollutantRow(
                 label = "PM2.5",
-                value = air.pm25,
-                level = air.pm25Level
+                pmData = air.pm25,
+                mainStationName = air.mainStationName
             )
             Spacer(Modifier.height(8.dp))
             // PM10
             PollutantRow(
                 label = "PM10",
-                value = air.pm10,
-                level = air.pm10Level
+                pmData = air.pm10,
+                mainStationName = air.mainStationName
             )
             
             Spacer(Modifier.height(12.dp))
@@ -283,33 +283,21 @@ private fun AirQualityCard(air: AirQuality) {
             Spacer(Modifier.height(8.dp))
             
             // 측정소 정보
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "📍 ${air.mainStationName}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (air.updatedAt.isNotBlank()) {
                     Text(
-                        text = "📍 ${air.stationName}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    if (air.updatedAt.isNotBlank()) {
-                        Text(
-                            text = air.updatedAt,
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-                
-                // 폴백 측정소 사용 시 안내
-                if (air.usedFallbackStation && air.nearestStationName != null) {
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "⚠️ 가장 가까운 ${air.nearestStationName}에서 데이터 없음",
+                        text = air.updatedAt,
                         fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -318,33 +306,47 @@ private fun AirQualityCard(air: AirQuality) {
 }
 
 @Composable
-private fun PollutantRow(label: String, value: Double?, level: AqiLevel) {
+private fun PollutantRow(label: String, pmData: PmData?, mainStationName: String) {
+    val level = pmData?.level ?: AqiLevel.UNKNOWN
     val color = Color(level.colorHex)
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        // 라벨
-        Column {
-            Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(
-                text = value?.let { "%.1f μg/m³".format(it) } ?: "- μg/m³",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-        // WHO 등급 칩
-        Box(
-            modifier = Modifier
-                .background(color.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
-                .padding(horizontal = 12.dp, vertical = 6.dp)
+    
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            // 라벨 + 값
+            Column {
+                Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    text = pmData?.let { "%.1f μg/m³".format(it.value) } ?: "- μg/m³",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            // WHO 등급 칩
+            Box(
+                modifier = Modifier
+                    .background(color.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 12.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "${level.emoji} ${level.label}",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = color
+                )
+            }
+        }
+        
+        // 폴백 측정소에서 가져온 경우 출처 표시
+        if (pmData != null && pmData.isFromFallback) {
             Text(
-                text = "${level.emoji} ${level.label}",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = color
+                text = "↳ ${pmData.stationName}에서 가져옴",
+                fontSize = 10.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.padding(start = 4.dp, top = 2.dp)
             )
         }
     }
