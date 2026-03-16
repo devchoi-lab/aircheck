@@ -1,6 +1,6 @@
 @file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
-package seriouschoi.aircheck
+package seriouschoi.aircheck.feature.weather.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -25,9 +25,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import seriouschoi.aircheck.core.domain.model.AirQuality
+import seriouschoi.aircheck.core.domain.model.AqiLevel
+import seriouschoi.aircheck.core.domain.model.HourlyForecast
+import seriouschoi.aircheck.core.domain.model.PmData
+import seriouschoi.aircheck.core.domain.model.WeatherCondition
+import seriouschoi.aircheck.core.domain.model.WeatherData
 
 @Composable
-fun AirCheckScreen(
+fun WeatherScreen(
     uiState: MainUiState,
     onRefresh: () -> Unit
 ) {

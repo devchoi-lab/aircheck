@@ -9,17 +9,21 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import dagger.hilt.android.AndroidEntryPoint
+import seriouschoi.aircheck.feature.weather.ui.WeatherScreen
+import seriouschoi.aircheck.feature.weather.ui.WeatherViewModel
 import seriouschoi.aircheck.ui.theme.AirCheckTheme
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             AirCheckTheme {
-                val vm: MainViewModel = viewModel()
+                val vm: WeatherViewModel = hiltViewModel()
                 val uiState by vm.uiState.collectAsStateWithLifecycle()
 
                 val permissionLauncher = rememberLauncherForActivityResult(
@@ -37,7 +41,7 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                AirCheckScreen(
+                WeatherScreen(
                     uiState = uiState,
                     onRefresh = { vm.load() }
                 )
