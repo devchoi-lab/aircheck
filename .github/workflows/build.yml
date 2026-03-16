@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout
@@ -36,6 +36,8 @@ jobs:
 
       - name: Build Debug APK
         run: ./gradlew :app:assembleDebug
+        env:
+          ANDROID_HOME: ~/android-sdk
 
       - name: Upload APK (Artifact)
         uses: actions/upload-artifact@v4
