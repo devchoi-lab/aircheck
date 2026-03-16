@@ -42,6 +42,8 @@ data class WeatherData(
     val temperature: Double,
     val feelsLike: Double,
     val precipitation: Double,
+    val precipitationProbability: Int,  // 강수확률 (%)
+    val snowfallProbability: Int,       // 강설확률 (%) - 적설량 > 0인 시간 비율
     val condition: WeatherCondition,
     val cloudCover: Int,
     val isDay: Boolean,
@@ -116,10 +118,20 @@ class WeatherRepository {
             // 시간별 예보 파싱
             val hourlyForecast = parseHourlyForecast(response.hourly, isDay)
             
+            // 현재 강수/강설 확률 (첫 6시간 내 최대값)
+            val next6Hours = hourlyForecast.take(6)
+            val precipProb = next6Hours.maxOfOrNull { it.precipitationProbability } ?: 0
+            val snowProb = if (next6Hours.any { it.snowfall > 0 }) {
+                // 적설이 있는 시간의 강수확률 최대값
+                next6Hours.filter { it.snowfall > 0 }.maxOfOrNull { it.precipitationProbability } ?: 0
+            } else 0
+            
             val weatherData = WeatherData(
                 temperature = current.temperature,
                 feelsLike = current.feelsLike,
                 precipitation = current.precipitation,
+                precipitationProbability = precipProb,
+                snowfallProbability = snowProb,
                 condition = WeatherCondition.from(current.weatherCode, isDay),
                 cloudCover = current.cloudCover,
                 isDay = isDay,
