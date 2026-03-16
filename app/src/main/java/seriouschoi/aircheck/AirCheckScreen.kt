@@ -282,23 +282,25 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
             color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
         )
         
-        // 강수확률 (0%가 아닐 때만)
-        if (forecast.precipitationProbability > 0) {
-            Spacer(Modifier.height(2.dp))
-            Text(
-                text = "💧${forecast.precipitationProbability}%",
-                fontSize = 10.sp,
-                color = Color(0xFF2196F3)
-            )
-        }
+        Spacer(Modifier.height(4.dp))
         
-        // 눈 (0cm가 아닐 때만)
+        // 강수/강설 확률
         if (forecast.snowfall > 0) {
-            Spacer(Modifier.height(2.dp))
+            // 눈이 예상되면 강설확률로 표시
             Text(
-                text = "❄️%.1fcm".format(forecast.snowfall),
+                text = "❄️${forecast.precipitationProbability}%",
                 fontSize = 10.sp,
                 color = Color(0xFF64B5F6)
+            )
+        } else {
+            // 비가 예상되면 강수확률로 표시
+            Text(
+                text = "🌧️${forecast.precipitationProbability}%",
+                fontSize = 10.sp,
+                color = if (forecast.precipitationProbability >= 40) 
+                    Color(0xFF2196F3) 
+                else 
+                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
             )
         }
         
