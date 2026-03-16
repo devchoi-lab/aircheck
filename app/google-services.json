@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "929627870632",
+    "project_id": "air-check-7e17e",
+    "storage_bucket": "air-check-7e17e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:929627870632:android:985e8431cf93abbb64b99d",
+        "android_client_info": {
+          "package_name": "seriouschoi.aircheck"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiI-lyJID0_MFm3Fnd8P52NM6XUroEgSw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
