@@ -301,7 +301,36 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
                 color = Color(0xFF64B5F6)
             )
         }
+        
+        Spacer(Modifier.height(4.dp))
+        HorizontalDivider(
+            modifier = Modifier.width(40.dp),
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f)
+        )
+        Spacer(Modifier.height(4.dp))
+        
+        // 추천 아이템 (체감온도 + 강수/적설 기반)
+        val outfitEmoji = getOutfitEmoji(forecast.feelsLike)
+        Text(outfitEmoji, fontSize = 16.sp)
+        
+        // 우산/눈 추천
+        if (forecast.precipitationProbability >= 40) {
+            Text("☂️", fontSize = 14.sp)
+        } else if (forecast.snowfall > 0) {
+            Text("⛄", fontSize = 14.sp)
+        }
     }
+}
+
+/** 체감온도 기반 옷 이모지 */
+private fun getOutfitEmoji(feelsLike: Double): String = when {
+    feelsLike >= 28 -> "👕🏖️"  // 민소매 + 양산
+    feelsLike >= 23 -> "👕"     // 반팔
+    feelsLike >= 17 -> "👔"     // 얇은 긴팔
+    feelsLike >= 12 -> "🧥"     // 자켓
+    feelsLike >= 6 -> "🧥"      // 코트
+    feelsLike >= 0 -> "🧣"      // 패딩
+    else -> "🧣❄️"              // 두꺼운 패딩
 }
 
 @Composable
