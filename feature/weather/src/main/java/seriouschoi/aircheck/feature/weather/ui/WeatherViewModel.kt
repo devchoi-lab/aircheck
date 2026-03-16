@@ -10,6 +10,8 @@ import kotlinx.coroutines.launch
 import seriouschoi.aircheck.core.domain.repository.AirQualityRepository
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.WeatherRepository
+import seriouschoi.aircheck.core.resource.R
+import seriouschoi.aircheck.core.resource.UiText
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,7 +30,9 @@ internal class WeatherViewModel @Inject constructor(
             
             val location = locationProvider.getCurrentLocation()
             if (location == null) {
-                _uiState.value = WeatherUiState.Error("위치를 확인할 수 없어요.\n위치 권한을 확인해주세요.")
+                _uiState.value = WeatherUiState.Error(
+                    UiText.StringResource(R.string.error_location_unavailable)
+                )
                 return@launch
             }
             
@@ -41,11 +45,11 @@ internal class WeatherViewModel @Inject constructor(
             _uiState.value = WeatherUiState.Success(
                 airQuality = WeatherDataResult(
                     data = airResult.getOrNull(),
-                    error = airResult.exceptionOrNull()?.message
+                    error = airResult.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
                 ),
                 weather = WeatherDataResult(
                     data = weatherResult.getOrNull(),
-                    error = weatherResult.exceptionOrNull()?.message
+                    error = weatherResult.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
                 )
             )
         }
