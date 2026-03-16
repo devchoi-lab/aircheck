@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 앱 기본 -->
+    <string name="app_name">에어체크</string>
+    <string name="content_description_info">기준 안내</string>
+    <string name="content_description_refresh">새로고침</string>
+    
+    <!-- 에러 메시지 -->
+    <string name="error_location_unavailable">위치를 확인할 수 없어요.\n위치 권한을 확인해주세요.</string>
+    <string name="error_no_pm_data">주변 측정소에서 미세먼지 데이터를 찾을 수 없어요</string>
+    <string name="error_location_info">위치 정보를 확인할 수 없어요</string>
+    <string name="error_weather_no_data">날씨 데이터 없음</string>
+    
+    <!-- 로딩/안내 -->
+    <string name="loading_message">날씨 및 공기질 가져오는 중…</string>
+    <string name="idle_message">현재 위치의 날씨와 공기질을 확인해보세요</string>
+    <string name="button_check">확인하기</string>
+    <string name="button_retry">재시도</string>
+    <string name="button_retry_again">다시 시도</string>
+    
+    <!-- 날씨 카드 -->
+    <string name="weather_title">날씨</string>
+    <string name="air_quality_title">공기질</string>
+    <string name="label_temperature">기온</string>
+    <string name="label_feels_like">체감온도</string>
+    <string name="label_precipitation_prob">강수확률</string>
+    <string name="label_snowfall_prob">강설확률</string>
+    <string name="format_temperature">%.1f°C</string>
+    <string name="format_percent">%d%%</string>
+    <string name="format_feels_like">체감 %.0f°</string>
+    <string name="format_snowfall">적설 %smm</string>
+    <string name="format_precipitation">강수량 %smm</string>
+    <string name="air_quality_update">공기질 업데이트: %s</string>
+    
+    <!-- 추천 아이템 -->
+    <string name="recommendation_title">🎒 오늘의 추천</string>
+    <string name="recommendation_description">현재 날씨 + 6시간 내 예보 기준</string>
+    <string name="outfit_sleeveless">민소매</string>
+    <string name="outfit_short_sleeve">반팔</string>
+    <string name="outfit_long_sleeve">긴팔</string>
+    <string name="outfit_jacket">자켓</string>
+    <string name="outfit_coat">코트</string>
+    <string name="outfit_padding">패딩</string>
+    <string name="outfit_heavy_padding">두꺼운패딩</string>
+    <string name="outfit_sleeveless_short">민소매/반팔</string>
+    <string name="outfit_thin_long">얇은 긴팔</string>
+    <string name="outfit_jacket_cardigan">자켓/가디건</string>
+    <string name="outfit_coat_knit">코트/니트</string>
+    <string name="outfit_padding_scarf">패딩/목도리</string>
+    <string name="outfit_heavy_padding_full">두꺼운 패딩</string>
+    <string name="item_parasol">양산</string>
+    <string name="item_umbrella">우산</string>
+    <string name="item_umbrella_take">우산 챙기기</string>
+    <string name="item_umbrella_with_prob">우산 (%d%%)</string>
+    <string name="item_snow">눈</string>
+    <string name="item_snow_cm">눈 %.1fcm</string>
+    <string name="item_mask">마스크 (%s)</string>
+    
+    <!-- 공기질 -->
+    <string name="label_pm25">초미세먼지</string>
+    <string name="label_pm10">미세먼지</string>
+    <string name="air_quality_integrated">통합 공기질 (AQI/초미세먼지/미세먼지 중 최악)</string>
+    <string name="air_quality_from_station">↳ %s에서 가져옴</string>
+    
+    <!-- 공기질 등급 -->
+    <string name="aqi_best">최고</string>
+    <string name="aqi_good">좋음</string>
+    <string name="aqi_fair">양호</string>
+    <string name="aqi_moderate">보통</string>
+    <string name="aqi_bad">나쁨</string>
+    <string name="aqi_quite_bad">상당히 나쁨</string>
+    <string name="aqi_very_bad">매우 나쁨</string>
+    <string name="aqi_worst">최악</string>
+    <string name="aqi_unknown">알 수 없음</string>
+    
+    <!-- 날씨 상태 -->
+    <string name="weather_clear_day">맑음</string>
+    <string name="weather_clear_night">맑음 (야간)</string>
+    <string name="weather_partly_cloudy">구름 조금</string>
+    <string name="weather_cloudy">흐림</string>
+    <string name="weather_fog">안개</string>
+    <string name="weather_drizzle">이슬비</string>
+    <string name="weather_rain">비</string>
+    <string name="weather_heavy_rain">폭우</string>
+    <string name="weather_snow">눈</string>
+    <string name="weather_snow_shower">소나기눈</string>
+    <string name="weather_thunderstorm">뇌우</string>
+    <string name="weather_unknown">알 수 없음</string>
+    
+    <!-- 공기질 기준 다이얼로그 -->
+    <string name="dialog_air_quality_title">공기질 기준 안내</string>
+    <string name="dialog_button_close">닫기</string>
+    <string name="dialog_pm25_title">🔹 초미세먼지 (PM2.5) 기준</string>
+    <string name="dialog_pm10_title">🔸 미세먼지 (PM10) 기준</string>
+    <string name="dialog_grade_format">%s %s: %s</string>
+</resources>
