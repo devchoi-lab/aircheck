@@ -133,7 +133,8 @@ class AirQualityRepository {
         val response = json.decodeFromString<NominatimResponse>(body)
         val addr = response.address ?: return null
 
-        val sido = koreanSidoName(addr.state)
+        // 시/도 추론: state → city → county 순으로 시도
+        val sido = inferSidoName(addr)
 
         // 키워드: 세부→광역 순으로 모든 행정구역명 수집 (suffix 제거 포함)
         val rawNames = listOfNotNull(
@@ -151,6 +152,44 @@ class AirQualityRepository {
         Pair(sido, keywords)
     } catch (e: Exception) {
         null
+    }
+
+    /** 시/도명 추론: state가 없으면 city/county로 추론 */
+    private fun inferSidoName(addr: NominatimAddress): String {
+        // 1. state가 있으면 직접 매핑
+        if (addr.state.isNotBlank()) {
+            return koreanSidoName(addr.state)
+        }
+
+        // 2. city가 광역시/특별시면 직접 사용
+        val city = addr.city ?: ""
+        val directCities = mapOf(
+            "서울" to "서울", "부산" to "부산", "대구" to "대구", "인천" to "인천",
+            "광주" to "광주", "대전" to "대전", "울산" to "울산", "세종" to "세종"
+        )
+        for ((key, value) in directCities) {
+            if (city.contains(key)) return value
+        }
+
+        // 3. 경기도 주요 도시 매핑 (Nominatim이 state 안 주는 경우 대비)
+        val gyeonggiCities = listOf(
+            "수원", "성남", "안양", "안산", "부천", "광명", "평택", "과천", "오산", "시흥",
+            "군포", "의왕", "하남", "이천", "용인", "파주", "안성", "김포", "화성", "광주",
+            "양주", "포천", "고양", "의정부", "동두천", "구리", "남양주", "여주", "양평",
+            "가평", "연천"
+        )
+        for (gc in gyeonggiCities) {
+            if (city.contains(gc)) return "경기"
+        }
+
+        // 4. county 확인
+        val county = addr.county ?: ""
+        for (gc in gyeonggiCities) {
+            if (county.contains(gc)) return "경기"
+        }
+
+        // 5. 기본값 - 경기 (한국 인구 대부분)
+        return "경기"
     }
 
     /** 시/도 전체 측정소 실시간 데이터 (최대 100개) */
