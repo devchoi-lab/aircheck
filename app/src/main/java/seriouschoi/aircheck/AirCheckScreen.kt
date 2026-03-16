@@ -268,7 +268,7 @@ private fun AirQualityCard(air: AirQuality) {
                         color = worstColor
                     )
                     Text(
-                        text = "통합 공기질 (AQI/PM2.5/PM10 중 최악)",
+                        text = "통합 공기질 (AQI/초미세먼지/미세먼지 중 최악)",
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -279,16 +279,16 @@ private fun AirQualityCard(air: AirQuality) {
             HorizontalDivider()
             Spacer(Modifier.height(12.dp))
 
-            // PM2.5
+            // 초미세먼지 (PM2.5)
             PollutantRow(
-                label = "PM2.5",
+                label = "초미세먼지",
                 pmData = air.pm25,
                 mainStationName = air.mainStationName
             )
             Spacer(Modifier.height(8.dp))
-            // PM10
+            // 미세먼지 (PM10)
             PollutantRow(
-                label = "PM10",
+                label = "미세먼지",
                 pmData = air.pm10,
                 mainStationName = air.mainStationName
             )
@@ -439,16 +439,16 @@ private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
                     fontSize = 14.sp
                 )
                 Text(
-                    text = "AQI(통합대기환경지수), PM2.5, PM10 중 가장 나쁜 등급을 기준으로 표시합니다.",
+                    text = "AQI(통합대기환경지수), 초미세먼지, 미세먼지 중 가장 나쁜 등급을 기준으로 표시합니다.",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
                 HorizontalDivider()
                 
-                // PM2.5 기준 (초미세먼지)
+                // 초미세먼지 (PM2.5)
                 Text(
-                    text = "PM2.5 (초미세먼지)",
+                    text = "초미세먼지 (PM2.5)",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
@@ -467,9 +467,9 @@ private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
                 
                 HorizontalDivider()
                 
-                // PM10 기준 (미세먼지)
+                // 미세먼지 (PM10)
                 Text(
-                    text = "PM10 (미세먼지)",
+                    text = "미세먼지 (PM10)",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
