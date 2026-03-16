@@ -118,15 +118,15 @@ private fun SuccessContent(
             )
         }
 
+        // ── 추천 아이템 (가장 위에) ─────────────────────────────
+        if (weather.data != null || air.data != null) {
+            RecommendationCard(weather = weather.data, airQuality = air.data)
+        }
+
         // ── 날씨 카드 ────────────────────────────────────────
         when {
             weather.data != null -> WeatherCard(weather.data)
             weather.error != null -> ErrorCard(title = "날씨", message = weather.error, onRetry = onRefresh)
-        }
-
-        // ── 추천 아이템 ──────────────────────────────────────
-        if (weather.data != null || air.data != null) {
-            RecommendationCard(weather = weather.data, airQuality = air.data)
         }
 
         // ── 공기질 카드 ──────────────────────────────────────
@@ -312,27 +312,42 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
         Spacer(Modifier.height(4.dp))
         
         // 추천 아이템 (체감온도 + 강수/적설 기반)
-        val outfitEmoji = getOutfitEmoji(forecast.feelsLike)
-        Text(outfitEmoji, fontSize = 16.sp)
+        val (outfitEmoji, outfitLabel) = getOutfitRecommendation(forecast.feelsLike)
+        Text(outfitEmoji, fontSize = 14.sp)
+        Text(
+            text = outfitLabel,
+            fontSize = 9.sp,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+        )
         
         // 우산/눈 추천
         if (forecast.precipitationProbability >= 40) {
-            Text("☂️", fontSize = 14.sp)
+            Text("☂️", fontSize = 12.sp)
+            Text(
+                text = "우산",
+                fontSize = 9.sp,
+                color = Color(0xFF2196F3)
+            )
         } else if (forecast.snowfall > 0) {
-            Text("⛄", fontSize = 14.sp)
+            Text("⛄", fontSize = 12.sp)
+            Text(
+                text = "눈",
+                fontSize = 9.sp,
+                color = Color(0xFF64B5F6)
+            )
         }
     }
 }
 
-/** 체감온도 기반 옷 이모지 */
-private fun getOutfitEmoji(feelsLike: Double): String = when {
-    feelsLike >= 28 -> "👕🏖️"  // 민소매 + 양산
-    feelsLike >= 23 -> "👕"     // 반팔
-    feelsLike >= 17 -> "👔"     // 얇은 긴팔
-    feelsLike >= 12 -> "🧥"     // 자켓
-    feelsLike >= 6 -> "🧥"      // 코트
-    feelsLike >= 0 -> "🧣"      // 패딩
-    else -> "🧣❄️"              // 두꺼운 패딩
+/** 체감온도 기반 옷 추천 (이모지, 라벨) */
+private fun getOutfitRecommendation(feelsLike: Double): Pair<String, String> = when {
+    feelsLike >= 28 -> "👕" to "민소매"
+    feelsLike >= 23 -> "👕" to "반팔"
+    feelsLike >= 17 -> "👔" to "긴팔"
+    feelsLike >= 12 -> "🧥" to "자켓"
+    feelsLike >= 6 -> "🧥" to "코트"
+    feelsLike >= 0 -> "🧣" to "패딩"
+    else -> "🧣" to "두꺼운패딩"
 }
 
 @Composable
@@ -414,6 +429,11 @@ private fun RecommendationCard(weather: WeatherData?, airQuality: AirQuality?) {
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Text(
+                text = "현재 날씨 + 6시간 내 예보 기준",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.6f)
             )
             Spacer(Modifier.height(12.dp))
             
