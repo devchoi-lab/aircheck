@@ -37,6 +37,8 @@ hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hil
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version = "1.2.0" }
 javax-inject = { module = "javax.inject:javax.inject", version.ref = "javax-inject" }
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version = "1.1.4" }
+firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics", version = "19.2.0" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics", version = "22.1.0" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
@@ -47,3 +49,4 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google-services" }
+firebase-crashlytics-plugin = { id = "com.google.firebase.crashlytics", version = "3.0.2" }
