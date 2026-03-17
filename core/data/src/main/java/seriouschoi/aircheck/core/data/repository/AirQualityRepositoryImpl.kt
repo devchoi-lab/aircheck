@@ -31,24 +31,25 @@ class AirQualityRepositoryImpl @Inject constructor(
                 ?: return@withContext Result.failure(Exception("대기질 데이터 없음"))
             
             // 밀도 → 등급 계산 (WHO 2021 기준)
-            val pm25 = air.pm25
-            val pm10 = air.pm10
+            val mainStation = air.stationName
             
-            val pm25Data = pm25?.let { value ->
-                PmData(
-                    value = value.toDouble(),
-                    level = AqiLevel.fromPm25(value.toDouble()),
-                    stationName = "${air.stationName} (${air.sidoName})",
-                    isFromFallback = false
-                )
-            }
-            
-            val pm10Data = pm10?.let { value ->
+            val pm10Data = air.pm10?.let { value ->
+                val isFromFallback = air.pm10Station != mainStation
                 PmData(
                     value = value.toDouble(),
                     level = AqiLevel.fromPm10(value.toDouble()),
-                    stationName = "${air.stationName} (${air.sidoName})",
-                    isFromFallback = false
+                    stationName = air.pm10Station,
+                    isFromFallback = isFromFallback
+                )
+            }
+            
+            val pm25Data = air.pm25?.let { value ->
+                val isFromFallback = air.pm25Station != mainStation
+                PmData(
+                    value = value.toDouble(),
+                    level = AqiLevel.fromPm25(value.toDouble()),
+                    stationName = air.pm25Station,
+                    isFromFallback = isFromFallback
                 )
             }
             
