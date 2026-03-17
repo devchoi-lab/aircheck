@@ -13,12 +13,13 @@ import seriouschoi.aircheck.core.domain.repository.RegionRepository
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
 import javax.inject.Inject
 
-data class LocationPickerState(
+internal data class LocationPickerState(
     val regions: List<Region> = emptyList(),
     val currentPath: List<String> = emptyList(),
     val searchQuery: String = "",
     val isLoading: Boolean = true,
-    val locationSaved: Boolean = false
+    val locationSaved: Boolean = false,
+    val error: String? = null
 )
 
 @HiltViewModel
@@ -36,12 +37,19 @@ internal class LocationPickerViewModel @Inject constructor(
 
     private fun loadRegions() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true)
-            val regions = regionRepository.getTopLevelRegions()
-            _state.value = _state.value.copy(
-                regions = regions,
-                isLoading = false
-            )
+            _state.value = _state.value.copy(isLoading = true, error = null)
+            try {
+                val regions = regionRepository.getTopLevelRegions()
+                _state.value = _state.value.copy(
+                    regions = regions,
+                    isLoading = false
+                )
+            } catch (e: Exception) {
+                _state.value = _state.value.copy(
+                    isLoading = false,
+                    error = e.message ?: "지역 데이터 로드 실패"
+                )
+            }
         }
     }
 
