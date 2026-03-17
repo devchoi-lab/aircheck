@@ -6,4 +6,7 @@ import kotlinx.serialization.Serializable
 sealed interface WeatherRoute {
     @Serializable
     data object Main : WeatherRoute
+    
+    @Serializable
+    data object LocationPicker : WeatherRoute
 }
