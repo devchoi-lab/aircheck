@@ -46,13 +46,13 @@ import seriouschoi.aircheck.core.domain.model.WeatherData
 
 @Composable
 internal fun WeatherScreen(
-    uiState: WeatherUiState,
+    state: WeatherContract.State,
     multiState: MultiLocationState,
-    onRefresh: () -> Unit,
+    onIntent: (WeatherContract.Intent) -> Unit,
     onAddLocation: () -> Unit = {}
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }
-    val isRefreshing = multiState.isLoading
+    val isRefreshing = (state as? WeatherContract.State.Success)?.isRefreshing == true || multiState.isLoading
     
     Scaffold(
         topBar = {
@@ -65,7 +65,7 @@ internal fun WeatherScreen(
                     IconButton(onClick = { showInfoDialog = true }) {
                         Icon(Icons.Default.Info, contentDescription = stringResource(CoreR.string.content_description_info))
                     }
-                    IconButton(onClick = onRefresh) {
+                    IconButton(onClick = { onIntent(WeatherContract.Intent.Refresh) }) {
                         Icon(Icons.Default.Refresh, contentDescription = stringResource(CoreR.string.content_description_refresh))
                     }
                 }
@@ -87,17 +87,17 @@ internal fun WeatherScreen(
                 // 위치 없음 또는 로딩 중
                 PullToRefreshBox(
                     isRefreshing = isRefreshing,
-                    onRefresh = onRefresh,
+                    onRefresh = { onIntent(WeatherContract.Intent.Refresh) },
                     modifier = Modifier.fillMaxSize()
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        when (uiState) {
-                            is WeatherUiState.Loading -> { }
-                            is WeatherUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather, onRefresh)
-                            is WeatherUiState.Error -> ErrorContent(uiState.message.asString(), onRefresh)
+                        when (state) {
+                            is WeatherContract.State.Loading -> { }
+                            is WeatherContract.State.Success -> SuccessContent(state.airQuality, state.weather, onIntent)
+                            is WeatherContract.State.Error -> ErrorContent(state.message.asString(), onIntent)
                         }
                     }
                 }
@@ -113,7 +113,7 @@ internal fun WeatherScreen(
                     
                     PullToRefreshBox(
                         isRefreshing = isRefreshing,
-                        onRefresh = onRefresh,
+                        onRefresh = { onIntent(WeatherContract.Intent.Refresh) },
                         modifier = Modifier.fillMaxSize()
                     ) {
                         Column(modifier = Modifier.fillMaxSize()) {
@@ -128,10 +128,10 @@ internal fun WeatherScreen(
                                     .padding(vertical = 8.dp)
                             )
                             
-                            when (val state = locationData.state) {
-                                is WeatherUiState.Loading -> { }
-                                is WeatherUiState.Success -> SuccessContent(state.airQuality, state.weather, onRefresh)
-                                is WeatherUiState.Error -> ErrorContent(state.message.asString(), onRefresh)
+                            when (val locationState = locationData.state) {
+                                is WeatherContract.State.Loading -> { }
+                                is WeatherContract.State.Success -> SuccessContent(locationState.airQuality, locationState.weather, onIntent)
+                                is WeatherContract.State.Error -> ErrorContent(locationState.message.asString(), onIntent)
                             }
                         }
                     }
@@ -171,9 +171,9 @@ internal fun WeatherScreen(
 
 @Composable
 private fun SuccessContent(
-    air: WeatherDataResult<AirQuality>,
-    weather: WeatherDataResult<WeatherData>,
-    onRefresh: () -> Unit
+    air: WeatherContract.DataResult<AirQuality>,
+    weather: WeatherContract.DataResult<WeatherData>,
+    onIntent: (WeatherContract.Intent) -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -204,13 +204,21 @@ private fun SuccessContent(
                 WeatherSection(weather.data)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
-            weather.error != null -> ErrorSection(title = stringResource(CoreR.string.weather_title), message = weather.error.asString(), onRetry = onRefresh)
+            weather.error != null -> ErrorSection(
+                title = stringResource(CoreR.string.weather_title), 
+                message = weather.error.asString(), 
+                onRetry = { onIntent(WeatherContract.Intent.Refresh) }
+            )
         }
 
         // ── 공기질 섹션 ──────────────────────────────────────
         when {
             air.data != null -> AirQualitySection(air.data)
-            air.error != null -> ErrorSection(title = stringResource(CoreR.string.air_quality_title), message = air.error.asString(), onRetry = onRefresh)
+            air.error != null -> ErrorSection(
+                title = stringResource(CoreR.string.air_quality_title), 
+                message = air.error.asString(), 
+                onRetry = { onIntent(WeatherContract.Intent.Refresh) }
+            )
         }
 
         // 업데이트 시간
@@ -714,7 +722,12 @@ private fun ErrorSection(title: String, message: String, onRetry: () -> Unit) {
 // ── 전체 오류 (위치 실패 등) ──────────────────────────────────────────────────
 
 @Composable
-private fun ErrorContent(message: String, onRetry: () -> Unit) {
+private fun ErrorContent(message: String, onIntent: (WeatherContract.Intent) -> Unit) {
+    ErrorContentInner(message = message, onRetry = { onIntent(WeatherContract.Intent.Refresh) })
+}
+
+@Composable
+private fun ErrorContentInner(message: String, onRetry: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("😵", fontSize = 48.sp)
         Spacer(Modifier.height(16.dp))

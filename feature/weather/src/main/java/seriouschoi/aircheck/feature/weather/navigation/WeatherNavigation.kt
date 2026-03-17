@@ -16,13 +16,13 @@ import seriouschoi.aircheck.feature.weather.ui.WeatherViewModel
 fun NavGraphBuilder.weatherScreen(navController: NavController) {
     composable<WeatherRoute.Main> {
         val viewModel: WeatherViewModel = hiltViewModel()
-        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        val state by viewModel.state.collectAsStateWithLifecycle()
         val multiState by viewModel.multiState.collectAsStateWithLifecycle()
         
         WeatherScreen(
-            uiState = uiState,
+            state = state,
             multiState = multiState,
-            onRefresh = { viewModel.load() },
+            onIntent = viewModel::processIntent,
             onAddLocation = { navController.navigate(WeatherRoute.LocationPicker) }
         )
     }
