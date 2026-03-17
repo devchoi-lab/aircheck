@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     startDestination = WeatherRoute.Main
                 ) {
-                    weatherScreen()
+                    weatherScreen(navController)
                 }
             }
         }

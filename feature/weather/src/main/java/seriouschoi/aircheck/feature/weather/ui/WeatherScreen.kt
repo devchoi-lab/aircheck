@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
@@ -38,7 +39,8 @@ import seriouschoi.aircheck.core.domain.model.WeatherData
 @Composable
 internal fun WeatherScreen(
     uiState: WeatherUiState,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onAddLocation: () -> Unit = {}
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }
     val isRefreshing = uiState is WeatherUiState.Loading
@@ -48,6 +50,9 @@ internal fun WeatherScreen(
             TopAppBar(
                 title = { Text(stringResource(CoreR.string.app_name), fontWeight = FontWeight.Bold) },
                 actions = {
+                    IconButton(onClick = onAddLocation) {
+                        Icon(Icons.Default.Add, contentDescription = "위치 추가")
+                    }
                     IconButton(onClick = { showInfoDialog = true }) {
                         Icon(Icons.Default.Info, contentDescription = stringResource(CoreR.string.content_description_info))
                     }
