@@ -18,14 +18,14 @@ import seriouschoi.aircheck.core.resource.UiText
 import javax.inject.Inject
 
 /** 위치별 날씨 데이터 */
-data class LocationWeatherData(
+internal data class LocationWeatherData(
     val locationName: String,
     val isCurrentLocation: Boolean,
     val state: WeatherUiState
 )
 
 /** 전체 UI 상태 */
-data class MultiLocationState(
+internal data class MultiLocationState(
     val locations: List<LocationWeatherData> = emptyList(),
     val isLoading: Boolean = true
 )
