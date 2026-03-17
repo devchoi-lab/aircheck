@@ -52,7 +52,9 @@ data class AirQualityResponse(
     val sidoName: String = "",
     val dataTime: String = "",
     val pm10: Int? = null,
-    val pm25: Int? = null
+    val pm10Station: String = "",
+    val pm25: Int? = null,
+    val pm25Station: String = ""
 )
 
 // ── API 클라이언트 ─────────────────────────────────────────────────────────
