@@ -91,15 +91,16 @@ internal class LocationPickerViewModel @Inject constructor(
     }
 
     private fun saveLocation(region: Region) {
-        if (region.lat == null || region.lng == null) return
+        val lat = region.lat ?: return
+        val lng = region.lng ?: return
         
         viewModelScope.launch {
             val displayName = (_state.value.currentPath + region.name).joinToString(" ")
             val location = SavedLocation(
                 name = region.name,
                 displayName = displayName,
-                lat = region.lat,
-                lng = region.lng
+                lat = lat,
+                lng = lng
             )
             savedLocationRepository.add(location)
             _state.value = _state.value.copy(locationSaved = true)
