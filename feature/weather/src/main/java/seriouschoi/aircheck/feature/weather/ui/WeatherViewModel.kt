@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import seriouschoi.aircheck.core.domain.repository.AirQualityRepository
@@ -59,11 +61,9 @@ internal class WeatherViewModel @Inject constructor(
 
     init {
         // Intent Flow 구독
-        viewModelScope.launch {
-            _intent.receiveAsFlow().collect { intent ->
-                handleIntent(intent)
-            }
-        }
+        _intent.receiveAsFlow()
+            .onEach { intent -> handleIntent(intent) }
+            .launchIn(viewModelScope)
         
         // 초기 로드
         processIntent(Intent.Load)
