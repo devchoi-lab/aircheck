@@ -48,11 +48,11 @@ data class HourlyForecastResponse(
 
 @Serializable
 data class AirQualityResponse(
+    val stationName: String = "",
+    val sidoName: String = "",
+    val dataTime: String = "",
     val pm10: Int? = null,
-    val pm25: Int? = null,
-    val pm10Grade: String? = null,
-    val pm25Grade: String? = null,
-    val stationName: String? = null
+    val pm25: Int? = null
 )
 
 // ── API 클라이언트 ─────────────────────────────────────────────────────────
