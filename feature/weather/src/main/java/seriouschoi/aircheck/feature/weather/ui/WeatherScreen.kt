@@ -424,9 +424,9 @@ private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?
         }
     }
     
-    // 4. 대기질 나쁨 이하면 마스크
+    // 4. 대기질 민감군 주의 이상이면 마스크
     airQuality?.worstLevel?.let { level ->
-        if (level.ordinal >= AqiLevel.BAD.ordinal && level != AqiLevel.UNKNOWN) {
+        if (level.ordinal >= AqiLevel.UNHEALTHY_SENSITIVE.ordinal && level != AqiLevel.UNKNOWN) {
             recommendations.add("😷" to "마스크 (${level.label})")
         }
     }
@@ -673,14 +673,14 @@ private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
                     fontSize = 14.sp
                 )
                 Text(
-                    text = "AQI(통합대기환경지수), 초미세먼지, 미세먼지 중 가장 나쁜 등급을 기준으로 표시합니다.",
+                    text = "초미세먼지(PM2.5), 미세먼지(PM10) 중 가장 나쁜 등급을 기준으로 표시합니다.",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 
                 HorizontalDivider()
                 
-                // 초미세먼지 (PM2.5)
+                // 초미세먼지 (PM2.5) - WHO 2021
                 Text(
                     text = "초미세먼지 (PM2.5)",
                     fontWeight = FontWeight.SemiBold,
@@ -688,20 +688,18 @@ private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
                 )
                 GradeTable(
                     grades = listOf(
-                        Triple("🌟 최고", "0 ~ 5", Color(0xFF00E5FF)),
-                        Triple("😊 좋음", "6 ~ 9", Color(0xFF00C8A0)),
-                        Triple("🙂 양호", "10 ~ 12", Color(0xFF8BC34A)),
-                        Triple("😐 보통", "13 ~ 15", Color(0xFFFFD700)),
-                        Triple("😮 나쁨", "16 ~ 37", Color(0xFFFF9800)),
-                        Triple("😷 상당히 나쁨", "38 ~ 50", Color(0xFFFF5722)),
-                        Triple("🤢 매우 나쁨", "51 ~ 75", Color(0xFF9400D3)),
-                        Triple("☠️ 최악", "76+", Color(0xFF7E0023))
+                        Triple("😊 좋음", "0 ~ 15", Color(0xFF00C853)),
+                        Triple("🙂 보통", "16 ~ 25", Color(0xFFFFD600)),
+                        Triple("😐 민감군 주의", "26 ~ 37.5", Color(0xFFFF9100)),
+                        Triple("😷 나쁨", "37.6 ~ 50", Color(0xFFFF5722)),
+                        Triple("🤢 매우 나쁨", "51 ~ 75", Color(0xFF9C27B0)),
+                        Triple("☠️ 위험", "76+", Color(0xFF7E0023))
                     )
                 )
                 
                 HorizontalDivider()
                 
-                // 미세먼지 (PM10)
+                // 미세먼지 (PM10) - WHO 2021
                 Text(
                     text = "미세먼지 (PM10)",
                     fontWeight = FontWeight.SemiBold,
@@ -709,32 +707,27 @@ private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
                 )
                 GradeTable(
                     grades = listOf(
-                        Triple("🌟 최고", "0 ~ 10", Color(0xFF00E5FF)),
-                        Triple("😊 좋음", "11 ~ 22", Color(0xFF00C8A0)),
-                        Triple("🙂 양호", "23 ~ 35", Color(0xFF8BC34A)),
-                        Triple("😐 보통", "36 ~ 45", Color(0xFFFFD700)),
-                        Triple("😮 나쁨", "46 ~ 75", Color(0xFFFF9800)),
-                        Triple("😷 상당히 나쁨", "76 ~ 100", Color(0xFFFF5722)),
-                        Triple("🤢 매우 나쁨", "101 ~ 150", Color(0xFF9400D3)),
-                        Triple("☠️ 최악", "151+", Color(0xFF7E0023))
+                        Triple("😊 좋음", "0 ~ 45", Color(0xFF00C853)),
+                        Triple("🙂 보통", "46 ~ 50", Color(0xFFFFD600)),
+                        Triple("😐 민감군 주의", "51 ~ 75", Color(0xFFFF9100)),
+                        Triple("😷 나쁨", "76 ~ 100", Color(0xFFFF5722)),
+                        Triple("🤢 매우 나쁨", "101 ~ 150", Color(0xFF9C27B0)),
+                        Triple("☠️ 위험", "151+", Color(0xFF7E0023))
                     )
                 )
                 
                 HorizontalDivider()
                 
-                // AQI 기준 (에어코리아)
+                // 출처
                 Text(
-                    text = "AQI (통합대기환경지수) - 에어코리아",
+                    text = "📋 기준 출처",
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
-                GradeTable(
-                    grades = listOf(
-                        Triple("😊 좋음", "0 ~ 50", Color(0xFF00C8A0)),
-                        Triple("😐 보통", "51 ~ 100", Color(0xFFFFD700)),
-                        Triple("😮 나쁨", "101 ~ 250", Color(0xFFFF9800)),
-                        Triple("🤢 매우 나쁨", "251+", Color(0xFF9400D3))
-                    )
+                Text(
+                    text = "WHO Global Air Quality Guidelines 2021\nISBN: 978-92-4-003422-8",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         },

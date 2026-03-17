@@ -18,43 +18,50 @@ data class AirQuality(
     val worstLevel: AqiLevel
 )
 
+/**
+ * WHO Global Air Quality Guidelines 2021 기준
+ * ISBN: 978-92-4-003422-8
+ * 
+ * PM2.5 (24시간): AQG 15, IT-4 25, IT-3 37.5, IT-2 50, IT-1 75
+ * PM10 (24시간): AQG 45, IT-4 50, IT-3 75, IT-2 100, IT-1 150
+ */
 enum class AqiLevel(val label: String, val emoji: String, val colorHex: Long) {
-    BEST("최고", "🌟", 0xFF00E5FF),
-    GOOD("좋음", "😊", 0xFF00C8A0),
-    FAIR("양호", "🙂", 0xFF8BC34A),
-    MODERATE("보통", "😐", 0xFFFFD700),
-    BAD("나쁨", "😮", 0xFFFF9800),
-    QUITE_BAD("상당히 나쁨", "😷", 0xFFFF5722),
-    VERY_BAD("매우 나쁨", "🤢", 0xFF9400D3),
-    WORST("최악", "☠️", 0xFF7E0023),
+    GOOD("좋음", "😊", 0xFF00C853),           // AQG 이하
+    MODERATE("보통", "🙂", 0xFFFFD600),       // IT-4 이하
+    UNHEALTHY_SENSITIVE("민감군 주의", "😐", 0xFFFF9100), // IT-3 이하
+    UNHEALTHY("나쁨", "😷", 0xFFFF5722),      // IT-2 이하
+    VERY_UNHEALTHY("매우 나쁨", "🤢", 0xFF9C27B0), // IT-1 이하
+    HAZARDOUS("위험", "☠️", 0xFF7E0023),      // IT-1 초과
     UNKNOWN("알 수 없음", "❓", 0xFF9E9E9E);
 
     companion object {
+        /** 에어코리아 통합대기환경지수(KHAI) 등급 */
         fun fromKhaiGrade(grade: String): AqiLevel = when (grade) {
-            "1" -> GOOD; "2" -> MODERATE; "3" -> BAD; "4" -> VERY_BAD
+            "1" -> GOOD
+            "2" -> MODERATE
+            "3" -> UNHEALTHY
+            "4" -> VERY_UNHEALTHY
             else -> UNKNOWN
         }
         
+        /** PM2.5 (μg/m³) - WHO 2021 기준 */
         fun fromPm25(v: Double): AqiLevel = when {
-            v <= 5.0 -> BEST
-            v <= 9.0 -> GOOD
-            v <= 12.0 -> FAIR
-            v <= 15.0 -> MODERATE
-            v <= 37.0 -> BAD
-            v <= 50.0 -> QUITE_BAD
-            v <= 75.0 -> VERY_BAD
-            else -> WORST
+            v <= 15.0 -> GOOD              // AQG
+            v <= 25.0 -> MODERATE          // IT-4
+            v <= 37.5 -> UNHEALTHY_SENSITIVE // IT-3
+            v <= 50.0 -> UNHEALTHY         // IT-2
+            v <= 75.0 -> VERY_UNHEALTHY    // IT-1
+            else -> HAZARDOUS
         }
         
+        /** PM10 (μg/m³) - WHO 2021 기준 */
         fun fromPm10(v: Double): AqiLevel = when {
-            v <= 10.0 -> BEST
-            v <= 22.0 -> GOOD
-            v <= 35.0 -> FAIR
-            v <= 45.0 -> MODERATE
-            v <= 75.0 -> BAD
-            v <= 100.0 -> QUITE_BAD
-            v <= 150.0 -> VERY_BAD
-            else -> WORST
+            v <= 45.0 -> GOOD              // AQG
+            v <= 50.0 -> MODERATE          // IT-4
+            v <= 75.0 -> UNHEALTHY_SENSITIVE // IT-3
+            v <= 100.0 -> UNHEALTHY        // IT-2
+            v <= 150.0 -> VERY_UNHEALTHY   // IT-1
+            else -> HAZARDOUS
         }
     }
 }
