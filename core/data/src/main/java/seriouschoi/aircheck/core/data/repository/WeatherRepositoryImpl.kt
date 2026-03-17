@@ -6,9 +6,9 @@ import seriouschoi.aircheck.core.domain.model.HourlyForecast
 import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.core.domain.repository.WeatherRepository
-import seriouschoi.aircheck.core.network.api.OpenMeteoApiClient
-import seriouschoi.aircheck.core.network.api.OpenMeteoHourly
-import seriouschoi.aircheck.core.network.api.OpenMeteoResponse
+import seriouschoi.aircheck.core.network.api.AircheckApiClient
+import seriouschoi.aircheck.core.network.api.AircheckWeatherResponse
+import seriouschoi.aircheck.core.network.api.HourlyForecastResponse
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
@@ -16,18 +16,19 @@ import javax.inject.Singleton
 
 @Singleton
 class WeatherRepositoryImpl @Inject constructor(
-    private val apiClient: OpenMeteoApiClient
+    private val apiClient: AircheckApiClient
 ) : WeatherRepository {
 
     override suspend fun fetch(lat: Double, lng: Double): Result<WeatherData> = withContext(Dispatchers.IO) {
         try {
             val body = apiClient.getWeather(lat, lng)
-            val response = apiClient.json.decodeFromString<OpenMeteoResponse>(body)
-            val current = response.current
+            val response = apiClient.json.decodeFromString<AircheckWeatherResponse>(body)
+            val weather = response.weather
                 ?: return@withContext Result.failure(Exception("날씨 데이터 없음"))
+            val current = weather.current
+                ?: return@withContext Result.failure(Exception("현재 날씨 데이터 없음"))
 
-            val isDay = current.isDay == 1
-            val hourlyForecast = parseHourlyForecast(response.hourly, isDay)
+            val hourlyForecast = parseHourlyForecast(weather.hourlyForecast, current.isDay)
             
             val next6Hours = hourlyForecast.take(6)
             val precipProb = next6Hours.maxOfOrNull { it.precipitationProbability } ?: 0
@@ -41,9 +42,9 @@ class WeatherRepositoryImpl @Inject constructor(
                 precipitation = current.precipitation,
                 precipitationProbability = precipProb,
                 snowfallProbability = snowProb,
-                condition = WeatherCondition.from(current.weatherCode, isDay),
+                condition = WeatherCondition.from(current.weatherCode, current.isDay),
                 cloudCover = current.cloudCover,
-                isDay = isDay,
+                isDay = current.isDay,
                 hourlyForecast = hourlyForecast
             )
             Result.success(weatherData)
@@ -52,20 +53,17 @@ class WeatherRepositoryImpl @Inject constructor(
         }
     }
     
-    private fun parseHourlyForecast(hourly: OpenMeteoHourly?, isDay: Boolean): List<HourlyForecast> {
-        if (hourly == null) return emptyList()
-        
+    private fun parseHourlyForecast(
+        hourlyList: List<HourlyForecastResponse>,
+        isDay: Boolean
+    ): List<HourlyForecast> {
         val today = LocalDate.now()
         val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         
-        return hourly.time.mapIndexedNotNull { index, timeStr ->
-            val hour = try {
-                timeStr.substringAfter("T").substringBefore(":").toInt()
-            } catch (e: Exception) {
-                return@mapIndexedNotNull null
-            }
+        return hourlyList.map { hourly ->
+            val hour = hourly.hour
             
-            val dateStr = timeStr.substringBefore("T")
+            val dateStr = hourly.time.substringBefore("T")
             val forecastDate = try {
                 LocalDate.parse(dateStr, dateFormatter)
             } catch (e: Exception) {
@@ -82,14 +80,11 @@ class WeatherRepositoryImpl @Inject constructor(
             HourlyForecast(
                 hour = "${hour}시",
                 dayLabel = dayLabel,
-                temperature = hourly.temperature.getOrNull(index) ?: return@mapIndexedNotNull null,
-                feelsLike = hourly.feelsLike.getOrNull(index) ?: 0.0,
-                precipitationProbability = hourly.precipitationProbability.getOrNull(index) ?: 0,
-                snowfall = hourly.snowfall.getOrNull(index) ?: 0.0,
-                condition = WeatherCondition.from(
-                    hourly.weatherCode.getOrNull(index) ?: 0,
-                    hour in 6..18
-                )
+                temperature = hourly.temperature,
+                feelsLike = hourly.feelsLike,
+                precipitationProbability = hourly.precipitationProbability,
+                snowfall = hourly.snowfall,
+                condition = WeatherCondition.from(hourly.weatherCode, hour in 6..18)
             )
         }
     }
