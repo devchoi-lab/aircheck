@@ -40,6 +40,10 @@ internal class WeatherViewModel @Inject constructor(
     private val savedLocationRepository: SavedLocationRepository
 ) : ViewModel() {
 
+    // ── Intent (사용자 액션) ────────────────────────────────────────────────
+    
+    private val _intent = Channel<Intent>(Channel.UNLIMITED)
+    
     // ── State ───────────────────────────────────────────────────────────────
     
     private val _state = MutableStateFlow<State>(State.Loading)
@@ -54,12 +58,28 @@ internal class WeatherViewModel @Inject constructor(
     val effect = _effect.receiveAsFlow()
 
     init {
+        // Intent Flow 구독
+        viewModelScope.launch {
+            _intent.receiveAsFlow().collect { intent ->
+                handleIntent(intent)
+            }
+        }
+        
+        // 초기 로드
         processIntent(Intent.Load)
     }
     
-    // ── Intent 처리 ─────────────────────────────────────────────────────────
+    // ── Intent 발송 ─────────────────────────────────────────────────────────
 
     fun processIntent(intent: Intent) {
+        viewModelScope.launch {
+            _intent.send(intent)
+        }
+    }
+    
+    // ── Intent 처리 ─────────────────────────────────────────────────────────
+    
+    private fun handleIntent(intent: Intent) {
         when (intent) {
             is Intent.Load -> load(isRefresh = false)
             is Intent.Refresh -> load(isRefresh = true)
