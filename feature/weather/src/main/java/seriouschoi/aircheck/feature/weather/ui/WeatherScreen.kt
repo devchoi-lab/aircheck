@@ -114,19 +114,23 @@ private fun SuccessContent(
 
         // ── 추천 아이템 (가장 위에) ─────────────────────────────
         if (weather.data != null || air.data != null) {
-            RecommendationCard(weather = weather.data, airQuality = air.data)
+            RecommendationSection(weather = weather.data, airQuality = air.data)
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         }
 
-        // ── 날씨 카드 ────────────────────────────────────────
+        // ── 날씨 섹션 ────────────────────────────────────────
         when {
-            weather.data != null -> WeatherCard(weather.data)
-            weather.error != null -> ErrorCard(title = stringResource(CoreR.string.weather_title), message = weather.error.asString(), onRetry = onRefresh)
+            weather.data != null -> {
+                WeatherSection(weather.data)
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            }
+            weather.error != null -> ErrorSection(title = stringResource(CoreR.string.weather_title), message = weather.error.asString(), onRetry = onRefresh)
         }
 
-        // ── 공기질 카드 ──────────────────────────────────────
+        // ── 공기질 섹션 ──────────────────────────────────────
         when {
-            air.data != null -> AirQualityCard(air.data)
-            air.error != null -> ErrorCard(title = stringResource(CoreR.string.air_quality_title), message = air.error.asString(), onRetry = onRefresh)
+            air.data != null -> AirQualitySection(air.data)
+            air.error != null -> ErrorSection(title = stringResource(CoreR.string.air_quality_title), message = air.error.asString(), onRetry = onRefresh)
         }
 
         // 업데이트 시간
@@ -141,128 +145,115 @@ private fun SuccessContent(
     }
 }
 
-// ── 날씨 카드 ─────────────────────────────────────────────────────────────────
+// ── 날씨 섹션 ─────────────────────────────────────────────────────────────────
 
 @Composable
-private fun WeatherCard(weather: WeatherData) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+private fun WeatherSection(weather: WeatherData) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // 현재 날씨 라벨
+        Text(
+            text = "🌤️ 현재 날씨",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // 현재 날씨 라벨
+        Spacer(Modifier.height(8.dp))
+        
+        // 날씨 상태 + 이모지
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(weather.condition.emoji, fontSize = 36.sp)
+            Column {
+                Text(
+                    text = weather.condition.label,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                if (weather.precipitation > 0) {
+                    val precipLabel = when (weather.condition) {
+                        WeatherCondition.SNOW, WeatherCondition.SNOW_SHOWER -> "적설 ${weather.precipitation}mm"
+                        else -> "강수량 ${weather.precipitation}mm"
+                    }
+                    Text(
+                        text = precipLabel,
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // 기온 / 체감온도 / 강수확률 / 강설확률
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            WeatherStat(
+                emoji = "🌡️",
+                label = stringResource(CoreR.string.label_temperature),
+                value = stringResource(CoreR.string.format_temperature, weather.temperature)
+            )
+            WeatherStat(
+                emoji = "🤔",
+                label = stringResource(CoreR.string.label_feels_like),
+                value = stringResource(CoreR.string.format_temperature, weather.feelsLike)
+            )
+            WeatherStat(
+                emoji = "🌧️",
+                label = stringResource(CoreR.string.label_precipitation_prob),
+                value = stringResource(CoreR.string.format_percent, weather.precipitationProbability)
+            )
+            WeatherStat(
+                emoji = "❄️",
+                label = stringResource(CoreR.string.label_snowfall_prob),
+                value = stringResource(CoreR.string.format_percent, weather.snowfallProbability)
+            )
+        }
+        
+        // 48시간 예보
+        if (weather.hourlyForecast.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            
             Text(
-                text = "🌤️ 현재 날씨",
+                text = "📅 48시간 예보",
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(8.dp))
             
-            // 날씨 상태 + 이모지
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
+            LazyRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(weather.condition.emoji, fontSize = 36.sp)
-                Column {
-                    Text(
-                        text = weather.condition.label,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    if (weather.precipitation > 0) {
-                        val precipLabel = when (weather.condition) {
-                            WeatherCondition.SNOW, WeatherCondition.SNOW_SHOWER -> "적설 ${weather.precipitation}mm"
-                            else -> "강수량 ${weather.precipitation}mm"
-                        }
-                        Text(
-                            text = precipLabel,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                        )
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
-            Spacer(Modifier.height(16.dp))
-
-            // 기온 / 체감온도 / 햇빛
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                WeatherStat(
-                    emoji = "🌡️",
-                    label = stringResource(CoreR.string.label_temperature),
-                    value = stringResource(CoreR.string.format_temperature, weather.temperature)
-                )
-                WeatherStat(
-                    emoji = "🤔",
-                    label = stringResource(CoreR.string.label_feels_like),
-                    value = stringResource(CoreR.string.format_temperature, weather.feelsLike)
-                )
-                WeatherStat(
-                    emoji = "🌧️",
-                    label = stringResource(CoreR.string.label_precipitation_prob),
-                    value = stringResource(CoreR.string.format_percent, weather.precipitationProbability)
-                )
-                WeatherStat(
-                    emoji = "❄️",
-                    label = stringResource(CoreR.string.label_snowfall_prob),
-                    value = stringResource(CoreR.string.format_percent, weather.snowfallProbability)
-                )
-            }
-            
-            // 48시간 예보
-            if (weather.hourlyForecast.isNotEmpty()) {
-                Spacer(Modifier.height(16.dp))
-                HorizontalDivider(color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f))
-                Spacer(Modifier.height(12.dp))
-                
-                Text(
-                    text = "48시간 예보",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Spacer(Modifier.height(8.dp))
-                
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val grouped = weather.hourlyForecast.groupBy { it.dayLabel }
-                    grouped.forEach { (dayLabel, forecasts) ->
-                        // 날짜 헤더
-                        item {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
-                                modifier = Modifier
-                                    .background(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
-                                        RoundedCornerShape(8.dp)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Text(
-                                    text = dayLabel,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary
+                val grouped = weather.hourlyForecast.groupBy { it.dayLabel }
+                grouped.forEach { (dayLabel, forecasts) ->
+                    // 날짜 헤더
+                    item {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                            modifier = Modifier
+                                .background(
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                    RoundedCornerShape(8.dp)
                                 )
-                            }
+                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = dayLabel,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
-                        // 해당 날짜의 시간별 예보
-                        items(forecasts) { forecast ->
-                            HourlyForecastItem(forecast)
-                        }
+                    }
+                    // 해당 날짜의 시간별 예보
+                    items(forecasts) { forecast ->
+                        HourlyForecastItem(forecast)
                     }
                 }
             }
@@ -276,17 +267,16 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .background(
-                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.05f),
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
                 RoundedCornerShape(8.dp)
             )
-            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .padding(horizontal = 10.dp, vertical = 8.dp)
     ) {
         // 시간
         Text(
             text = forecast.hour,
             fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            fontWeight = FontWeight.SemiBold
         )
         Spacer(Modifier.height(4.dp))
         
@@ -298,53 +288,50 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
         Text(
             text = "%.0f°".format(forecast.temperature),
             fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            fontWeight = FontWeight.Bold
         )
         
         // 체감온도
         Text(
             text = "체감 %.0f°".format(forecast.feelsLike),
             fontSize = 10.sp,
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
         Spacer(Modifier.height(4.dp))
         
         // 강수/강설 확률
         if (forecast.snowfall > 0) {
-            // 눈이 예상되면 강설확률로 표시
             Text(
                 text = "❄️${forecast.precipitationProbability}%",
                 fontSize = 10.sp,
                 color = Color(0xFF64B5F6)
             )
         } else {
-            // 비가 예상되면 강수확률로 표시
             Text(
                 text = "🌧️${forecast.precipitationProbability}%",
                 fontSize = 10.sp,
                 color = if (forecast.precipitationProbability >= 40) 
                     Color(0xFF2196F3) 
                 else 
-                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f)
+                    MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         
         Spacer(Modifier.height(4.dp))
         HorizontalDivider(
             modifier = Modifier.width(40.dp),
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f)
+            color = MaterialTheme.colorScheme.outlineVariant
         )
         Spacer(Modifier.height(4.dp))
         
-        // 추천 아이템 (체감온도 + 강수/적설 기반)
+        // 추천 아이템 (체감온도 기반)
         val (outfitEmoji, outfitLabel) = getOutfitRecommendation(forecast.feelsLike)
         Text(outfitEmoji, fontSize = 14.sp)
         Text(
             text = outfitLabel,
             fontSize = 9.sp,
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
         // 우산/눈 추천
@@ -385,21 +372,20 @@ private fun WeatherStat(emoji: String, label: String, value: String) {
         Text(
             text = value,
             fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            fontWeight = FontWeight.Bold
         )
         Text(
             text = label,
             fontSize = 11.sp,
-            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
 
-// ── 추천 아이템 카드 ──────────────────────────────────────────────────────────
+// ── 추천 아이템 섹션 ──────────────────────────────────────────────────────────
 
 @Composable
-private fun RecommendationCard(weather: WeatherData?, airQuality: AirQuality?) {
+private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?) {
     val recommendations = mutableListOf<Pair<String, String>>() // emoji to label
     
     // 1. 체감온도 기반 옷 추천
@@ -407,7 +393,7 @@ private fun RecommendationCard(weather: WeatherData?, airQuality: AirQuality?) {
         when {
             temp >= 28 -> {
                 recommendations.add("👕" to "민소매/반팔")
-                recommendations.add("🏖️" to "양산") // 더울 때 양산
+                recommendations.add("🏖️" to "양산")
             }
             temp >= 23 -> recommendations.add("👕" to "반팔")
             temp >= 17 -> recommendations.add("👔" to "얇은 긴팔")
@@ -423,7 +409,6 @@ private fun RecommendationCard(weather: WeatherData?, airQuality: AirQuality?) {
         when {
             maxPrecip >= 40 -> recommendations.add("☂️" to "우산 (${maxPrecip}%)")
             maxPrecip >= 20 -> recommendations.add("🌂" to "우산 챙기기 (${maxPrecip}%)")
-            // maxPrecip < 20 → 우산 추천 안 함
         }
     }
     
@@ -443,134 +428,124 @@ private fun RecommendationCard(weather: WeatherData?, airQuality: AirQuality?) {
     
     if (recommendations.isEmpty()) return
     
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = "🎒 오늘의 추천",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold
         )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "🎒 오늘의 추천",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
-            )
-            Text(
-                text = "현재 날씨 + 6시간 내 예보 기준",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.6f)
-            )
-            Spacer(Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                recommendations.forEach { (emoji, label) ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier.weight(1f, fill = false)
-                    ) {
-                        Text(emoji, fontSize = 28.sp)
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = label,
-                            fontSize = 11.sp,
-                            color = MaterialTheme.colorScheme.onTertiaryContainer,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+        Text(
+            text = "현재 날씨 + 6시간 내 예보 기준",
+            fontSize = 11.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(12.dp))
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            recommendations.forEach { (emoji, label) ->
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    Text(emoji, fontSize = 28.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = label,
+                        fontSize = 11.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
     }
 }
 
-// ── 공기질 카드 ───────────────────────────────────────────────────────────────
+// ── 공기질 섹션 ───────────────────────────────────────────────────────────────
 
 @Composable
-private fun AirQualityCard(air: AirQuality) {
-    // 통합 등급: AQI/PM2.5/PM10 중 최악
+private fun AirQualitySection(air: AirQuality) {
     val worstColor = Color(air.worstLevel.colorHex)
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // 통합 공기질 등급 (최악 기준)
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(worstColor.copy(alpha = 0.15f), RoundedCornerShape(32.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = air.worstLevel.emoji,
-                        fontSize = 32.sp
-                    )
-                }
-                Column {
-                    Text(
-                        text = air.worstLevel.label,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = worstColor
-                    )
-                    Text(
-                        text = stringResource(CoreR.string.air_quality_integrated),
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(16.dp))
-            HorizontalDivider()
-            Spacer(Modifier.height(12.dp))
-
-            // 초미세먼지 (PM2.5)
-            PollutantRow(
-                label = stringResource(CoreR.string.label_pm25),
-                pmData = air.pm25,
-                mainStationName = air.mainStationName
-            )
-            Spacer(Modifier.height(8.dp))
-            // 미세먼지 (PM10)
-            PollutantRow(
-                label = stringResource(CoreR.string.label_pm10),
-                pmData = air.pm10,
-                mainStationName = air.mainStationName
-            )
-            
-            Spacer(Modifier.height(12.dp))
-            HorizontalDivider()
-            Spacer(Modifier.height(8.dp))
-            
-            // 측정소 정보
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // 섹션 라벨
+        Text(
+            text = "💨 공기질",
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(8.dp))
+        
+        // 통합 공기질 등급 (최악 기준)
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .background(worstColor.copy(alpha = 0.15f), RoundedCornerShape(28.dp)),
+                contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "📍 ${air.mainStationName}",
-                    fontSize = 12.sp,
+                    text = air.worstLevel.emoji,
+                    fontSize = 28.sp
+                )
+            }
+            Column {
+                Text(
+                    text = air.worstLevel.label,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = worstColor
+                )
+                Text(
+                    text = stringResource(CoreR.string.air_quality_integrated),
+                    fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (air.updatedAt.isNotBlank()) {
-                    Text(
-                        text = air.updatedAt,
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // 초미세먼지 (PM2.5)
+        PollutantRow(
+            label = stringResource(CoreR.string.label_pm25),
+            pmData = air.pm25,
+            mainStationName = air.mainStationName
+        )
+        Spacer(Modifier.height(8.dp))
+        // 미세먼지 (PM10)
+        PollutantRow(
+            label = stringResource(CoreR.string.label_pm10),
+            pmData = air.pm10,
+            mainStationName = air.mainStationName
+        )
+        
+        Spacer(Modifier.height(8.dp))
+        
+        // 측정소 정보
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "📍 ${air.mainStationName}",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (air.updatedAt.isNotBlank()) {
+                Text(
+                    text = air.updatedAt,
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
             }
         }
     }
@@ -623,38 +598,36 @@ private fun PollutantRow(label: String, pmData: PmData?, mainStationName: String
     }
 }
 
-// ── 부분 오류 카드 (날씨 또는 공기질 하나만 실패) ─────────────────────────────
+// ── 부분 오류 섹션 (날씨 또는 공기질 하나만 실패) ─────────────────────────────
 
 @Composable
-private fun ErrorCard(title: String, message: String, onRetry: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
-        )
+private fun ErrorSection(title: String, message: String, onRetry: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f),
+                RoundedCornerShape(8.dp)
+            )
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "$title 정보를 불러오지 못했어요",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.error
-                )
-                Text(
-                    text = message,
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.padding(top = 2.dp)
-                )
-            }
-            TextButton(onClick = onRetry) { Text(stringResource(CoreR.string.button_retry)) }
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "$title 정보를 불러오지 못했어요",
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.error
+            )
+            Text(
+                text = message,
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onErrorContainer,
+                modifier = Modifier.padding(top = 2.dp)
+            )
         }
+        TextButton(onClick = onRetry) { Text(stringResource(CoreR.string.button_retry)) }
     }
 }
 
