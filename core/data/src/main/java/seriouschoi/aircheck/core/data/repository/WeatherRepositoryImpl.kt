@@ -9,6 +9,8 @@ import seriouschoi.aircheck.core.domain.repository.WeatherRepository
 import seriouschoi.aircheck.core.network.api.OpenMeteoApiClient
 import seriouschoi.aircheck.core.network.api.OpenMeteoHourly
 import seriouschoi.aircheck.core.network.api.OpenMeteoResponse
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -53,6 +55,9 @@ class WeatherRepositoryImpl @Inject constructor(
     private fun parseHourlyForecast(hourly: OpenMeteoHourly?, isDay: Boolean): List<HourlyForecast> {
         if (hourly == null) return emptyList()
         
+        val today = LocalDate.now()
+        val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+        
         return hourly.time.mapIndexedNotNull { index, timeStr ->
             val hour = try {
                 timeStr.substringAfter("T").substringBefore(":").toInt()
@@ -60,8 +65,23 @@ class WeatherRepositoryImpl @Inject constructor(
                 return@mapIndexedNotNull null
             }
             
+            val dateStr = timeStr.substringBefore("T")
+            val forecastDate = try {
+                LocalDate.parse(dateStr, dateFormatter)
+            } catch (e: Exception) {
+                today
+            }
+            
+            val dayLabel = when (forecastDate) {
+                today -> "오늘"
+                today.plusDays(1) -> "내일"
+                today.plusDays(2) -> "모레"
+                else -> "${forecastDate.monthValue}/${forecastDate.dayOfMonth}"
+            }
+            
             HourlyForecast(
                 hour = "${hour}시",
+                dayLabel = dayLabel,
                 temperature = hourly.temperature.getOrNull(index) ?: return@mapIndexedNotNull null,
                 feelsLike = hourly.feelsLike.getOrNull(index) ?: 0.0,
                 precipitationProbability = hourly.precipitationProbability.getOrNull(index) ?: 0,
