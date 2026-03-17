@@ -1,12 +1,19 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+@file:OptIn(
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.foundation.ExperimentalFoundationApi::class
+)
 
 package seriouschoi.aircheck.feature.weather.ui
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
@@ -39,11 +47,12 @@ import seriouschoi.aircheck.core.domain.model.WeatherData
 @Composable
 internal fun WeatherScreen(
     uiState: WeatherUiState,
+    multiState: MultiLocationState,
     onRefresh: () -> Unit,
     onAddLocation: () -> Unit = {}
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }
-    val isRefreshing = uiState is WeatherUiState.Loading
+    val isRefreshing = multiState.isLoading
     
     Scaffold(
         topBar = {
@@ -69,21 +78,87 @@ internal fun WeatherScreen(
             AirQualityInfoDialog(onDismiss = { showInfoDialog = false })
         }
         
-        PullToRefreshBox(
-            isRefreshing = isRefreshing,
-            onRefresh = onRefresh,
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                when (uiState) {
-                    is WeatherUiState.Loading -> { /* PullToRefreshBox가 인디케이터 표시 */ }
-                    is WeatherUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather, onRefresh)
-                    is WeatherUiState.Error -> ErrorContent(uiState.message.asString(), onRefresh)
+            if (multiState.locations.isEmpty()) {
+                // 위치 없음 또는 로딩 중
+                PullToRefreshBox(
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when (uiState) {
+                            is WeatherUiState.Loading -> { }
+                            is WeatherUiState.Success -> SuccessContent(uiState.airQuality, uiState.weather, onRefresh)
+                            is WeatherUiState.Error -> ErrorContent(uiState.message.asString(), onRefresh)
+                        }
+                    }
+                }
+            } else {
+                // 다중 위치 페이저
+                val pagerState = rememberPagerState(pageCount = { multiState.locations.size })
+                
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.weight(1f)
+                ) { page ->
+                    val locationData = multiState.locations[page]
+                    
+                    PullToRefreshBox(
+                        isRefreshing = isRefreshing,
+                        onRefresh = onRefresh,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            // 위치명 표시
+                            Text(
+                                text = if (locationData.isCurrentLocation) "📍 현재 위치" else "📌 ${locationData.locationName}",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .align(Alignment.CenterHorizontally)
+                                    .padding(vertical = 8.dp)
+                            )
+                            
+                            when (val state = locationData.state) {
+                                is WeatherUiState.Loading -> { }
+                                is WeatherUiState.Success -> SuccessContent(state.airQuality, state.weather, onRefresh)
+                                is WeatherUiState.Error -> ErrorContent(state.message.asString(), onRefresh)
+                            }
+                        }
+                    }
+                }
+                
+                // 페이지 인디케이터
+                if (multiState.locations.size > 1) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        repeat(multiState.locations.size) { index ->
+                            val isSelected = pagerState.currentPage == index
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 4.dp)
+                                    .size(if (isSelected) 10.dp else 8.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        if (isSelected) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                                    )
+                            )
+                        }
+                    }
                 }
             }
         }
