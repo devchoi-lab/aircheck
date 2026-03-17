@@ -99,8 +99,8 @@ private fun SuccessContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // 위치 (공기질 데이터 있을 때만)
         air.data?.mainStationName?.let {
@@ -147,12 +147,12 @@ private fun SuccessContent(
 private fun WeatherCard(weather: WeatherData) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
         )
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             // 현재 날씨 라벨
             Text(
                 text = "🌤️ 현재 날씨",
@@ -235,10 +235,34 @@ private fun WeatherCard(weather: WeatherData) {
                 Spacer(Modifier.height(8.dp))
                 
                 LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(weather.hourlyForecast) { forecast ->
-                        HourlyForecastItem(forecast)
+                    val grouped = weather.hourlyForecast.groupBy { it.dayLabel }
+                    grouped.forEach { (dayLabel, forecasts) ->
+                        // 날짜 헤더
+                        item {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier
+                                    .background(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                                        RoundedCornerShape(8.dp)
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                            ) {
+                                Text(
+                                    text = dayLabel,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+                        // 해당 날짜의 시간별 예보
+                        items(forecasts) { forecast ->
+                            HourlyForecastItem(forecast)
+                        }
                     }
                 }
             }
@@ -421,7 +445,7 @@ private fun RecommendationCard(weather: WeatherData?, airQuality: AirQuality?) {
     
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer
         )
@@ -473,9 +497,9 @@ private fun AirQualityCard(air: AirQuality) {
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(12.dp)
     ) {
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             // 통합 공기질 등급 (최악 기준)
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -605,7 +629,7 @@ private fun PollutantRow(label: String, pmData: PmData?, mainStationName: String
 private fun ErrorCard(title: String, message: String, onRetry: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
         )
