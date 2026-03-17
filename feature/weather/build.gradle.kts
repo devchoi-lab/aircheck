@@ -50,4 +50,10 @@ dependencies {
     ksp(libs.hilt.compiler)
     
     debugImplementation(libs.compose.ui.tooling)
+    
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
+    testImplementation(libs.turbine)
 }

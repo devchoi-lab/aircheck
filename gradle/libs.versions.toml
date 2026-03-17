@@ -13,6 +13,9 @@ hilt = "2.51.1"
 ksp = "2.0.21-1.0.28"
 javax-inject = "1"
 google-services = "4.4.2"
+junit = "4.13.2"
+mockk = "1.13.13"
+turbine = "1.2.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
@@ -39,6 +42,12 @@ javax-inject = { module = "javax.inject:javax.inject", version.ref = "javax-inje
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version = "1.1.4" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics", version = "19.2.0" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics", version = "22.1.0" }
+
+# Testing
+junit = { module = "junit:junit", version.ref = "junit" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
