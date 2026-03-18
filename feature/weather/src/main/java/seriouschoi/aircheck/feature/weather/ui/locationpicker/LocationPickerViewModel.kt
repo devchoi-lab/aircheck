@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import seriouschoi.aircheck.core.domain.model.Region
+import seriouschoi.aircheck.core.domain.model.RegionSearchResult
 import seriouschoi.aircheck.core.domain.model.SavedLocation
 import seriouschoi.aircheck.core.domain.repository.RegionRepository
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
@@ -63,6 +64,7 @@ internal class LocationPickerViewModel @Inject constructor(
         when (intent) {
             is Intent.SearchQueryChanged -> onSearchQueryChange(intent.query)
             is Intent.RegionClicked -> onRegionClick(intent.region)
+            is Intent.SearchResultClicked -> onSearchResultClick(intent.result)
             is Intent.BackClicked -> onBackClick()
         }
     }
@@ -90,11 +92,27 @@ internal class LocationPickerViewModel @Inject constructor(
     private fun onSearchQueryChange(query: String) {
         _uiState.value = _uiState.value.copy(searchQuery = query)
         viewModelScope.launch {
-            val filtered = regionRepository.searchRegions(query, _uiState.value.currentPath)
-            _uiState.value = _uiState.value.copy(regions = filtered)
+            if (query.isBlank()) {
+                // 검색어 비우면 → 탐색 모드로 복귀 (현재 경로 기준)
+                val currentPath = _uiState.value.currentPath
+                val regions = if (currentPath.isEmpty()) {
+                    regionRepository.getTopLevelRegions()
+                } else {
+                    regionRepository.getRegionByPath(currentPath)?.children ?: emptyList()
+                }
+                _uiState.value = _uiState.value.copy(
+                    regions = regions,
+                    searchResults = emptyList()
+                )
+            } else {
+                // 전체 계층 재귀 검색
+                val results = regionRepository.deepSearchRegions(query)
+                _uiState.value = _uiState.value.copy(searchResults = results)
+            }
         }
     }
 
+    /** 탐색 모드: 지역 클릭 */
     private fun onRegionClick(region: Region) {
         if (region.hasChildren) {
             viewModelScope.launch {
@@ -107,7 +125,24 @@ internal class LocationPickerViewModel @Inject constructor(
                 )
             }
         } else {
-            saveLocation(region)
+            saveLocation(region, _uiState.value.currentPath)
+        }
+    }
+
+    /** 검색 모드: 검색 결과 클릭 */
+    private fun onSearchResultClick(result: RegionSearchResult) {
+        val region = result.region
+        if (region.hasChildren) {
+            // 하위 목록으로 진입 + 검색 모드 해제
+            val newPath = result.path + region.name
+            _uiState.value = _uiState.value.copy(
+                currentPath = newPath,
+                regions = region.children,
+                searchQuery = "",
+                searchResults = emptyList()
+            )
+        } else {
+            saveLocation(region, result.path)
         }
     }
 
@@ -130,12 +165,12 @@ internal class LocationPickerViewModel @Inject constructor(
         }
     }
 
-    private fun saveLocation(region: Region) {
+    private fun saveLocation(region: Region, path: List<String>) {
         val lat = region.lat ?: return
         val lng = region.lng ?: return
 
         viewModelScope.launch {
-            val displayName = (_uiState.value.currentPath + region.name).joinToString(" ")
+            val displayName = (path + region.name).joinToString(" ")
             val location = SavedLocation(
                 name = region.name,
                 displayName = displayName,

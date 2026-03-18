@@ -7,6 +7,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import seriouschoi.aircheck.core.domain.model.Region
+import seriouschoi.aircheck.core.domain.model.RegionSearchResult
 import seriouschoi.aircheck.core.domain.repository.RegionRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -59,14 +60,34 @@ class RegionRepositoryImpl @Inject constructor(
         } else {
             getRegionByPath(parentPath)
         }
-        
+
         val searchList = parent?.children ?: getCachedRegions()
-        
+
         return if (query.isBlank()) {
             searchList
         } else {
             searchList.filter { it.name.contains(query, ignoreCase = true) }
         }
+    }
+
+    override suspend fun deepSearchRegions(query: String): List<RegionSearchResult> {
+        if (query.isBlank()) return emptyList()
+
+        val results = mutableListOf<RegionSearchResult>()
+
+        fun searchRecursive(regions: List<Region>, path: List<String>) {
+            for (region in regions) {
+                if (region.name.contains(query, ignoreCase = true)) {
+                    results.add(RegionSearchResult(region = region, path = path))
+                }
+                if (region.hasChildren) {
+                    searchRecursive(region.children, path + region.name)
+                }
+            }
+        }
+
+        searchRecursive(getCachedRegions(), emptyList())
+        return results
     }
     
     private suspend fun getCachedRegions(): List<Region> {
