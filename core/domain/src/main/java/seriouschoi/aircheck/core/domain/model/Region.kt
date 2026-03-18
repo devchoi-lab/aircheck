@@ -2,16 +2,19 @@ package seriouschoi.aircheck.core.domain.model
 
 /**
  * 지역 모델 (행정구역 계층 구조)
+ *
+ * 플랫 JSON(korean_regions_2.json)에서 파싱 후 트리로 조립된다.
+ * 모든 노드에 lat/lng가 존재한다 (parent는 하위 leaf의 centroid).
  */
 data class Region(
+    val id: Int,
     val name: String,
-    val lat: Double? = null,
-    val lng: Double? = null,
+    val lat: Double,
+    val lng: Double,
+    /** 최하위 지역인지 (동/읍/면/리) — JSON에서 직접 읽음 */
+    val isLeaf: Boolean,
     val children: List<Region> = emptyList()
 ) {
-    /** 최하위 지역인지 (동/읍/면/리) */
-    val isLeaf: Boolean get() = children.isEmpty() && lat != null && lng != null
-    
     /** 하위 지역이 있는지 */
     val hasChildren: Boolean get() = children.isNotEmpty()
 }

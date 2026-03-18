@@ -179,16 +179,13 @@ internal class LocationPickerViewModel @Inject constructor(
     }
 
     private fun saveLocation(region: Region, path: List<String>) {
-        val lat = region.lat ?: return
-        val lng = region.lng ?: return
-
         viewModelScope.launch {
             val displayName = (path + region.name).joinToString(" ")
             val location = SavedLocation(
                 name = region.name,
                 displayName = displayName,
-                lat = lat,
-                lng = lng
+                lat = region.lat,
+                lng = region.lng
             )
             savedLocationRepository.add(location)
             _effect.send(Effect.LocationSaved)
@@ -201,8 +198,7 @@ internal class LocationPickerViewModel @Inject constructor(
     private fun List<Region>.sortedByDistance(): List<Region> {
         val loc = currentLocation ?: return this
         return sortedBy { region ->
-            val (lat, lng) = region.representativeCoordinate() ?: return@sortedBy Double.MAX_VALUE
-            haversineDistance(loc.latitude, loc.longitude, lat, lng)
+            haversineDistance(loc.latitude, loc.longitude, region.lat, region.lng)
         }
     }
 
@@ -210,35 +206,8 @@ internal class LocationPickerViewModel @Inject constructor(
     private fun List<RegionSearchResult>.sortedBySearchResultDistance(): List<RegionSearchResult> {
         val loc = currentLocation ?: return this
         return sortedBy { result ->
-            val (lat, lng) = result.region.representativeCoordinate() ?: return@sortedBy Double.MAX_VALUE
-            haversineDistance(loc.latitude, loc.longitude, lat, lng)
+            haversineDistance(loc.latitude, loc.longitude, result.region.lat, result.region.lng)
         }
-    }
-
-    /**
-     * 대표 좌표를 반환한다.
-     * - leaf: 자신의 좌표
-     * - parent: 자식 leaf들의 좌표 평균 (centroid)
-     */
-    private fun Region.representativeCoordinate(): Pair<Double, Double>? {
-        val myLat = lat
-        val myLng = lng
-        if (myLat != null && myLng != null) return myLat to myLng
-
-        val leaves = collectLeaves()
-        if (leaves.isEmpty()) return null
-
-        val avgLat = leaves.sumOf { it.first } / leaves.size
-        val avgLng = leaves.sumOf { it.second } / leaves.size
-        return avgLat to avgLng
-    }
-
-    /** 모든 하위 leaf의 좌표를 수집 */
-    private fun Region.collectLeaves(): List<Pair<Double, Double>> {
-        val myLat = lat
-        val myLng = lng
-        if (isLeaf && myLat != null && myLng != null) return listOf(myLat to myLng)
-        return children.flatMap { it.collectLeaves() }
     }
 
     /** Haversine 공식으로 두 좌표 간 거리 (km) 계산 */
