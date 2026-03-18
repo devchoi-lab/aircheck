@@ -1,6 +1,7 @@
 package seriouschoi.aircheck.feature.weather.ui.locationpicker
 
 import seriouschoi.aircheck.core.domain.model.Region
+import seriouschoi.aircheck.core.domain.model.RegionSearchResult
 import seriouschoi.aircheck.core.resource.UiText
 
 /**
@@ -14,8 +15,11 @@ object LocationPickerContract {
         /** 검색어 변경 */
         data class SearchQueryChanged(val query: String) : Intent
 
-        /** 지역 클릭 (하위 탐색 or 선택) */
+        /** 탐색 모드: 지역 클릭 (하위 탐색 or 선택) */
         data class RegionClicked(val region: Region) : Intent
+
+        /** 검색 모드: 검색 결과 클릭 */
+        data class SearchResultClicked(val result: RegionSearchResult) : Intent
 
         /** 뒤로가기 (상위 지역으로) */
         data object BackClicked : Intent
@@ -24,12 +28,20 @@ object LocationPickerContract {
     // ── State (UI 상태) ─────────────────────────────────────────────────────
 
     data class UiState(
+        /** 탐색 모드: 현재 depth의 지역 목록 */
         val regions: List<Region> = emptyList(),
+        /** 탐색 모드: 현재 경로 */
         val currentPath: List<String> = emptyList(),
+        /** 검색어 (비어있으면 탐색 모드, 있으면 검색 모드) */
         val searchQuery: String = "",
+        /** 검색 모드: 전체 계층 검색 결과 */
+        val searchResults: List<RegionSearchResult> = emptyList(),
         val isLoading: Boolean = true,
         val error: UiText? = null
-    )
+    ) {
+        /** 검색 모드 여부 */
+        val isSearching: Boolean get() = searchQuery.isNotBlank()
+    }
 
     // ── Side Effect (일회성 이벤트) ──────────────────────────────────────────
 

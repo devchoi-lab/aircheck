@@ -17,6 +17,20 @@ data class Region(
 }
 
 /**
+ * 지역 검색 결과 (지역 + 상위 경로)
+ */
+data class RegionSearchResult(
+    val region: Region,
+    val path: List<String>        // 상위 경로 (예: ["서울특별시", "강남구"])
+) {
+    /** 전체 경로 표시용 (예: "서울특별시 > 강남구") */
+    val pathDisplay: String get() = path.joinToString(" > ")
+
+    /** 저장용 전체 이름 (예: "서울특별시 강남구 역삼동") */
+    val fullName: String get() = (path + region.name).joinToString(" ")
+}
+
+/**
  * 저장된 위치 (사용자가 추가한 관심 지역)
  */
 data class SavedLocation(
