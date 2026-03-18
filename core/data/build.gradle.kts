@@ -31,6 +31,10 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.datastore.preferences)
     
+    // Location
+    implementation(libs.play.services.location)
+    implementation(libs.kotlinx.coroutines.play.services)
+    
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 }
