@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.serialization.InternalSerializationApi::class)
+
 package seriouschoi.aircheck.core.network.api
 
 import kotlinx.serialization.SerialName
