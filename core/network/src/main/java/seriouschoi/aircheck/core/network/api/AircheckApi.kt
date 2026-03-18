@@ -2,11 +2,13 @@
 
 package seriouschoi.aircheck.core.network.api
 
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -59,6 +61,27 @@ data class AirQualityResponse(
     val pm25Station: String = ""
 )
 
+// ── 배치 API 모델 ──────────────────────────────────────────────────────────
+
+@Serializable
+data class BatchWeatherRequest(
+    val locations: List<LocationRequest>
+)
+
+@Serializable
+data class LocationRequest(
+    val lat: Double,
+    val lng: Double
+)
+
+@Serializable
+data class BatchWeatherItem(
+    val lat: Double = 0.0,
+    val lng: Double = 0.0,
+    val weather: WeatherResponse? = null,
+    val airQuality: AirQualityResponse? = null
+)
+
 // ── API 클라이언트 ─────────────────────────────────────────────────────────
 
 @Singleton
@@ -87,6 +110,27 @@ class AircheckApiClient @Inject constructor() {
                 throw Exception("API 호출 실패: ${response.code}")
             }
             response.body?.string() ?: ""
+        }
+    }
+    
+    /**
+     * 다중 위치 일괄 조회 API
+     */
+    fun getBatchWeather(locations: List<Pair<Double, Double>>): String {
+        val url = "$BASE_URL/api/v1/weather/batch"
+        val requestBody = BatchWeatherRequest(
+            locations = locations.map { (lat, lng) -> LocationRequest(lat, lng) }
+        )
+        val jsonBody = json.encodeToString(requestBody)
+        val request = Request.Builder()
+            .url(url)
+            .post(jsonBody.toRequestBody("application/json".toMediaType()))
+            .build()
+        return client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) {
+                throw Exception("API 호출 실패: ${response.code}")
+            }
+            response.body?.string() ?: "[]"
         }
     }
 }
