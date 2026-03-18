@@ -29,6 +29,20 @@ internal fun LocationPickerScreen(
 ) {
     val title = if (uiState.currentPath.isEmpty()) "지역 선택" else uiState.currentPath.last()
 
+    // 알림 다이얼로그
+    uiState.alertMessage?.let { message ->
+        AlertDialog(
+            onDismissRequest = { onIntent(LocationPickerContract.Intent.DismissAlert) },
+            title = { Text("안내", fontWeight = FontWeight.Bold) },
+            text = { Text(message.asString()) },
+            confirmButton = {
+                TextButton(onClick = { onIntent(LocationPickerContract.Intent.DismissAlert) }) {
+                    Text("확인")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(

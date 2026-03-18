@@ -23,6 +23,9 @@ object LocationPickerContract {
 
         /** 뒤로가기 (상위 지역으로) */
         data object BackClicked : Intent
+
+        /** 알림 다이얼로그 닫기 */
+        data object DismissAlert : Intent
     }
 
     // ── State (UI 상태) ─────────────────────────────────────────────────────
@@ -37,7 +40,9 @@ object LocationPickerContract {
         /** 검색 모드: 전체 계층 검색 결과 */
         val searchResults: List<RegionSearchResult> = emptyList(),
         val isLoading: Boolean = true,
-        val error: UiText? = null
+        val error: UiText? = null,
+        /** 알림 다이얼로그 메시지 (null이면 비표시) */
+        val alertMessage: UiText? = null
     ) {
         /** 검색 모드 여부 */
         val isSearching: Boolean get() = searchQuery.isNotBlank()
