@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 양산 -->
+    <path
+        android:fillColor="#FFEAA7"
+        android:pathData="M12,2C6.48,2 2,6 2,10H22C22,6 17.52,2 12,2Z"/>
+    <!-- 양산 줄무늬 -->
+    <path
+        android:fillColor="#FDCB6E"
+        android:pathData="M6,2.5C6,2.5 4,6 4,10H6C6,6.5 7,4 6,2.5ZM12,2C12,2 11,5 11,10H13C13,5 12,2 12,2ZM18,2.5C18,2.5 20,6 20,10H18C18,6.5 17,4 18,2.5Z"/>
+    <!-- 손잡이 -->
+    <path
+        android:fillColor="#B2BEC3"
+        android:pathData="M11,10H13V20H11V20ZM10,20H14V21C14,21.55 13.55,22 13,22H11C10.45,22 10,21.55 10,21V20Z"/>
+</vector>

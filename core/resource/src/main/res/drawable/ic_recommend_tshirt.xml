@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 반팔 티셔츠 -->
+    <path
+        android:fillColor="#4ECDC4"
+        android:pathData="M20,6L16,4L14.5,2H9.5L8,4L4,6V10L6,10V20C6,21.1 6.9,22 8,22H16C17.1,22 18,21.1 18,20V10L20,10V6ZM8,8H16V20H8V8Z"/>
+</vector>
