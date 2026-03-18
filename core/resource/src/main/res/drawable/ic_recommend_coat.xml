@@ -8,26 +8,26 @@
     <!-- 몸통 (길게) -->
     <path
         android:fillColor="#A29BFE"
-        android:pathData="M12,1L9,2L6,4V21C6,21.5 6.5,22 7,22H17C17.5,22 18,21.5 18,21V4L15,2L12,1Z"/>
-    <!-- 왼쪽 소매 -->
+        android:pathData="M9,3C9,3 10,1 12,1C14,1 15,3 15,3L18,5V21C18,21.5 17.5,22 17,22H7C6.5,22 6,21.5 6,21V5L9,3Z"/>
+    <!-- 왼쪽 소매 (단순) -->
     <path
         android:fillColor="#A29BFE"
-        android:pathData="M6,4L2,6V9L4,9V20H6V4Z"/>
-    <!-- 오른쪽 소매 -->
+        android:pathData="M6,5H4V20H6V5Z"/>
+    <!-- 오른쪽 소매 (단순) -->
     <path
         android:fillColor="#A29BFE"
-        android:pathData="M18,4V20H20V9L22,9V6L18,4Z"/>
+        android:pathData="M18,5H20V20H18V5Z"/>
     <!-- 옷깃 -->
     <path
         android:fillColor="#8B7FE8"
-        android:pathData="M9,2L11,5L11,9L8,6V2ZM15,2V6L12,9V5L14,2Z"/>
+        android:pathData="M9,3L11,6V10L8,7V3ZM15,3V7L12,10V6L15,3Z"/>
     <!-- 버튼 -->
     <path
         android:fillColor="#FFD93D"
-        android:pathData="M12,10m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
+        android:pathData="M12,11m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
     <path
         android:fillColor="#FFD93D"
-        android:pathData="M12,15m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
+        android:pathData="M12,16m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
     <!-- 주머니 -->
     <path
         android:fillColor="#8B7FE8"
