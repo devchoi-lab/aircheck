@@ -14,10 +14,9 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import seriouschoi.aircheck.core.domain.repository.AirQualityRepository
+import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
-import seriouschoi.aircheck.core.domain.repository.WeatherRepository
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.core.resource.R
@@ -42,8 +41,7 @@ internal data class MultiLocationState(
 
 @HiltViewModel
 internal class WeatherViewModel @Inject constructor(
-    private val airQualityRepository: AirQualityRepository,
-    private val weatherRepository: WeatherRepository,
+    private val combinedWeatherRepository: CombinedWeatherRepository,
     private val locationProvider: LocationProvider,
     private val savedLocationRepository: SavedLocationRepository
 ) : ViewModel() {
@@ -205,17 +203,17 @@ internal class WeatherViewModel @Inject constructor(
     )
 
     private suspend fun fetchWeather(lat: Double, lng: Double): FetchResult {
-        val airResult = airQualityRepository.fetch(lat, lng)
-        val weatherResult = weatherRepository.fetch(lat, lng)
+        // 통합 API 1회 호출로 날씨 + 대기질 함께 조회
+        val combined = combinedWeatherRepository.fetch(lat, lng)
 
         return FetchResult(
             airQuality = WeatherContract.DataResult(
-                data = airResult.getOrNull(),
-                error = airResult.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                data = combined.airQuality.getOrNull(),
+                error = combined.airQuality.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
             ),
             weather = WeatherContract.DataResult(
-                data = weatherResult.getOrNull(),
-                error = weatherResult.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                data = combined.weather.getOrNull(),
+                error = combined.weather.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
             )
         )
     }
