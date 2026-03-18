@@ -117,22 +117,43 @@ internal class WeatherViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             }
 
-            _multiState.value = _multiState.value.copy(isLoading = true)
-
-            val locationDataList = mutableListOf<LocationWeatherData>()
-
-            // 1. 현재 위치
+            // 1. 먼저 위치 목록을 즉시 표시 (데이터 로딩 전)
+            val savedLocations = savedLocationRepository.getAll().first()
             val currentLocation = locationProvider.getCurrentLocation()
+            
+            val initialLocationList = mutableListOf<LocationWeatherData>()
+            
+            // 현재 위치 추가 (로딩 상태)
             if (currentLocation != null) {
-                val (airResult, weatherResult) = fetchWeather(currentLocation.latitude, currentLocation.longitude)
-                locationDataList.add(
+                initialLocationList.add(
                     LocationWeatherData(
                         locationName = "현재 위치",
-                        isCurrentLocation = true,
-                        airQuality = airResult,
-                        weather = weatherResult
+                        isCurrentLocation = true
                     )
                 )
+            }
+            
+            // 저장된 위치들 추가 (로딩 상태)
+            savedLocations.forEach { saved ->
+                initialLocationList.add(
+                    LocationWeatherData(
+                        locationName = saved.displayName,
+                        isCurrentLocation = false,
+                        savedLocationId = saved.id
+                    )
+                )
+            }
+            
+            // 즉시 위치 목록 표시
+            _multiState.value = MultiLocationState(
+                locations = initialLocationList,
+                isLoading = true
+            )
+
+            // 2. 현재 위치 날씨 데이터 로드
+            if (currentLocation != null) {
+                val (airResult, weatherResult) = fetchWeather(currentLocation.latitude, currentLocation.longitude)
+                updateLocationData(0, airResult, weatherResult)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isRefreshing = false,
@@ -151,25 +172,30 @@ internal class WeatherViewModel @Inject constructor(
                 )
             }
 
-            // 2. 저장된 위치들
-            val savedLocations = savedLocationRepository.getAll().first()
-            savedLocations.forEach { saved ->
+            // 3. 저장된 위치들 날씨 데이터 로드
+            val startIndex = if (currentLocation != null) 1 else 0
+            savedLocations.forEachIndexed { index, saved ->
                 val (airResult, weatherResult) = fetchWeather(saved.lat, saved.lng)
-                locationDataList.add(
-                    LocationWeatherData(
-                        locationName = saved.displayName,
-                        isCurrentLocation = false,
-                        savedLocationId = saved.id,
-                        airQuality = airResult,
-                        weather = weatherResult
-                    )
-                )
+                updateLocationData(startIndex + index, airResult, weatherResult)
             }
 
-            _multiState.value = MultiLocationState(
-                locations = locationDataList,
-                isLoading = false
+            _multiState.value = _multiState.value.copy(isLoading = false)
+        }
+    }
+    
+    /** 특정 위치의 날씨 데이터 업데이트 */
+    private fun updateLocationData(
+        index: Int,
+        airResult: WeatherContract.DataResult<AirQuality>,
+        weatherResult: WeatherContract.DataResult<WeatherData>
+    ) {
+        val currentLocations = _multiState.value.locations.toMutableList()
+        if (index < currentLocations.size) {
+            currentLocations[index] = currentLocations[index].copy(
+                airQuality = airResult,
+                weather = weatherResult
             )
+            _multiState.value = _multiState.value.copy(locations = currentLocations)
         }
     }
 
