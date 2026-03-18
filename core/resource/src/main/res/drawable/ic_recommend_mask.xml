@@ -4,18 +4,34 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+    <!-- 마스크 -->
     <!-- 마스크 본체 -->
     <path
-        android:fillColor="#DFE6E9"
-        android:pathData="M4,10C4,10 4,6 12,6C20,6 20,10 20,10V14C20,14 20,18 12,18C4,18 4,14 4,14V10Z"/>
+        android:fillColor="#E8F5E9"
+        android:pathData="M3,9C3,9 3,6 12,6C21,6 21,9 21,9V15C21,15 21,18 12,18C3,18 3,15 3,15V9Z"/>
+    <!-- 마스크 테두리 -->
+    <path
+        android:strokeColor="#A5D6A7"
+        android:strokeWidth="0.5"
+        android:pathData="M3,9C3,9 3,6 12,6C21,6 21,9 21,9V15C21,15 21,18 12,18C3,18 3,15 3,15V9Z"/>
     <!-- 주름 -->
     <path
-        android:strokeColor="#B2BEC3"
-        android:strokeWidth="0.8"
-        android:pathData="M6,9H18M6,12H18M6,15H18"/>
-    <!-- 귀걸이 끈 -->
+        android:fillColor="#C8E6C9"
+        android:pathData="M5,8.5H19V9.5H5V8.5ZM5,11.5H19V12.5H5V11.5ZM5,14.5H19V15.5H5V14.5Z"/>
+    <!-- 귀걸이 끈 왼쪽 -->
     <path
-        android:strokeColor="#B2BEC3"
+        android:strokeColor="#90A4AE"
         android:strokeWidth="1.5"
-        android:pathData="M4,10C2,10 1,8 1,8M20,10C22,10 23,8 23,8"/>
+        android:strokeLineCap="round"
+        android:pathData="M3,10C1,10 0,8 0,7"/>
+    <!-- 귀걸이 끈 오른쪽 -->
+    <path
+        android:strokeColor="#90A4AE"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M21,10C23,10 24,8 24,7"/>
+    <!-- 코 부분 -->
+    <path
+        android:fillColor="#A5D6A7"
+        android:pathData="M10,7H14V8H10V7Z"/>
 </vector>

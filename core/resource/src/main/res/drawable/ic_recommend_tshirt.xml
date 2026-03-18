@@ -5,7 +5,20 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     <!-- 반팔 티셔츠 -->
+    <!-- 몸통 + 소매 -->
     <path
         android:fillColor="#4ECDC4"
-        android:pathData="M20,6L16,4L14.5,2H9.5L8,4L4,6V10L6,10V20C6,21.1 6.9,22 8,22H16C17.1,22 18,21.1 18,20V10L20,10V6ZM8,8H16V20H8V8Z"/>
+        android:pathData="M12,2C10,2 9,3 9,3L4,5V9L7,9V20C7,21 8,22 9,22H15C16,22 17,21 17,20V9L20,9V5L15,3C15,3 14,2 12,2Z"/>
+    <!-- 목 -->
+    <path
+        android:fillColor="#3DBDB5"
+        android:pathData="M10,3C10,3 11,4 12,4C13,4 14,3 14,3L12,2L10,3Z"/>
+    <!-- 소매 라인 -->
+    <path
+        android:fillColor="#3DBDB5"
+        android:pathData="M4,6L7,7V9L4,9V6ZM20,6V9L17,9V7L20,6Z"/>
+    <!-- 하이라이트 -->
+    <path
+        android:fillColor="#6FE4DC"
+        android:pathData="M9,7L11,7L11,11L9,11Z"/>
 </vector>
