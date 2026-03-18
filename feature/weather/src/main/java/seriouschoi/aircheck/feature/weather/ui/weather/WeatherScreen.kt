@@ -853,6 +853,16 @@ private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
                 
                 HorizontalDivider()
                 
+                // 체감온도별 의상 추천
+                Text(
+                    text = "👕 체감온도별 의상 추천",
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 14.sp
+                )
+                ClothingRecommendationTable()
+                
+                HorizontalDivider()
+                
                 // 출처
                 Text(
                     text = "📋 기준 출처",
@@ -860,7 +870,7 @@ private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
                     fontSize = 14.sp
                 )
                 Text(
-                    text = "WHO Global Air Quality Guidelines 2021\nISBN: 978-92-4-003422-8",
+                    text = "대기질: WHO Global Air Quality Guidelines 2021\n의상: 일반적인 체감 기준",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -890,6 +900,50 @@ private fun GradeTable(grades: List<Triple<String, String, Color>>) {
                 )
                 Text(
                     text = "$range μg/m³",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ClothingRecommendationTable() {
+    val recommendations = listOf(
+        Triple(CoreR.drawable.ic_recommend_tank_top, "민소매 + 양산", "28°C 이상"),
+        Triple(CoreR.drawable.ic_recommend_tshirt, "반팔", "23°C ~ 27°C"),
+        Triple(CoreR.drawable.ic_recommend_long_sleeve, "얇은 긴팔", "17°C ~ 22°C"),
+        Triple(CoreR.drawable.ic_recommend_jacket, "자켓/가디건", "12°C ~ 16°C"),
+        Triple(CoreR.drawable.ic_recommend_coat, "코트/니트", "6°C ~ 11°C"),
+        Triple(CoreR.drawable.ic_recommend_padding, "패딩/목도리", "0°C ~ 5°C"),
+        Triple(CoreR.drawable.ic_recommend_heavy_padding, "두꺼운 패딩", "0°C 미만")
+    )
+    
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        recommendations.forEach { (iconRes, label, tempRange) ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(iconRes),
+                        contentDescription = label,
+                        modifier = Modifier.size(24.dp),
+                        tint = Color.Unspecified
+                    )
+                    Text(
+                        text = label,
+                        fontSize = 12.sp
+                    )
+                }
+                Text(
+                    text = tempRange,
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
