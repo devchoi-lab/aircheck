@@ -51,6 +51,11 @@ dependencies {
     implementation(libs.hilt.navigation.compose)
     ksp(libs.hilt.compiler)
     
+    // WorkManager
+    implementation(libs.work.runtime)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+    
     // Firebase
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
