@@ -17,8 +17,12 @@ import seriouschoi.aircheck.core.domain.model.RegionSearchResult
 import seriouschoi.aircheck.core.domain.model.SavedLocation
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.RegionRepository
-import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
+import seriouschoi.aircheck.core.domain.usecase.AddSavedLocationUseCase
+import seriouschoi.aircheck.core.domain.usecase.DuplicateLocationException
+import seriouschoi.aircheck.core.domain.usecase.LimitExceededException
+import seriouschoi.aircheck.core.resource.R as CoreR
 import seriouschoi.aircheck.core.resource.UiText
+
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract.Effect
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract.Intent
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract.UiState
@@ -31,7 +35,7 @@ import kotlin.math.sqrt
 @HiltViewModel
 internal class LocationPickerViewModel @Inject constructor(
     private val regionRepository: RegionRepository,
-    private val savedLocationRepository: SavedLocationRepository,
+    private val addSavedLocation: AddSavedLocationUseCase,
     private val locationProvider: LocationProvider
 ) : ViewModel() {
 
@@ -76,6 +80,7 @@ internal class LocationPickerViewModel @Inject constructor(
             is Intent.RegionClicked -> onRegionClick(intent.region)
             is Intent.SearchResultClicked -> onSearchResultClick(intent.result)
             is Intent.BackClicked -> onBackClick()
+            is Intent.DismissAlert -> _uiState.value = _uiState.value.copy(alertMessage = null)
         }
     }
 
@@ -187,8 +192,21 @@ internal class LocationPickerViewModel @Inject constructor(
                 lat = region.lat,
                 lng = region.lng
             )
-            savedLocationRepository.add(location)
-            _effect.send(Effect.LocationSaved)
+            addSavedLocation(location)
+                .onSuccess { _effect.send(Effect.LocationSaved) }
+                .onFailure { e ->
+                    val message = when (e) {
+                        is DuplicateLocationException -> UiText.StringResource(
+                            CoreR.string.error_duplicate_location
+                        )
+                        is LimitExceededException -> UiText.StringResource(
+                            CoreR.string.error_saved_location_limit,
+                            AddSavedLocationUseCase.MAX_SAVED_LOCATIONS
+                        )
+                        else -> UiText.StringResource(CoreR.string.error_save_failed)
+                    }
+                    _uiState.value = _uiState.value.copy(alertMessage = message)
+                }
         }
     }
 
