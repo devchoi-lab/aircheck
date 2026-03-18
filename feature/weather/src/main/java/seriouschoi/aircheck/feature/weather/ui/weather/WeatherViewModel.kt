@@ -170,11 +170,23 @@ internal class WeatherViewModel @Inject constructor(
                 )
             }
 
-            // 3. 저장된 위치들 날씨 데이터 로드
-            val startIndex = if (currentLocation != null) 1 else 0
-            savedLocations.forEachIndexed { index, saved ->
-                val (airResult, weatherResult) = fetchWeather(saved.lat, saved.lng)
-                updateLocationData(startIndex + index, airResult, weatherResult)
+            // 3. 저장된 위치들 날씨 데이터 일괄 로드 (배치 API)
+            if (savedLocations.isNotEmpty()) {
+                val startIndex = if (currentLocation != null) 1 else 0
+                val locations = savedLocations.map { it.lat to it.lng }
+                val batchResults = combinedWeatherRepository.fetchBatch(locations)
+                
+                batchResults.forEachIndexed { index, result ->
+                    val airResult = WeatherContract.DataResult(
+                        data = result.airQuality.getOrNull(),
+                        error = result.airQuality.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                    )
+                    val weatherResult = WeatherContract.DataResult(
+                        data = result.weather.getOrNull(),
+                        error = result.weather.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+                    )
+                    updateLocationData(startIndex + index, airResult, weatherResult)
+                }
             }
 
             _multiState.value = _multiState.value.copy(isLoading = false)

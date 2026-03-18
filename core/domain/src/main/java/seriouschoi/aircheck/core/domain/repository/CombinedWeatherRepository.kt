@@ -10,6 +10,13 @@ import seriouschoi.aircheck.core.domain.model.WeatherData
  */
 interface CombinedWeatherRepository {
     suspend fun fetch(lat: Double, lng: Double): CombinedWeatherResult
+    
+    /**
+     * 다중 위치 일괄 조회
+     * @param locations (lat, lng) 쌍 목록
+     * @return 위치별 결과 목록 (입력 순서 유지)
+     */
+    suspend fun fetchBatch(locations: List<Pair<Double, Double>>): List<CombinedWeatherResult>
 }
 
 data class CombinedWeatherResult(
