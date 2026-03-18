@@ -5,10 +5,12 @@ import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import seriouschoi.aircheck.core.data.repository.AirQualityRepositoryImpl
+import seriouschoi.aircheck.core.data.repository.CombinedWeatherRepositoryImpl
 import seriouschoi.aircheck.core.data.repository.RegionRepositoryImpl
 import seriouschoi.aircheck.core.data.repository.SavedLocationRepositoryImpl
 import seriouschoi.aircheck.core.data.repository.WeatherRepositoryImpl
 import seriouschoi.aircheck.core.domain.repository.AirQualityRepository
+import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.RegionRepository
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
 import seriouschoi.aircheck.core.domain.repository.WeatherRepository
@@ -41,4 +43,10 @@ abstract class DataModule {
     abstract fun bindSavedLocationRepository(
         impl: SavedLocationRepositoryImpl
     ): SavedLocationRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindCombinedWeatherRepository(
+        impl: CombinedWeatherRepositoryImpl
+    ): CombinedWeatherRepository
 }
