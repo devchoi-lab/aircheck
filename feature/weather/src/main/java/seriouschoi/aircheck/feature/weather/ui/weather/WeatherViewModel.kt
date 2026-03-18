@@ -7,6 +7,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -26,6 +28,8 @@ import javax.inject.Inject
 internal data class LocationWeatherData(
     val locationName: String,
     val isCurrentLocation: Boolean,
+    /** 저장된 위치의 ID (현재 위치는 null) — 삭제 시 사용 */
+    val savedLocationId: Long? = null,
     val airQuality: WeatherContract.DataResult<AirQuality> = WeatherContract.DataResult(),
     val weather: WeatherContract.DataResult<WeatherData> = WeatherContract.DataResult()
 )
@@ -69,6 +73,13 @@ internal class WeatherViewModel @Inject constructor(
 
         // 초기 로드
         processIntent(WeatherContract.Intent.Load)
+
+        // 저장된 위치 변경 감지 → 자동 리로드 (첫 emit은 초기 로드와 중복이므로 스킵)
+        savedLocationRepository.getAll()
+            .distinctUntilChangedBy { it.map { loc -> loc.id } }
+            .drop(1)
+            .onEach { processIntent(WeatherContract.Intent.Refresh) }
+            .launchIn(viewModelScope)
     }
 
     // ── Intent 발송 ─────────────────────────────────────────────────────────
@@ -87,6 +98,11 @@ internal class WeatherViewModel @Inject constructor(
             is WeatherContract.Intent.Refresh -> load(isRefresh = true)
             is WeatherContract.Intent.ShowInfoDialog -> _uiState.value = _uiState.value.copy(showInfoDialog = true)
             is WeatherContract.Intent.DismissInfoDialog -> _uiState.value = _uiState.value.copy(showInfoDialog = false)
+            is WeatherContract.Intent.RequestDeleteLocation -> _uiState.value = _uiState.value.copy(
+                deleteConfirm = WeatherContract.DeleteConfirmState(intent.locationId, intent.locationName)
+            )
+            is WeatherContract.Intent.ConfirmDeleteLocation -> confirmDelete()
+            is WeatherContract.Intent.DismissDeleteDialog -> _uiState.value = _uiState.value.copy(deleteConfirm = null)
         }
     }
 
@@ -143,6 +159,7 @@ internal class WeatherViewModel @Inject constructor(
                     LocationWeatherData(
                         locationName = saved.displayName,
                         isCurrentLocation = false,
+                        savedLocationId = saved.id,
                         airQuality = airResult,
                         weather = weatherResult
                     )
@@ -175,6 +192,15 @@ internal class WeatherViewModel @Inject constructor(
                 error = weatherResult.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
             )
         )
+    }
+
+    private fun confirmDelete() {
+        val deleteState = _uiState.value.deleteConfirm ?: return
+        viewModelScope.launch {
+            savedLocationRepository.delete(deleteState.locationId)
+            _uiState.value = _uiState.value.copy(deleteConfirm = null)
+            // 리로드는 savedLocationRepository.getAll() observe에서 자동 처리
+        }
     }
 
     // ── Effect 발송 ─────────────────────────────────────────────────────────
