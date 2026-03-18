@@ -20,23 +20,20 @@ import seriouschoi.aircheck.core.domain.model.Region
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun LocationPickerScreen(
-    regions: List<Region>,
-    currentPath: List<String>,
-    searchQuery: String,
-    onSearchQueryChange: (String) -> Unit,
-    onRegionClick: (Region) -> Unit,
-    onBackClick: () -> Unit,
+    uiState: LocationPickerContract.UiState,
+    onIntent: (LocationPickerContract.Intent) -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    val title = if (currentPath.isEmpty()) "지역 선택" else currentPath.last()
-    
+    val title = if (uiState.currentPath.isEmpty()) "지역 선택" else uiState.currentPath.last()
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(title, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (currentPath.isEmpty()) onNavigateBack() else onBackClick()
+                        if (uiState.currentPath.isEmpty()) onNavigateBack()
+                        else onIntent(LocationPickerContract.Intent.BackClicked)
                     }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
                     }
@@ -51,33 +48,33 @@ internal fun LocationPickerScreen(
         ) {
             // 검색 필드
             OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
+                value = uiState.searchQuery,
+                onValueChange = { onIntent(LocationPickerContract.Intent.SearchQueryChanged(it)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 placeholder = { Text("검색...") },
                 singleLine = true
             )
-            
+
             // 현재 경로 표시
-            if (currentPath.isNotEmpty()) {
+            if (uiState.currentPath.isNotEmpty()) {
                 Text(
-                    text = currentPath.joinToString(" > "),
+                    text = uiState.currentPath.joinToString(" > "),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                 )
             }
-            
+
             // 지역 목록
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
-                items(regions, key = { it.name }) { region ->
+                items(uiState.regions, key = { it.name }) { region ->
                     RegionItem(
                         region = region,
-                        onClick = { onRegionClick(region) }
+                        onClick = { onIntent(LocationPickerContract.Intent.RegionClicked(region)) }
                     )
                 }
             }
@@ -102,7 +99,7 @@ private fun RegionItem(
             text = region.name,
             fontSize = 16.sp
         )
-        
+
         if (region.hasChildren) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,

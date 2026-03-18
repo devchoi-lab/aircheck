@@ -3,24 +3,23 @@ package seriouschoi.aircheck.feature.weather.ui.locationpicker
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import seriouschoi.aircheck.core.domain.model.Region
 import seriouschoi.aircheck.core.domain.model.SavedLocation
 import seriouschoi.aircheck.core.domain.repository.RegionRepository
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
+import seriouschoi.aircheck.core.resource.UiText
+import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract.Effect
+import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract.Intent
+import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract.UiState
 import javax.inject.Inject
-
-internal data class LocationPickerState(
-    val regions: List<Region> = emptyList(),
-    val currentPath: List<String> = emptyList(),
-    val searchQuery: String = "",
-    val isLoading: Boolean = true,
-    val locationSaved: Boolean = false,
-    val error: String? = null
-)
 
 @HiltViewModel
 internal class LocationPickerViewModel @Inject constructor(
@@ -28,61 +27,94 @@ internal class LocationPickerViewModel @Inject constructor(
     private val savedLocationRepository: SavedLocationRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(LocationPickerState())
-    val state: StateFlow<LocationPickerState> = _state.asStateFlow()
+    // ── Intent ───────────────────────────────────────────────────────────────
+
+    private val _intent = Channel<Intent>(Channel.UNLIMITED)
+
+    // ── State ────────────────────────────────────────────────────────────────
+
+    private val _uiState = MutableStateFlow(UiState())
+    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    // ── Effect ───────────────────────────────────────────────────────────────
+
+    private val _effect = Channel<Effect>(Channel.BUFFERED)
+    val effect = _effect.receiveAsFlow()
 
     init {
+        _intent.receiveAsFlow()
+            .onEach { intent -> handleIntent(intent) }
+            .launchIn(viewModelScope)
+
         loadRegions()
     }
 
+    // ── Intent 발송 ──────────────────────────────────────────────────────────
+
+    fun processIntent(intent: Intent) {
+        viewModelScope.launch {
+            _intent.send(intent)
+        }
+    }
+
+    // ── Intent 처리 ──────────────────────────────────────────────────────────
+
+    private fun handleIntent(intent: Intent) {
+        when (intent) {
+            is Intent.SearchQueryChanged -> onSearchQueryChange(intent.query)
+            is Intent.RegionClicked -> onRegionClick(intent.region)
+            is Intent.BackClicked -> onBackClick()
+        }
+    }
+
+    // ── Private ──────────────────────────────────────────────────────────────
+
     private fun loadRegions() {
         viewModelScope.launch {
-            _state.value = _state.value.copy(isLoading = true, error = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
                 val regions = regionRepository.getTopLevelRegions()
-                _state.value = _state.value.copy(
+                _uiState.value = _uiState.value.copy(
                     regions = regions,
                     isLoading = false
                 )
             } catch (e: Exception) {
-                _state.value = _state.value.copy(
+                _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = e.message ?: "지역 데이터 로드 실패"
+                    error = UiText.DynamicString(e.message ?: "지역 데이터 로드 실패")
                 )
             }
         }
     }
 
-    fun onSearchQueryChange(query: String) {
-        _state.value = _state.value.copy(searchQuery = query)
+    private fun onSearchQueryChange(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
         viewModelScope.launch {
-            val filtered = regionRepository.searchRegions(query, _state.value.currentPath)
-            _state.value = _state.value.copy(regions = filtered)
+            val filtered = regionRepository.searchRegions(query, _uiState.value.currentPath)
+            _uiState.value = _uiState.value.copy(regions = filtered)
         }
     }
 
-    fun onRegionClick(region: Region) {
+    private fun onRegionClick(region: Region) {
         if (region.hasChildren) {
-            // 하위 지역으로 이동
             viewModelScope.launch {
-                val newPath = _state.value.currentPath + region.name
+                val newPath = _uiState.value.currentPath + region.name
                 val children = regionRepository.getRegionByPath(newPath)?.children ?: emptyList()
-                _state.value = _state.value.copy(
+                _uiState.value = _uiState.value.copy(
                     currentPath = newPath,
                     regions = children,
                     searchQuery = ""
                 )
             }
         } else {
-            // 최하위 지역 선택 - 저장
             saveLocation(region)
         }
     }
 
-    fun onBackClick() {
-        val currentPath = _state.value.currentPath
+    private fun onBackClick() {
+        val currentPath = _uiState.value.currentPath
         if (currentPath.isEmpty()) return
-        
+
         viewModelScope.launch {
             val newPath = currentPath.dropLast(1)
             val regions = if (newPath.isEmpty()) {
@@ -90,7 +122,7 @@ internal class LocationPickerViewModel @Inject constructor(
             } else {
                 regionRepository.getRegionByPath(newPath)?.children ?: emptyList()
             }
-            _state.value = _state.value.copy(
+            _uiState.value = _uiState.value.copy(
                 currentPath = newPath,
                 regions = regions,
                 searchQuery = ""
@@ -101,9 +133,9 @@ internal class LocationPickerViewModel @Inject constructor(
     private fun saveLocation(region: Region) {
         val lat = region.lat ?: return
         val lng = region.lng ?: return
-        
+
         viewModelScope.launch {
-            val displayName = (_state.value.currentPath + region.name).joinToString(" ")
+            val displayName = (_uiState.value.currentPath + region.name).joinToString(" ")
             val location = SavedLocation(
                 name = region.name,
                 displayName = displayName,
@@ -111,7 +143,7 @@ internal class LocationPickerViewModel @Inject constructor(
                 lng = lng
             )
             savedLocationRepository.add(location)
-            _state.value = _state.value.copy(locationSaved = true)
+            _effect.send(Effect.LocationSaved)
         }
     }
 }
