@@ -455,25 +455,40 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
         )
         Spacer(Modifier.height(4.dp))
         
-        // 추천 아이템 (체감온도 기반)
-        val (outfitEmoji, outfitLabel) = getOutfitRecommendation(forecast.feelsLike)
-        Text(outfitEmoji, fontSize = 14.sp)
+        // 추천 의상 아이콘 (체감온도 기반)
+        val (clothingIcon, clothingLabel) = getClothingIcon(forecast.feelsLike)
+        Icon(
+            painter = painterResource(clothingIcon),
+            contentDescription = clothingLabel,
+            modifier = Modifier.size(20.dp),
+            tint = Color.Unspecified
+        )
         Text(
-            text = outfitLabel,
+            text = clothingLabel,
             fontSize = 9.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
         // 우산/눈 추천
         if (forecast.precipitationProbability >= 40) {
-            Text("☂️", fontSize = 12.sp)
+            Icon(
+                painter = painterResource(CoreR.drawable.ic_recommend_umbrella),
+                contentDescription = "우산",
+                modifier = Modifier.size(16.dp),
+                tint = Color.Unspecified
+            )
             Text(
                 text = "우산",
                 fontSize = 9.sp,
                 color = Color(0xFF2196F3)
             )
         } else if (forecast.snowfall > 0) {
-            Text("⛄", fontSize = 12.sp)
+            Icon(
+                painter = painterResource(CoreR.drawable.ic_recommend_snow),
+                contentDescription = "눈",
+                modifier = Modifier.size(16.dp),
+                tint = Color.Unspecified
+            )
             Text(
                 text = "눈",
                 fontSize = 9.sp,
@@ -492,6 +507,16 @@ private fun getOutfitRecommendation(feelsLike: Double): Pair<String, String> = w
     feelsLike >= 6 -> "🧥" to "코트"
     feelsLike >= 0 -> "🧥" to "패딩"
     else -> "🧣" to "두꺼운패딩"
+}
+
+private fun getClothingIcon(feelsLike: Double): Pair<Int, String> = when {
+    feelsLike >= 28 -> CoreR.drawable.ic_recommend_tank_top to "민소매"
+    feelsLike >= 23 -> CoreR.drawable.ic_recommend_tshirt to "반팔"
+    feelsLike >= 17 -> CoreR.drawable.ic_recommend_long_sleeve to "긴팔"
+    feelsLike >= 12 -> CoreR.drawable.ic_recommend_jacket to "자켓"
+    feelsLike >= 6 -> CoreR.drawable.ic_recommend_coat to "코트"
+    feelsLike >= 0 -> CoreR.drawable.ic_recommend_padding to "패딩"
+    else -> CoreR.drawable.ic_recommend_heavy_padding to "롱패딩"
 }
 
 @Composable
