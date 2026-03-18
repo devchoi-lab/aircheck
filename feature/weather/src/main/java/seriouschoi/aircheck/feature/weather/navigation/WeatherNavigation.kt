@@ -7,6 +7,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerScreen
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerViewModel
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherScreen
@@ -29,21 +30,19 @@ fun NavGraphBuilder.weatherScreen(navController: NavController) {
     
     composable<WeatherRoute.LocationPicker> {
         val viewModel: LocationPickerViewModel = hiltViewModel()
-        val state by viewModel.state.collectAsStateWithLifecycle()
-        
-        LaunchedEffect(state.locationSaved) {
-            if (state.locationSaved) {
-                navController.popBackStack()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+        LaunchedEffect(Unit) {
+            viewModel.effect.collect { effect ->
+                when (effect) {
+                    is LocationPickerContract.Effect.LocationSaved -> navController.popBackStack()
+                }
             }
         }
-        
+
         LocationPickerScreen(
-            regions = state.regions,
-            currentPath = state.currentPath,
-            searchQuery = state.searchQuery,
-            onSearchQueryChange = viewModel::onSearchQueryChange,
-            onRegionClick = viewModel::onRegionClick,
-            onBackClick = viewModel::onBackClick,
+            uiState = uiState,
+            onIntent = viewModel::processIntent,
             onNavigateBack = { navController.popBackStack() }
         )
     }
