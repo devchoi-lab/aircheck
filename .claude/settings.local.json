@@ -3,7 +3,9 @@
     "allow": [
       "Bash(mv LocationPickerScreen.kt locationpicker/)",
       "Bash(mv LocationPickerViewModel.kt locationpicker/)",
-      "Bash(sed -i '' 's/^package seriouschoi.aircheck.feature.weather.ui$/package seriouschoi.aircheck.feature.weather.ui.locationpicker/' locationpicker/LocationPickerScreen.kt locationpicker/LocationPickerViewModel.kt)"
+      "Bash(sed -i '' 's/^package seriouschoi.aircheck.feature.weather.ui$/package seriouschoi.aircheck.feature.weather.ui.locationpicker/' locationpicker/LocationPickerScreen.kt locationpicker/LocationPickerViewModel.kt)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
