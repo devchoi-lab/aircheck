@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 두꺼운 패딩 -->
+    <path
+        android:fillColor="#636E72"
+        android:pathData="M22,2L17,0H14L12,2L10,0H7L2,2V22H22V2Z"/>
+    <!-- 퀼팅 라인 (두꺼움) -->
+    <path
+        android:strokeColor="#2D3436"
+        android:strokeWidth="1.2"
+        android:pathData="M4,5H20M4,9H20M4,13H20M4,17H20"/>
+    <!-- 후드 -->
+    <path
+        android:fillColor="#2D3436"
+        android:pathData="M9,0C9,0 10.5,2 12,2C13.5,2 15,0 15,0H9Z"/>
+    <!-- 눈송이 장식 -->
+    <path
+        android:fillColor="#74B9FF"
+        android:pathData="M18,3L19,4L18,5L17,4L18,3Z"/>
+</vector>
