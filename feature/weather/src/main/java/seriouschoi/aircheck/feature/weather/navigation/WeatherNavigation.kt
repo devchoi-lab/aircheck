@@ -7,20 +7,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import seriouschoi.aircheck.feature.weather.ui.LocationPickerScreen
-import seriouschoi.aircheck.feature.weather.ui.LocationPickerViewModel
-import seriouschoi.aircheck.feature.weather.ui.WeatherScreen
-import seriouschoi.aircheck.feature.weather.ui.WeatherViewModel
+import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerScreen
+import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerViewModel
+import seriouschoi.aircheck.feature.weather.ui.weather.WeatherScreen
+import seriouschoi.aircheck.feature.weather.ui.weather.WeatherViewModel
 
 /** 날씨 피처 네비게이션 그래프 */
 fun NavGraphBuilder.weatherScreen(navController: NavController) {
     composable<WeatherRoute.Main> {
         val viewModel: WeatherViewModel = hiltViewModel()
-        val state by viewModel.state.collectAsStateWithLifecycle()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         val multiState by viewModel.multiState.collectAsStateWithLifecycle()
-        
+
         WeatherScreen(
-            state = state,
+            uiState = uiState,
             multiState = multiState,
             onIntent = viewModel::processIntent,
             onAddLocation = { navController.navigate(WeatherRoute.LocationPicker) }

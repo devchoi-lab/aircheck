@@ -3,7 +3,7 @@
     androidx.compose.foundation.ExperimentalFoundationApi::class
 )
 
-package seriouschoi.aircheck.feature.weather.ui
+package seriouschoi.aircheck.feature.weather.ui.weather
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -24,9 +24,6 @@ import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,14 +43,13 @@ import seriouschoi.aircheck.core.domain.model.WeatherData
 
 @Composable
 internal fun WeatherScreen(
-    state: WeatherContract.State,
+    uiState: WeatherContract.UiState,
     multiState: MultiLocationState,
     onIntent: (WeatherContract.Intent) -> Unit,
     onAddLocation: () -> Unit = {}
 ) {
-    var showInfoDialog by remember { mutableStateOf(false) }
-    val isRefreshing = (state as? WeatherContract.State.Success)?.isRefreshing == true || multiState.isLoading
-    
+    val isRefreshing = uiState.isRefreshing || multiState.isLoading
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -62,7 +58,7 @@ internal fun WeatherScreen(
                     IconButton(onClick = onAddLocation) {
                         Icon(Icons.Default.Add, contentDescription = "위치 추가")
                     }
-                    IconButton(onClick = { showInfoDialog = true }) {
+                    IconButton(onClick = { onIntent(WeatherContract.Intent.ShowInfoDialog) }) {
                         Icon(Icons.Default.Info, contentDescription = stringResource(CoreR.string.content_description_info))
                     }
                     IconButton(onClick = { onIntent(WeatherContract.Intent.Refresh) }) {
@@ -72,12 +68,12 @@ internal fun WeatherScreen(
             )
         }
     ) { innerPadding ->
-    
+
         // 기준 안내 다이얼로그
-        if (showInfoDialog) {
-            AirQualityInfoDialog(onDismiss = { showInfoDialog = false })
+        if (uiState.showInfoDialog) {
+            AirQualityInfoDialog(onDismiss = { onIntent(WeatherContract.Intent.DismissInfoDialog) })
         }
-        
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -94,23 +90,23 @@ internal fun WeatherScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        when (state) {
-                            is WeatherContract.State.Loading -> { }
-                            is WeatherContract.State.Success -> SuccessContent(state.airQuality, state.weather, onIntent)
-                            is WeatherContract.State.Error -> ErrorContent(state.message.asString(), onIntent)
+                        when {
+                            uiState.isLoading -> { }
+                            uiState.error != null -> ErrorContent(uiState.error, onIntent)
+                            else -> SuccessContent(uiState.airQuality, uiState.weather, onIntent)
                         }
                     }
                 }
             } else {
                 // 다중 위치 페이저
                 val pagerState = rememberPagerState(pageCount = { multiState.locations.size })
-                
+
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.weight(1f)
                 ) { page ->
                     val locationData = multiState.locations[page]
-                    
+
                     PullToRefreshBox(
                         isRefreshing = isRefreshing,
                         onRefresh = { onIntent(WeatherContract.Intent.Refresh) },
@@ -127,16 +123,12 @@ internal fun WeatherScreen(
                                     .align(Alignment.CenterHorizontally)
                                     .padding(vertical = 8.dp)
                             )
-                            
-                            when (val locationState = locationData.state) {
-                                is WeatherContract.State.Loading -> { }
-                                is WeatherContract.State.Success -> SuccessContent(locationState.airQuality, locationState.weather, onIntent)
-                                is WeatherContract.State.Error -> ErrorContent(locationState.message.asString(), onIntent)
-                            }
+
+                            SuccessContent(locationData.airQuality, locationData.weather, onIntent)
                         }
                     }
                 }
-                
+
                 // 페이지 인디케이터
                 if (multiState.locations.size > 1) {
                     Row(
@@ -722,18 +714,18 @@ private fun ErrorSection(title: String, message: String, onRetry: () -> Unit) {
 // ── 전체 오류 (위치 실패 등) ──────────────────────────────────────────────────
 
 @Composable
-private fun ErrorContent(message: String, onIntent: (WeatherContract.Intent) -> Unit) {
-    ErrorContentInner(message = message, onRetry = { onIntent(WeatherContract.Intent.Refresh) })
-}
-
-@Composable
-private fun ErrorContentInner(message: String, onRetry: () -> Unit) {
+private fun ErrorContent(
+    error: WeatherContract.ErrorState,
+    onIntent: (WeatherContract.Intent) -> Unit
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text("😵", fontSize = 48.sp)
         Spacer(Modifier.height(16.dp))
-        Text(message, textAlign = TextAlign.Center, fontSize = 14.sp)
+        Text(error.message.asString(), textAlign = TextAlign.Center, fontSize = 14.sp)
         Spacer(Modifier.height(24.dp))
-        Button(onClick = onRetry) { Text(stringResource(CoreR.string.button_retry_again)) }
+        Button(onClick = { onIntent(error.action) }) {
+            Text(stringResource(CoreR.string.button_retry_again))
+        }
     }
 }
 

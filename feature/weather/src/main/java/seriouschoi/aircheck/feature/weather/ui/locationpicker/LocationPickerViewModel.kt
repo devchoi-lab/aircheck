@@ -1,4 +1,4 @@
-package seriouschoi.aircheck.feature.weather.ui
+package seriouschoi.aircheck.feature.weather.ui.locationpicker
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
