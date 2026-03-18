@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -135,20 +136,34 @@ internal fun WeatherScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.Center
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        repeat(multiState.locations.size) { index ->
+                        multiState.locations.forEachIndexed { index, locationData ->
                             val isSelected = pagerState.currentPage == index
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 4.dp)
-                                    .size(if (isSelected) 10.dp else 8.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        if (isSelected) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                                    )
-                            )
+                            val color = if (isSelected) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+
+                            if (locationData.isCurrentLocation) {
+                                // 현재 위치: 지도 핀 아이콘
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = "현재 위치",
+                                    tint = color,
+                                    modifier = Modifier
+                                        .padding(horizontal = 2.dp)
+                                        .size(if (isSelected) 16.dp else 12.dp)
+                                )
+                            } else {
+                                // 저장된 위치: 동그라미
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 4.dp)
+                                        .size(if (isSelected) 10.dp else 8.dp)
+                                        .clip(CircleShape)
+                                        .background(color)
+                                )
+                            }
                         }
                     }
                 }
