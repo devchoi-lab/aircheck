@@ -8,30 +8,24 @@
     <!-- 몸통 (퀼팅) -->
     <path
         android:fillColor="#6C5CE7"
-        android:pathData="M12,1L9,2L6,4V21C6,21.5 6.5,22 7,22H17C17.5,22 18,21.5 18,21V4L15,2L12,1Z"/>
-    <!-- 왼쪽 소매 -->
+        android:pathData="M9,3C9,3 10,1 12,1C14,1 15,3 15,3L18,5V21C18,21.5 17.5,22 17,22H7C6.5,22 6,21.5 6,21V5L9,3Z"/>
+    <!-- 왼쪽 소매 (단순) -->
     <path
         android:fillColor="#6C5CE7"
-        android:pathData="M6,4L2,6V9L4,9V20H6V4Z"/>
-    <!-- 오른쪽 소매 -->
+        android:pathData="M6,5H4V20H6V5Z"/>
+    <!-- 오른쪽 소매 (단순) -->
     <path
         android:fillColor="#6C5CE7"
-        android:pathData="M18,4V20H20V9L22,9V6L18,4Z"/>
+        android:pathData="M18,5H20V20H18V5Z"/>
     <!-- 퀼팅 라인 -->
-    <path
-        android:fillColor="#5B4AD6"
-        android:pathData="M7,7H17M7,11H17M7,15H17M7,19H17"/>
     <path
         android:strokeColor="#5B4AD6"
         android:strokeWidth="0.8"
-        android:pathData="M7,7H17M7,11H17M7,15H17M7,19H17"/>
+        android:pathData="M7,8H17M7,12H17M7,16H17M7,20H17"/>
     <!-- 목도리 -->
     <path
         android:fillColor="#FF7675"
-        android:pathData="M8,1C8,1 9,3 12,3C15,3 16,1 16,1L15,0H9L8,1Z"/>
-    <path
-        android:fillColor="#FF7675"
-        android:pathData="M10,3V7L8,9V5L10,3ZM14,3L16,5V9L14,7V3Z"/>
+        android:pathData="M9,1C9,1 10,3 12,3C14,3 15,1 15,1"/>
     <!-- 지퍼 -->
     <path
         android:fillColor="#DFE6E9"
