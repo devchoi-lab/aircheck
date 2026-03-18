@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
@@ -75,6 +76,25 @@ internal fun WeatherScreen(
             AirQualityInfoDialog(onDismiss = { onIntent(WeatherContract.Intent.DismissInfoDialog) })
         }
 
+        // 삭제 확인 다이얼로그
+        uiState.deleteConfirm?.let { confirm ->
+            AlertDialog(
+                onDismissRequest = { onIntent(WeatherContract.Intent.DismissDeleteDialog) },
+                title = { Text("위치 삭제", fontWeight = FontWeight.Bold) },
+                text = { Text("\"${confirm.locationName}\"을(를) 삭제할까요?") },
+                confirmButton = {
+                    TextButton(onClick = { onIntent(WeatherContract.Intent.ConfirmDeleteLocation) }) {
+                        Text("삭제", color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { onIntent(WeatherContract.Intent.DismissDeleteDialog) }) {
+                        Text("취소")
+                    }
+                }
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -114,16 +134,40 @@ internal fun WeatherScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         Column(modifier = Modifier.fillMaxSize()) {
-                            // 위치명 표시
-                            Text(
-                                text = if (locationData.isCurrentLocation) "📍 현재 위치" else "📌 ${locationData.locationName}",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.primary,
+                            // 위치명 + 삭제 버튼
+                            Row(
                                 modifier = Modifier
-                                    .align(Alignment.CenterHorizontally)
-                                    .padding(vertical = 8.dp)
-                            )
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = if (locationData.isCurrentLocation) "📍 현재 위치" else "📌 ${locationData.locationName}",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                // 저장된 위치만 삭제 버튼 표시
+                                if (!locationData.isCurrentLocation && locationData.savedLocationId != null) {
+                                    IconButton(
+                                        onClick = {
+                                            onIntent(WeatherContract.Intent.RequestDeleteLocation(
+                                                locationId = locationData.savedLocationId,
+                                                locationName = locationData.locationName
+                                            ))
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "위치 삭제",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                    }
+                                }
+                            }
 
                             SuccessContent(locationData.airQuality, locationData.weather, onIntent)
                         }
