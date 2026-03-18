@@ -233,16 +233,6 @@ private fun SuccessContent(
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // 위치 (공기질 데이터 있을 때만)
-        air.data?.mainStationName?.let {
-            Text(
-                text = it,
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-        }
-
         // ── 추천 아이템 (가장 위에) ─────────────────────────────
         if (weather.data != null || air.data != null) {
             RecommendationSection(weather = weather.data, airQuality = air.data)
