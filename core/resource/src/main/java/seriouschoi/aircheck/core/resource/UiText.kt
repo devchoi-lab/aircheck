@@ -1,5 +1,6 @@
 package seriouschoi.aircheck.core.resource
 
+import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
@@ -21,5 +22,11 @@ sealed class UiText {
     fun asString(): String = when (this) {
         is DynamicString -> value
         is StringResource -> stringResource(resId, *args)
+    }
+
+    /** non-Composable 컨텍스트 (Effect 처리 등)에서 사용 */
+    fun asString(context: Context): String = when (this) {
+        is DynamicString -> value
+        is StringResource -> context.getString(resId, *args)
     }
 }
