@@ -1,5 +1,6 @@
 package seriouschoi.aircheck.feature.weather.ui.locationpicker
 
+import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 import seriouschoi.aircheck.core.domain.model.Region
 import seriouschoi.aircheck.core.domain.model.RegionSearchResult
 import seriouschoi.aircheck.core.domain.model.SavedLocation
+import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.RegionRepository
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
 import seriouschoi.aircheck.core.resource.UiText
@@ -21,11 +23,16 @@ import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerCont
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract.Intent
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract.UiState
 import javax.inject.Inject
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 @HiltViewModel
 internal class LocationPickerViewModel @Inject constructor(
     private val regionRepository: RegionRepository,
-    private val savedLocationRepository: SavedLocationRepository
+    private val savedLocationRepository: SavedLocationRepository,
+    private val locationProvider: LocationProvider
 ) : ViewModel() {
 
     // ── Intent ───────────────────────────────────────────────────────────────
@@ -41,6 +48,9 @@ internal class LocationPickerViewModel @Inject constructor(
 
     private val _effect = Channel<Effect>(Channel.BUFFERED)
     val effect = _effect.receiveAsFlow()
+
+    /** 현재 위치 (init 시 한 번 조회) */
+    private var currentLocation: Location? = null
 
     init {
         _intent.receiveAsFlow()
@@ -75,9 +85,10 @@ internal class LocationPickerViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             try {
+                currentLocation = locationProvider.getCurrentLocation()
                 val regions = regionRepository.getTopLevelRegions()
                 _uiState.value = _uiState.value.copy(
-                    regions = regions,
+                    regions = regions.sortedByDistance(),
                     isLoading = false
                 )
             } catch (e: Exception) {
@@ -101,13 +112,15 @@ internal class LocationPickerViewModel @Inject constructor(
                     regionRepository.getRegionByPath(currentPath)?.children ?: emptyList()
                 }
                 _uiState.value = _uiState.value.copy(
-                    regions = regions,
+                    regions = regions.sortedByDistance(),
                     searchResults = emptyList()
                 )
             } else {
                 // 전체 계층 재귀 검색
                 val results = regionRepository.deepSearchRegions(query)
-                _uiState.value = _uiState.value.copy(searchResults = results)
+                _uiState.value = _uiState.value.copy(
+                    searchResults = results.sortedBySearchResultDistance()
+                )
             }
         }
     }
@@ -120,7 +133,7 @@ internal class LocationPickerViewModel @Inject constructor(
                 val children = regionRepository.getRegionByPath(newPath)?.children ?: emptyList()
                 _uiState.value = _uiState.value.copy(
                     currentPath = newPath,
-                    regions = children,
+                    regions = children.sortedByDistance(),
                     searchQuery = ""
                 )
             }
@@ -137,7 +150,7 @@ internal class LocationPickerViewModel @Inject constructor(
             val newPath = result.path + region.name
             _uiState.value = _uiState.value.copy(
                 currentPath = newPath,
-                regions = region.children,
+                regions = region.children.sortedByDistance(),
                 searchQuery = "",
                 searchResults = emptyList()
             )
@@ -159,7 +172,7 @@ internal class LocationPickerViewModel @Inject constructor(
             }
             _uiState.value = _uiState.value.copy(
                 currentPath = newPath,
-                regions = regions,
+                regions = regions.sortedByDistance(),
                 searchQuery = ""
             )
         }
@@ -180,5 +193,62 @@ internal class LocationPickerViewModel @Inject constructor(
             savedLocationRepository.add(location)
             _effect.send(Effect.LocationSaved)
         }
+    }
+
+    // ── 거리 기반 정렬 ───────────────────────────────────────────────────────
+
+    /** Region 리스트를 현재 위치와 가까운 순으로 정렬 */
+    private fun List<Region>.sortedByDistance(): List<Region> {
+        val loc = currentLocation ?: return this
+        return sortedBy { region ->
+            val (lat, lng) = region.representativeCoordinate() ?: return@sortedBy Double.MAX_VALUE
+            haversineDistance(loc.latitude, loc.longitude, lat, lng)
+        }
+    }
+
+    /** SearchResult 리스트를 현재 위치와 가까운 순으로 정렬 */
+    private fun List<RegionSearchResult>.sortedBySearchResultDistance(): List<RegionSearchResult> {
+        val loc = currentLocation ?: return this
+        return sortedBy { result ->
+            val (lat, lng) = result.region.representativeCoordinate() ?: return@sortedBy Double.MAX_VALUE
+            haversineDistance(loc.latitude, loc.longitude, lat, lng)
+        }
+    }
+
+    /**
+     * 대표 좌표를 반환한다.
+     * - leaf: 자신의 좌표
+     * - parent: 자식 leaf들의 좌표 평균 (centroid)
+     */
+    private fun Region.representativeCoordinate(): Pair<Double, Double>? {
+        val myLat = lat
+        val myLng = lng
+        if (myLat != null && myLng != null) return myLat to myLng
+
+        val leaves = collectLeaves()
+        if (leaves.isEmpty()) return null
+
+        val avgLat = leaves.sumOf { it.first } / leaves.size
+        val avgLng = leaves.sumOf { it.second } / leaves.size
+        return avgLat to avgLng
+    }
+
+    /** 모든 하위 leaf의 좌표를 수집 */
+    private fun Region.collectLeaves(): List<Pair<Double, Double>> {
+        val myLat = lat
+        val myLng = lng
+        if (isLeaf && myLat != null && myLng != null) return listOf(myLat to myLng)
+        return children.flatMap { it.collectLeaves() }
+    }
+
+    /** Haversine 공식으로 두 좌표 간 거리 (km) 계산 */
+    private fun haversineDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
+        val r = 6371.0 // 지구 반지름 (km)
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLng = Math.toRadians(lng2 - lng1)
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLng / 2) * sin(dLng / 2)
+        return r * 2 * atan2(sqrt(a), sqrt(1 - a))
     }
 }
