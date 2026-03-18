@@ -13,6 +13,8 @@ hilt = "2.51.1"
 ksp = "2.0.21-1.0.28"
 javax-inject = "1"
 google-services = "4.4.2"
+work = "2.10.0"
+hilt-work = "1.2.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
@@ -39,6 +41,9 @@ javax-inject = { module = "javax.inject:javax.inject", version.ref = "javax-inje
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version = "1.1.4" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics", version = "19.2.0" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics", version = "22.1.0" }
+work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
+hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hilt-work" }
+hilt-work-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hilt-work" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
