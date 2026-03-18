@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 코트/니트 -->
+    <path
+        android:fillColor="#6C5CE7"
+        android:pathData="M20,3L16,1H14L12,3L10,1H8L4,3V21C4,21.55 4.45,22 5,22H19C19.55,22 20,21.55 20,21V3ZM11,22H5V5L8,3.5L11,5V22ZM13,22V5L16,3.5L19,5V22H13Z"/>
+    <!-- 버튼 -->
+    <path
+        android:fillColor="#DFE6E9"
+        android:pathData="M12,8A1,1 0 1,1 12,10A1,1 0 1,1 12,8M12,12A1,1 0 1,1 12,14A1,1 0 1,1 12,12M12,16A1,1 0 1,1 12,18A1,1 0 1,1 12,16"/>
+</vector>

@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -525,43 +526,43 @@ private fun WeatherStat(emoji: String, label: String, value: String) {
 
 @Composable
 private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?) {
-    val recommendations = mutableListOf<Pair<String, String>>() // emoji to label
+    val recommendations = mutableListOf<Pair<Int, String>>() // drawableRes to label
     
     // 1. 체감온도 기반 옷 추천
     weather?.feelsLike?.let { temp ->
         when {
             temp >= 28 -> {
-                recommendations.add("👕" to "민소매/반팔")
-                recommendations.add("🏖️" to "양산")
+                recommendations.add(CoreR.drawable.ic_recommend_tank_top to "민소매")
+                recommendations.add(CoreR.drawable.ic_recommend_parasol to "양산")
             }
-            temp >= 23 -> recommendations.add("👕" to "반팔")
-            temp >= 17 -> recommendations.add("👔" to "얇은 긴팔")
-            temp >= 12 -> recommendations.add("🧥" to "자켓/가디건")
-            temp >= 6 -> recommendations.add("🧥" to "코트/니트")
-            temp >= 0 -> recommendations.add("🧥" to "패딩/목도리")
-            else -> recommendations.add("🧣" to "두꺼운 패딩")
+            temp >= 23 -> recommendations.add(CoreR.drawable.ic_recommend_tshirt to "반팔")
+            temp >= 17 -> recommendations.add(CoreR.drawable.ic_recommend_long_sleeve to "얇은 긴팔")
+            temp >= 12 -> recommendations.add(CoreR.drawable.ic_recommend_jacket to "자켓/가디건")
+            temp >= 6 -> recommendations.add(CoreR.drawable.ic_recommend_coat to "코트/니트")
+            temp >= 0 -> recommendations.add(CoreR.drawable.ic_recommend_padding to "패딩/목도리")
+            else -> recommendations.add(CoreR.drawable.ic_recommend_heavy_padding to "두꺼운 패딩")
         }
     }
     
     // 2. 강수확률 기반 우산 (6시간 내 최대값)
     weather?.hourlyForecast?.take(6)?.maxOfOrNull { it.precipitationProbability }?.let { maxPrecip ->
         when {
-            maxPrecip >= 40 -> recommendations.add("☂️" to "우산 (${maxPrecip}%)")
-            maxPrecip >= 20 -> recommendations.add("🌂" to "우산 챙기기 (${maxPrecip}%)")
+            maxPrecip >= 40 -> recommendations.add(CoreR.drawable.ic_recommend_umbrella to "우산 (${maxPrecip}%)")
+            maxPrecip >= 20 -> recommendations.add(CoreR.drawable.ic_recommend_umbrella_light to "우산 챙기기 (${maxPrecip}%)")
         }
     }
     
     // 3. 적설량 기반 (시간별 예보 중 합계)
     weather?.hourlyForecast?.sumOf { it.snowfall }?.let { totalSnow ->
         if (totalSnow > 0) {
-            recommendations.add("⛄" to "눈 %.1fcm".format(totalSnow))
+            recommendations.add(CoreR.drawable.ic_recommend_snow to "눈 %.1fcm".format(totalSnow))
         }
     }
     
     // 4. 대기질 민감군 주의 이상이면 마스크
     airQuality?.worstLevel?.let { level ->
         if (level.ordinal >= AqiLevel.UNHEALTHY_SENSITIVE.ordinal && level != AqiLevel.UNKNOWN) {
-            recommendations.add("😷" to "마스크 (${level.label})")
+            recommendations.add(CoreR.drawable.ic_recommend_mask to "마스크 (${level.label})")
         }
     }
     
@@ -584,12 +585,17 @@ private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            recommendations.forEach { (emoji, label) ->
+            recommendations.forEach { (iconRes, label) ->
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.weight(1f, fill = false)
                 ) {
-                    Text(emoji, fontSize = 28.sp)
+                    Icon(
+                        painter = painterResource(iconRes),
+                        contentDescription = label,
+                        modifier = Modifier.size(32.dp),
+                        tint = Color.Unspecified
+                    )
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = label,
