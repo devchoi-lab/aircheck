@@ -27,7 +27,7 @@ fun NavGraphBuilder.weatherScreen(navController: NavController) {
             onAddLocation = { navController.navigate(WeatherRoute.LocationPicker) }
         )
     }
-    
+
     composable<WeatherRoute.LocationPicker> {
         val viewModel: LocationPickerViewModel = hiltViewModel()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
