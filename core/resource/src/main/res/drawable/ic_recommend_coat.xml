@@ -5,11 +5,31 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     <!-- 코트/니트 -->
+    <!-- 몸통 (길게) -->
     <path
-        android:fillColor="#6C5CE7"
-        android:pathData="M20,3L16,1H14L12,3L10,1H8L4,3V21C4,21.55 4.45,22 5,22H19C19.55,22 20,21.55 20,21V3ZM11,22H5V5L8,3.5L11,5V22ZM13,22V5L16,3.5L19,5V22H13Z"/>
+        android:fillColor="#A29BFE"
+        android:pathData="M12,1L9,2L6,4V21C6,21.5 6.5,22 7,22H17C17.5,22 18,21.5 18,21V4L15,2L12,1Z"/>
+    <!-- 왼쪽 소매 -->
+    <path
+        android:fillColor="#A29BFE"
+        android:pathData="M6,4L2,6V9L4,9V20H6V4Z"/>
+    <!-- 오른쪽 소매 -->
+    <path
+        android:fillColor="#A29BFE"
+        android:pathData="M18,4V20H20V9L22,9V6L18,4Z"/>
+    <!-- 옷깃 -->
+    <path
+        android:fillColor="#8B7FE8"
+        android:pathData="M9,2L11,5L11,9L8,6V2ZM15,2V6L12,9V5L14,2Z"/>
     <!-- 버튼 -->
     <path
-        android:fillColor="#DFE6E9"
-        android:pathData="M12,8A1,1 0 1,1 12,10A1,1 0 1,1 12,8M12,12A1,1 0 1,1 12,14A1,1 0 1,1 12,12M12,16A1,1 0 1,1 12,18A1,1 0 1,1 12,16"/>
+        android:fillColor="#FFD93D"
+        android:pathData="M12,10m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
+    <path
+        android:fillColor="#FFD93D"
+        android:pathData="M12,15m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
+    <!-- 주머니 -->
+    <path
+        android:fillColor="#8B7FE8"
+        android:pathData="M8,14H10V17H8V14ZM14,14H16V17H14V14Z"/>
 </vector>

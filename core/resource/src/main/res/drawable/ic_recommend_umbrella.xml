@@ -5,22 +5,29 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     <!-- 우산 -->
+    <!-- 캐노피 왼쪽 -->
     <path
         android:fillColor="#0984E3"
-        android:pathData="M12,2C6.48,2 2,6 2,10H12V2Z"/>
+        android:pathData="M12,2C7,2 3,6 3,11H12V2Z"/>
+    <!-- 캐노피 오른쪽 -->
     <path
         android:fillColor="#74B9FF"
-        android:pathData="M12,2C17.52,2 22,6 22,10H12V2Z"/>
+        android:pathData="M12,2V11H21C21,6 17,2 12,2Z"/>
+    <!-- 물방울 디테일 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8,5C8,5 7,6 7,7C7,7.5 7.5,8 8,7.5C8.5,7 8,5 8,5Z"/>
     <!-- 손잡이 -->
     <path
         android:fillColor="#636E72"
-        android:pathData="M11,10H13V19H11V19Z"/>
-    <!-- 곡선 손잡이 -->
+        android:pathData="M11,11H13V19H11V19Z"/>
+    <!-- 손잡이 J -->
     <path
         android:fillColor="#636E72"
-        android:pathData="M11,19C11,19 11,22 14,22C15.5,22 16,21 16,20"/>
+        android:pathData="M11,19C11,19 11,22 14,22C16,22 16,20 16,20"/>
     <path
         android:strokeColor="#636E72"
         android:strokeWidth="2"
-        android:pathData="M12,19Q12,22 15,22"/>
+        android:strokeLineCap="round"
+        android:pathData="M12,19Q12,22 15,22Q16,22 16,20"/>
 </vector>
