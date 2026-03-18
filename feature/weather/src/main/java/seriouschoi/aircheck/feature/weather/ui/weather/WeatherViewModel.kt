@@ -117,15 +117,18 @@ internal class WeatherViewModel @Inject constructor(
 
             // 1. 먼저 위치 목록을 즉시 표시 (데이터 로딩 전)
             val savedLocations = savedLocationRepository.getAll().first()
-            val currentLocation = locationProvider.getCurrentLocation()
+            // 스마트 위치 사용 (법정동 centroid)
+            val smartLocation = locationProvider.getCurrentSmartLocation()
             
             val initialLocationList = mutableListOf<LocationWeatherData>()
             
             // 현재 위치 추가 (로딩 상태)
-            if (currentLocation != null) {
+            if (smartLocation != null) {
+                // 법정동 이름에서 동 이름만 추출 (예: "서울특별시 강남구 역삼동" → "역삼동")
+                val shortName = smartLocation.bjdName.split(" ").lastOrNull() ?: "현재 위치"
                 initialLocationList.add(
                     LocationWeatherData(
-                        locationName = "현재 위치",
+                        locationName = shortName,
                         isCurrentLocation = true
                     )
                 )
@@ -148,9 +151,9 @@ internal class WeatherViewModel @Inject constructor(
                 isLoading = true
             )
 
-            // 2. 현재 위치 날씨 데이터 로드
-            if (currentLocation != null) {
-                val (airResult, weatherResult) = fetchWeather(currentLocation.latitude, currentLocation.longitude)
+            // 2. 현재 위치 날씨 데이터 로드 (centroid 좌표 사용)
+            if (smartLocation != null) {
+                val (airResult, weatherResult) = fetchWeather(smartLocation.lat, smartLocation.lng)
                 updateLocationData(0, airResult, weatherResult)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -172,7 +175,7 @@ internal class WeatherViewModel @Inject constructor(
 
             // 3. 저장된 위치들 날씨 데이터 일괄 로드 (배치 API)
             if (savedLocations.isNotEmpty()) {
-                val startIndex = if (currentLocation != null) 1 else 0
+                val startIndex = if (smartLocation != null) 1 else 0
                 val locations = savedLocations.map { it.lat to it.lng }
                 val batchResults = combinedWeatherRepository.fetchBatch(locations)
                 
