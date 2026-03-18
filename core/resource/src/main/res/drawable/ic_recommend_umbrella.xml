@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- 우산 -->
+    <path
+        android:fillColor="#0984E3"
+        android:pathData="M12,2C6.48,2 2,6 2,10H12V2Z"/>
+    <path
+        android:fillColor="#74B9FF"
+        android:pathData="M12,2C17.52,2 22,6 22,10H12V2Z"/>
+    <!-- 손잡이 -->
+    <path
+        android:fillColor="#636E72"
+        android:pathData="M11,10H13V19H11V19Z"/>
+    <!-- 곡선 손잡이 -->
+    <path
+        android:fillColor="#636E72"
+        android:pathData="M11,19C11,19 11,22 14,22C15.5,22 16,21 16,20"/>
+    <path
+        android:strokeColor="#636E72"
+        android:strokeWidth="2"
+        android:pathData="M12,19Q12,22 15,22"/>
+</vector>
