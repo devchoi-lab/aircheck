@@ -23,6 +23,15 @@ object WeatherContract {
 
         /** 공기질 기준 안내 다이얼로그 닫기 */
         data object DismissInfoDialog : Intent
+
+        /** 저장된 위치 삭제 요청 (확인 다이얼로그 표시) */
+        data class RequestDeleteLocation(val locationId: Long, val locationName: String) : Intent
+
+        /** 삭제 확인 */
+        data object ConfirmDeleteLocation : Intent
+
+        /** 삭제 취소 (다이얼로그 닫기) */
+        data object DismissDeleteDialog : Intent
     }
 
     // ── State (UI 상태) ─────────────────────────────────────────────────────
@@ -34,7 +43,15 @@ object WeatherContract {
         val weather: DataResult<WeatherData> = DataResult(),
         val isRefreshing: Boolean = false,
         val error: ErrorState? = null,
-        val showInfoDialog: Boolean = false
+        val showInfoDialog: Boolean = false,
+        /** 삭제 확인 다이얼로그 (null이면 비표시) */
+        val deleteConfirm: DeleteConfirmState? = null
+    )
+
+    /** 삭제 확인 다이얼로그 상태 */
+    data class DeleteConfirmState(
+        val locationId: Long,
+        val locationName: String
     )
 
     /** 에러 상태 (메시지 + 버튼 액션) */
