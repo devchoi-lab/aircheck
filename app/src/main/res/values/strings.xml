@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">에어체크</string>
+    <string name="widget_description">미세먼지, 강수확률, 복장 추천을 한눈에</string>
 </resources>
