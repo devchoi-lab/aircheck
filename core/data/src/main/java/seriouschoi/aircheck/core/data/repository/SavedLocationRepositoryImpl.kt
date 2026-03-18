@@ -19,6 +19,11 @@ import javax.inject.Singleton
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "saved_locations")
 
+/*
+TODO FOR_AI
+    This declaration is opt-in and its usage should be marked with @kotlinx.serialization.InternalSerializationApi or @OptIn(markerClass = kotlinx.serialization.InternalSerializationApi.class) Toggle info (⌘F1)
+    위 오류가 날만한 위치를 다 찾아야 할듯.
+ */
 @Serializable
 private data class SavedLocationJson(
     val id: Long,
