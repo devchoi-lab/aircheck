@@ -4,19 +4,40 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- 눈송이 -->
+    <!-- 눈사람 (귀여운 스타일) -->
+    <!-- 몸 -->
     <path
-        android:fillColor="#74B9FF"
-        android:pathData="M12,2V22M2,12H22M4.93,4.93L19.07,19.07M19.07,4.93L4.93,19.07"
-        android:strokeWidth="2"
-        android:strokeColor="#74B9FF"/>
-    <!-- 중심 원 -->
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,22C15,22 17,20 17,17C17,15 16,14 14,13C16,12 17,11 17,9C17,6 15,4 12,4C9,4 7,6 7,9C7,11 8,12 10,13C8,14 7,15 7,17C7,20 9,22 12,22Z"/>
+    <!-- 눈 윤곽 -->
+    <path
+        android:strokeColor="#B2BEC3"
+        android:strokeWidth="0.5"
+        android:pathData="M12,22C15,22 17,20 17,17C17,15 16,14 14,13C16,12 17,11 17,9C17,6 15,4 12,4C9,4 7,6 7,9C7,11 8,12 10,13C8,14 7,15 7,17C7,20 9,22 12,22Z"/>
+    <!-- 눈 -->
+    <path
+        android:fillColor="#2D3436"
+        android:pathData="M10,8m-0.7,0a0.7,0.7 0,1 1,1.4 0a0.7,0.7 0,1 1,-1.4 0"/>
+    <path
+        android:fillColor="#2D3436"
+        android:pathData="M14,8m-0.7,0a0.7,0.7 0,1 1,1.4 0a0.7,0.7 0,1 1,-1.4 0"/>
+    <!-- 코 (당근) -->
+    <path
+        android:fillColor="#E17055"
+        android:pathData="M12,9L13.5,10L12,11L12,9Z"/>
+    <!-- 입 -->
+    <path
+        android:fillColor="#2D3436"
+        android:pathData="M10,11C10,11 11,12 12,12C13,12 14,11 14,11"/>
+    <!-- 모자 -->
     <path
         android:fillColor="#0984E3"
-        android:pathData="M12,12m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0"/>
-    <!-- 작은 가지들 -->
+        android:pathData="M8,4H16V5H8V4ZM9,2H15V4H9V2Z"/>
+    <!-- 버튼 -->
     <path
-        android:strokeColor="#74B9FF"
-        android:strokeWidth="1.5"
-        android:pathData="M12,5L10,7M12,5L14,7M12,19L10,17M12,19L14,17M5,12L7,10M5,12L7,14M19,12L17,10M19,12L17,14"/>
+        android:fillColor="#2D3436"
+        android:pathData="M12,15m-0.6,0a0.6,0.6 0,1 1,1.2 0a0.6,0.6 0,1 1,-1.2 0"/>
+    <path
+        android:fillColor="#2D3436"
+        android:pathData="M12,18m-0.6,0a0.6,0.6 0,1 1,1.2 0a0.6,0.6 0,1 1,-1.2 0"/>
 </vector>

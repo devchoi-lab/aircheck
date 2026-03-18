@@ -4,16 +4,25 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
-    <!-- 양산 -->
+    <!-- 양산 (귀여운 스타일) -->
+    <!-- 캐노피 -->
     <path
         android:fillColor="#FFEAA7"
-        android:pathData="M12,2C6.48,2 2,6 2,10H22C22,6 17.52,2 12,2Z"/>
-    <!-- 양산 줄무늬 -->
+        android:pathData="M12,2C6,2 2,7 2,11H22C22,7 18,2 12,2Z"/>
+    <!-- 캐노피 줄무늬 -->
     <path
         android:fillColor="#FDCB6E"
-        android:pathData="M6,2.5C6,2.5 4,6 4,10H6C6,6.5 7,4 6,2.5ZM12,2C12,2 11,5 11,10H13C13,5 12,2 12,2ZM18,2.5C18,2.5 20,6 20,10H18C18,6.5 17,4 18,2.5Z"/>
+        android:pathData="M7,3C5,5.5 4,8 4,11H7C7,8 7.5,5 7,3ZM12,2V11H15C15,6 14,3 12,2ZM17,3C17.5,5 18,8 18,11H20C20,8 19,5.5 17,3Z"/>
+    <!-- 프릴 장식 -->
+    <path
+        android:fillColor="#FFE082"
+        android:pathData="M2,11C2,11 4,12 6,11C8,10 10,12 12,11C14,10 16,12 18,11C20,10 22,11 22,11"/>
     <!-- 손잡이 -->
     <path
-        android:fillColor="#B2BEC3"
-        android:pathData="M11,10H13V20H11V20ZM10,20H14V21C14,21.55 13.55,22 13,22H11C10.45,22 10,21.55 10,21V20Z"/>
+        android:fillColor="#A1887F"
+        android:pathData="M11,11H13V20H11V20Z"/>
+    <!-- 손잡이 끝 -->
+    <path
+        android:fillColor="#8D6E63"
+        android:pathData="M10,20H14V22C14,22 13,23 12,23C11,23 10,22 10,22V20Z"/>
 </vector>

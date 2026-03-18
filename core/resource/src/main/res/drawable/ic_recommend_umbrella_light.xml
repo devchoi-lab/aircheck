@@ -5,17 +5,24 @@
     android:viewportWidth="24"
     android:viewportHeight="24">
     <!-- 접이식 우산 (우산 챙기기) -->
-    <path
-        android:fillColor="#81ECEC"
-        android:pathData="M12,4C8,4 5,7 5,10H12V4Z"/>
+    <!-- 캐노피 왼쪽 -->
     <path
         android:fillColor="#00CEC9"
-        android:pathData="M12,4C16,4 19,7 19,10H12V4Z"/>
+        android:pathData="M12,4C8,4 5,7 5,11H12V4Z"/>
+    <!-- 캐노피 오른쪽 -->
+    <path
+        android:fillColor="#81ECEC"
+        android:pathData="M12,4V11H19C19,7 16,4 12,4Z"/>
+    <!-- 물방울 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M9,6C9,6 8,7 8,7.5C8,8 8.5,8 9,7.5C9,7 9,6 9,6Z"/>
     <!-- 손잡이 -->
     <path
         android:fillColor="#636E72"
-        android:pathData="M11,10H13V18H11V18Z"/>
+        android:pathData="M11,11H13V18H11V18Z"/>
+    <!-- 손잡이 끝 -->
     <path
         android:fillColor="#636E72"
-        android:pathData="M10,18H14V20H10V18Z"/>
+        android:pathData="M10,18H14V20C14,20.5 13,21 12,21C11,21 10,20.5 10,20V18Z"/>
 </vector>
