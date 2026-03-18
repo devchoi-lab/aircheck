@@ -16,6 +16,8 @@ import seriouschoi.aircheck.core.domain.repository.AirQualityRepository
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
 import seriouschoi.aircheck.core.domain.repository.WeatherRepository
+import seriouschoi.aircheck.core.domain.model.AirQuality
+import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.core.resource.R
 import seriouschoi.aircheck.core.resource.UiText
 import javax.inject.Inject
@@ -24,8 +26,8 @@ import javax.inject.Inject
 internal data class LocationWeatherData(
     val locationName: String,
     val isCurrentLocation: Boolean,
-    val airQuality: WeatherContract.DataResult<seriouschoi.aircheck.core.domain.model.AirQuality> = WeatherContract.DataResult(),
-    val weather: WeatherContract.DataResult<seriouschoi.aircheck.core.domain.model.WeatherData> = WeatherContract.DataResult()
+    val airQuality: WeatherContract.DataResult<AirQuality> = WeatherContract.DataResult(),
+    val weather: WeatherContract.DataResult<WeatherData> = WeatherContract.DataResult()
 )
 
 /** 전체 UI 상태 (다중 위치) */
@@ -155,8 +157,8 @@ internal class WeatherViewModel @Inject constructor(
     }
 
     private data class FetchResult(
-        val airQuality: WeatherContract.DataResult<seriouschoi.aircheck.core.domain.model.AirQuality>,
-        val weather: WeatherContract.DataResult<seriouschoi.aircheck.core.domain.model.WeatherData>
+        val airQuality: WeatherContract.DataResult<AirQuality>,
+        val weather: WeatherContract.DataResult<WeatherData>
     )
 
     private suspend fun fetchWeather(lat: Double, lng: Double): FetchResult {
