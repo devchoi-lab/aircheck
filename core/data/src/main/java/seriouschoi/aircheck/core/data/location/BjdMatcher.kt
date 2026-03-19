@@ -29,16 +29,25 @@ class BjdMatcher @Inject constructor(
         val index = mutableMapOf<String, MutableList<BjdDistrict>>()
         
         try {
-            val jsonString = context.assets.open("bjd_centroids.json")
+            val jsonString = context.assets.open("korean_regions_2.json")
                 .bufferedReader()
                 .use { it.readText() }
             
-            val data = json.decodeFromString<BjdData>(jsonString)
+            val data = json.decodeFromString<RegionData>(jsonString)
             
-            data.districts.forEach { district ->
-                val key = gridKey(district.lat, district.lng)
-                index.getOrPut(key) { mutableListOf() }.add(district)
-            }
+            // isLeaf == true (동/읍/면)만 필터링
+            data.regions
+                .filter { it.isLeaf }
+                .forEach { region ->
+                    val district = BjdDistrict(
+                        code = region.id.toString(),
+                        name = region.fullName,
+                        lat = region.lat,
+                        lng = region.lng
+                    )
+                    val key = gridKey(district.lat, district.lng)
+                    index.getOrPut(key) { mutableListOf() }.add(district)
+                }
         } catch (e: Exception) {
             // 파일 로드 실패 시 빈 인덱스
             e.printStackTrace()
@@ -97,14 +106,24 @@ class BjdMatcher @Inject constructor(
 // ── 모델 ───────────────────────────────────────────────────────────────────
 
 @Serializable
-data class BjdData(
-    val version: String = "",
-    val description: String = "",
-    val source: String = "",
-    val districts: List<BjdDistrict> = emptyList()
+data class RegionData(
+    val regions: List<Region> = emptyList()
 )
 
 @Serializable
+data class Region(
+    val id: Int,
+    val name: String,
+    val lat: Double,
+    val lng: Double,
+    val isLeaf: Boolean = false,
+    val parentId: Int? = null,
+    val parentName: String? = null
+) {
+    val fullName: String
+        get() = if (parentName != null) "$parentName $name" else name
+}
+
 data class BjdDistrict(
     val code: String,
     val name: String,
