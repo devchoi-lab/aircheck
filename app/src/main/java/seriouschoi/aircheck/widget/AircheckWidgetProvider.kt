@@ -5,6 +5,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.widget.RemoteViews
 import seriouschoi.aircheck.R
 import seriouschoi.aircheck.MainActivity
@@ -12,11 +13,16 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 
 class AircheckWidgetProvider : AppWidgetProvider() {
     
+    companion object {
+        private const val TAG = "AircheckWidget"
+    }
+    
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
+        Log.d(TAG, "onUpdate called, widgetIds: ${appWidgetIds.toList()}")
         appWidgetIds.forEach { appWidgetId ->
             updateWidget(context, appWidgetManager, appWidgetId)
         }
@@ -42,7 +48,10 @@ class AircheckWidgetProvider : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
+        Log.d(TAG, "updateWidget called for widgetId: $appWidgetId")
+        
         val views = RemoteViews(context.packageName, R.layout.widget_aircheck)
+        Log.d(TAG, "RemoteViews created with package: ${context.packageName}")
         
         // 앱 실행 인텐트
         val intent = Intent(context, MainActivity::class.java)
@@ -64,6 +73,9 @@ class AircheckWidgetProvider : AppWidgetProvider() {
         val clothingIcon = prefs.getInt("clothing_icon", CoreR.drawable.ic_recommend_tshirt)
         val updateTime = prefs.getString("update_time", "") ?: ""
         
+        Log.d(TAG, "Widget data - location: $location, pm: $pmLevel, rain: $rainProb, clothing: $clothing, time: $updateTime")
+        Log.d(TAG, "Widget colors/icons - pmColor: ${Integer.toHexString(pmColor)}, clothingIcon: $clothingIcon")
+        
         views.setTextViewText(R.id.tv_location, location)
         views.setTextViewText(R.id.tv_pm_value, pmLevel)
         views.setTextColor(R.id.tv_pm_value, pmColor)
@@ -73,5 +85,6 @@ class AircheckWidgetProvider : AppWidgetProvider() {
         views.setTextViewText(R.id.tv_update_time, updateTime)
         
         appWidgetManager.updateAppWidget(appWidgetId, views)
+        Log.d(TAG, "Widget updated successfully")
     }
 }

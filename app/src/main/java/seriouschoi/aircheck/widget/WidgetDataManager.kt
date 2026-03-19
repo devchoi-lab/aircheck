@@ -4,6 +4,7 @@ import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -30,6 +31,7 @@ class WidgetDataManager @Inject constructor(
     private val locationProvider: LocationProvider
 ) {
     companion object {
+        private const val TAG = "WidgetDataManager"
         private const val PREFS_NAME = "widget_data"
         private const val KEY_LOCATION = "location"
         private const val KEY_PM_LEVEL = "pm_level"
@@ -48,10 +50,15 @@ class WidgetDataManager @Inject constructor(
      * 위젯 데이터 갱신
      */
     suspend fun refreshWidgetData(): Result<Unit> = withContext(Dispatchers.IO) {
+        Log.d(TAG, "refreshWidgetData started")
         try {
             // 1. 현재 위치 가져오기
             val smartLocation = locationProvider.getCurrentSmartLocation()
-                ?: return@withContext Result.failure(Exception(context.getString(CoreR.string.widget_error_location)))
+            if (smartLocation == null) {
+                Log.e(TAG, "Failed to get location")
+                return@withContext Result.failure(Exception(context.getString(CoreR.string.widget_error_location)))
+            }
+            Log.d(TAG, "Location: ${smartLocation.bjdName} (${smartLocation.lat}, ${smartLocation.lng})")
             
             // 2. 날씨 데이터 가져오기
             val result = combinedWeatherRepository.fetch(smartLocation.lat, smartLocation.lng)
@@ -59,7 +66,10 @@ class WidgetDataManager @Inject constructor(
             val weather = result.weather.getOrNull()
             val airQuality = result.airQuality.getOrNull()
             
+            Log.d(TAG, "Weather: ${weather != null}, AirQuality: ${airQuality != null}")
+            
             if (weather == null && airQuality == null) {
+                Log.e(TAG, "Both weather and airQuality are null")
                 return@withContext Result.failure(Exception(context.getString(CoreR.string.widget_error_data)))
             }
             
@@ -69,13 +79,16 @@ class WidgetDataManager @Inject constructor(
             val rainProb = weather?.precipitationProbability ?: 0
             val feelsLike = weather?.feelsLike ?: 20.0
             
+            Log.d(TAG, "Saving - location: $locationName, pm: $pmLevel, rain: $rainProb, feelsLike: $feelsLike")
             saveData(locationName, pmLevel, rainProb, feelsLike)
             
             // 4. 위젯 갱신 요청
             notifyWidgetUpdate()
             
+            Log.d(TAG, "refreshWidgetData completed successfully")
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e(TAG, "refreshWidgetData failed", e)
             Result.failure(e)
         }
     }
