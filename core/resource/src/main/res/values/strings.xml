@@ -94,10 +94,49 @@
     <string name="weather_thunderstorm">뇌우</string>
     <string name="weather_unknown">알 수 없음</string>
     
+    <!-- 날씨 화면 -->
+    <string name="content_description_add_location">위치 추가</string>
+    <string name="content_description_delete_location">위치 삭제</string>
+    <string name="content_description_current_location">현재 위치</string>
+    <string name="delete_location_title">위치 삭제</string>
+    <string name="delete_location_message">\"%s\"을(를) 삭제할까요?</string>
+    <string name="button_delete">삭제</string>
+    <string name="button_cancel">취소</string>
+    <string name="button_confirm">확인</string>
+    <string name="label_current_location">📍 현재 위치</string>
+    <string name="label_saved_location">📌 %s</string>
+    <string name="section_current_weather">🌤️ 현재 날씨</string>
+    <string name="section_hourly_forecast">📅 48시간 예보</string>
+    <string name="section_air_quality">💨 공기질</string>
+    <string name="label_station">📍 %s</string>
+    <string name="error_section_failed">%s 정보를 불러오지 못했어요</string>
+
     <!-- 공기질 기준 다이얼로그 -->
     <string name="dialog_air_quality_title">공기질 기준 안내</string>
     <string name="dialog_button_close">닫기</string>
     <string name="dialog_pm25_title">🔹 초미세먼지 (PM2.5) 기준</string>
     <string name="dialog_pm10_title">🔸 미세먼지 (PM10) 기준</string>
     <string name="dialog_grade_format">%s %s: %s</string>
+    <string name="dialog_integrated_grade_title">통합 공기질 등급</string>
+    <string name="dialog_integrated_grade_desc">초미세먼지(PM2.5), 미세먼지(PM10) 중 가장 나쁜 등급을 기준으로 표시합니다.</string>
+    <string name="dialog_pm25_section">초미세먼지 (PM2.5)</string>
+    <string name="dialog_pm10_section">미세먼지 (PM10)</string>
+    <string name="dialog_clothing_title">👕 체감온도별 의상 추천</string>
+    <string name="dialog_source_title">📋 기준 출처</string>
+    <string name="dialog_source_content">대기질: WHO Global Air Quality Guidelines 2021\n의상: 일반적인 체감 기준</string>
+
+    <!-- 위치 선택 -->
+    <string name="location_picker_title">지역 선택</string>
+    <string name="location_picker_guide_title">안내</string>
+    <string name="content_description_back">뒤로</string>
+    <string name="location_picker_search_hint">도, 시, 구, 동 검색…</string>
+    <string name="location_picker_no_result">\"%s\" 검색 결과가 없습니다</string>
+    <string name="button_select">선택</string>
+
+    <!-- 위젯 -->
+    <string name="widget_location_loading">위치 로딩중…</string>
+    <string name="widget_update_time_now">방금</string>
+    <string name="widget_error_location">위치를 가져올 수 없습니다</string>
+    <string name="widget_error_data">데이터를 가져올 수 없습니다</string>
+    <string name="widget_default_location">현재 위치</string>
 </resources>

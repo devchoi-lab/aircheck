@@ -38,12 +38,12 @@ internal fun AirQualityInfoDialog(onDismiss: () -> Unit) {
             ) {
                 // 통합 등급 설명
                 Text(
-                    text = "통합 공기질 등급",
+                    text = stringResource(CoreR.string.dialog_integrated_grade_title),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
                 Text(
-                    text = "초미세먼지(PM2.5), 미세먼지(PM10) 중 가장 나쁜 등급을 기준으로 표시합니다.",
+                    text = stringResource(CoreR.string.dialog_integrated_grade_desc),
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -52,7 +52,7 @@ internal fun AirQualityInfoDialog(onDismiss: () -> Unit) {
 
                 // 초미세먼지 (PM2.5) - WHO 2021
                 Text(
-                    text = "초미세먼지 (PM2.5)",
+                    text = stringResource(CoreR.string.dialog_pm25_section),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
@@ -71,7 +71,7 @@ internal fun AirQualityInfoDialog(onDismiss: () -> Unit) {
 
                 // 미세먼지 (PM10) - WHO 2021
                 Text(
-                    text = "미세먼지 (PM10)",
+                    text = stringResource(CoreR.string.dialog_pm10_section),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
@@ -90,7 +90,7 @@ internal fun AirQualityInfoDialog(onDismiss: () -> Unit) {
 
                 // 체감온도별 의상 추천
                 Text(
-                    text = "👕 체감온도별 의상 추천",
+                    text = stringResource(CoreR.string.dialog_clothing_title),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
@@ -100,12 +100,12 @@ internal fun AirQualityInfoDialog(onDismiss: () -> Unit) {
 
                 // 출처
                 Text(
-                    text = "📋 기준 출처",
+                    text = stringResource(CoreR.string.dialog_source_title),
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 14.sp
                 )
                 Text(
-                    text = "대기질: WHO Global Air Quality Guidelines 2021\n의상: 일반적인 체감 기준",
+                    text = stringResource(CoreR.string.dialog_source_content),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -113,7 +113,7 @@ internal fun AirQualityInfoDialog(onDismiss: () -> Unit) {
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("확인")
+                Text(stringResource(CoreR.string.button_confirm))
             }
         }
     )

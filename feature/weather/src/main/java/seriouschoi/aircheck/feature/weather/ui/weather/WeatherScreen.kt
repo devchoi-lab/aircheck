@@ -65,7 +65,7 @@ internal fun WeatherScreen(
                 title = { Text(stringResource(CoreR.string.app_name), fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = onAddLocation) {
-                        Icon(Icons.Default.Add, contentDescription = "위치 추가")
+                        Icon(Icons.Default.Add, contentDescription = stringResource(CoreR.string.content_description_add_location))
                     }
                     IconButton(onClick = { onIntent(WeatherContract.Intent.ShowInfoDialog) }) {
                         Icon(Icons.Default.Info, contentDescription = stringResource(CoreR.string.content_description_info))
@@ -87,16 +87,16 @@ internal fun WeatherScreen(
         uiState.deleteConfirm?.let { confirm ->
             AlertDialog(
                 onDismissRequest = { onIntent(WeatherContract.Intent.DismissDeleteDialog) },
-                title = { Text("위치 삭제", fontWeight = FontWeight.Bold) },
-                text = { Text("\"${confirm.locationName}\"을(를) 삭제할까요?") },
+                title = { Text(stringResource(CoreR.string.delete_location_title), fontWeight = FontWeight.Bold) },
+                text = { Text(stringResource(CoreR.string.delete_location_message, confirm.locationName)) },
                 confirmButton = {
                     TextButton(onClick = { onIntent(WeatherContract.Intent.ConfirmDeleteLocation) }) {
-                        Text("삭제", color = MaterialTheme.colorScheme.error)
+                        Text(stringResource(CoreR.string.button_delete), color = MaterialTheme.colorScheme.error)
                     }
                 },
                 dismissButton = {
                     TextButton(onClick = { onIntent(WeatherContract.Intent.DismissDeleteDialog) }) {
-                        Text("취소")
+                        Text(stringResource(CoreR.string.button_cancel))
                     }
                 }
             )
@@ -150,7 +150,7 @@ internal fun WeatherScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = if (locationData.isCurrentLocation) "📍 현재 위치" else "📌 ${locationData.locationName}",
+                                    text = if (locationData.isCurrentLocation) stringResource(CoreR.string.label_current_location) else stringResource(CoreR.string.label_saved_location, locationData.locationName),
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.primary
@@ -168,7 +168,7 @@ internal fun WeatherScreen(
                                     ) {
                                         Icon(
                                             imageVector = Icons.Default.Delete,
-                                            contentDescription = "위치 삭제",
+                                            contentDescription = stringResource(CoreR.string.content_description_delete_location),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.size(16.dp)
                                         )
@@ -199,7 +199,7 @@ internal fun WeatherScreen(
                                 // 현재 위치: 지도 핀 아이콘
                                 Icon(
                                     imageVector = Icons.Default.LocationOn,
-                                    contentDescription = "현재 위치",
+                                    contentDescription = stringResource(CoreR.string.content_description_current_location),
                                     tint = color,
                                     modifier = Modifier
                                         .padding(horizontal = 2.dp)
@@ -288,7 +288,7 @@ private fun WeatherSection(weather: WeatherData) {
     Column(modifier = Modifier.fillMaxWidth()) {
         // 현재 날씨 라벨
         Text(
-            text = "🌤️ 현재 날씨",
+            text = stringResource(CoreR.string.section_current_weather),
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -309,8 +309,8 @@ private fun WeatherSection(weather: WeatherData) {
                 )
                 if (weather.precipitation > 0) {
                     val precipLabel = when (weather.condition) {
-                        WeatherCondition.SNOW, WeatherCondition.SNOW_SHOWER -> "적설 ${weather.precipitation}mm"
-                        else -> "강수량 ${weather.precipitation}mm"
+                        WeatherCondition.SNOW, WeatherCondition.SNOW_SHOWER -> stringResource(CoreR.string.format_snowfall, weather.precipitation.toString())
+                        else -> stringResource(CoreR.string.format_precipitation, weather.precipitation.toString())
                     }
                     Text(
                         text = precipLabel,
@@ -355,7 +355,7 @@ private fun WeatherSection(weather: WeatherData) {
             Spacer(Modifier.height(12.dp))
             
             Text(
-                text = "📅 48시간 예보",
+                text = stringResource(CoreR.string.section_hourly_forecast),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -429,7 +429,7 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
         
         // 체감온도
         Text(
-            text = "체감 %.0f°".format(forecast.feelsLike),
+            text = stringResource(CoreR.string.format_feels_like, forecast.feelsLike),
             fontSize = 10.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -479,24 +479,24 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
         if (forecast.precipitationProbability >= 40) {
             Icon(
                 painter = painterResource(CoreR.drawable.ic_recommend_umbrella),
-                contentDescription = "우산",
+                contentDescription = stringResource(CoreR.string.item_umbrella),
                 modifier = Modifier.size(16.dp),
                 tint = Color.Unspecified
             )
             Text(
-                text = "우산",
+                text = stringResource(CoreR.string.item_umbrella),
                 fontSize = 9.sp,
                 color = Color(0xFF2196F3)
             )
         } else if (forecast.snowfall > 0) {
             Icon(
                 painter = painterResource(CoreR.drawable.ic_recommend_snow),
-                contentDescription = "눈",
+                contentDescription = stringResource(CoreR.string.item_snow),
                 modifier = Modifier.size(16.dp),
                 tint = Color.Unspecified
             )
             Text(
-                text = "눈",
+                text = stringResource(CoreR.string.item_snow),
                 fontSize = 9.sp,
                 color = Color(0xFF64B5F6)
             )
@@ -534,7 +534,7 @@ private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?
         val clothing = RecommendedClothing.fromFeelsLike(temp)
         recommendations.add(clothing.toIconRes() to stringResource(clothing.toDetailedLabelRes()))
         if (clothing == RecommendedClothing.TANK_TOP) {
-            recommendations.add(CoreR.drawable.ic_recommend_parasol to "양산")
+            recommendations.add(CoreR.drawable.ic_recommend_parasol to stringResource(CoreR.string.item_parasol))
         }
     }
     
@@ -564,12 +564,12 @@ private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?
     
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
-            text = "🎒 오늘의 추천",
+            text = stringResource(CoreR.string.recommendation_title),
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold
         )
         Text(
-            text = "현재 날씨 + 6시간 내 예보 기준",
+            text = stringResource(CoreR.string.recommendation_description),
             fontSize = 11.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -612,7 +612,7 @@ private fun AirQualitySection(air: AirQuality) {
     Column(modifier = Modifier.fillMaxWidth()) {
         // 섹션 라벨
         Text(
-            text = "💨 공기질",
+            text = stringResource(CoreR.string.section_air_quality),
             fontSize = 13.sp,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -675,7 +675,7 @@ private fun AirQualitySection(air: AirQuality) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "📍 ${air.mainStationName}",
+                text = stringResource(CoreR.string.label_station, air.mainStationName),
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -728,7 +728,7 @@ private fun PollutantRow(label: String, pmData: PmData?, mainStationName: String
         // 폴백 측정소에서 가져온 경우 출처 표시
         if (pmData != null && pmData.isFromFallback) {
             Text(
-                text = "↳ ${pmData.stationName}에서 가져옴",
+                text = stringResource(CoreR.string.air_quality_from_station, pmData.stationName),
                 fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 modifier = Modifier.padding(start = 4.dp, top = 2.dp)
@@ -754,7 +754,7 @@ private fun ErrorSection(title: String, message: String, onRetry: () -> Unit) {
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "$title 정보를 불러오지 못했어요",
+                text = stringResource(CoreR.string.error_section_failed, title),
                 fontWeight = FontWeight.Bold,
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.error

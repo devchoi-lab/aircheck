@@ -55,7 +55,8 @@ class AircheckWidgetProvider : AppWidgetProvider() {
         // SharedPreferences에서 저장된 데이터 로드
         val prefs = context.getSharedPreferences("widget_data", Context.MODE_PRIVATE)
         
-        val location = prefs.getString("location", "위치 로딩중...") ?: "위치 로딩중..."
+        val defaultLocation = context.getString(CoreR.string.widget_location_loading)
+        val location = prefs.getString("location", defaultLocation) ?: defaultLocation
         val pmLevel = prefs.getString("pm_level", "---") ?: "---"
         val pmColor = prefs.getInt("pm_color", 0xFF888888.toInt())
         val rainProb = prefs.getString("rain_prob", "--%") ?: "--%"
