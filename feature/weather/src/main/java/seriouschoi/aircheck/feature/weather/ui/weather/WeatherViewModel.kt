@@ -30,7 +30,9 @@ internal data class LocationWeatherData(
     /** 저장된 위치의 ID (현재 위치는 null) — 삭제 시 사용 */
     val savedLocationId: Long? = null,
     val airQuality: WeatherContract.DataResult<AirQuality> = WeatherContract.DataResult(),
-    val weather: WeatherContract.DataResult<WeatherData> = WeatherContract.DataResult()
+    val weather: WeatherContract.DataResult<WeatherData> = WeatherContract.DataResult(),
+    /** 위치 권한 필요 (현재 위치 전용) */
+    val needsPermission: Boolean = false
 )
 
 /** 전체 UI 상태 (다중 위치) */
@@ -121,8 +123,9 @@ internal class WeatherViewModel @Inject constructor(
             val smartLocation = locationProvider.getCurrentSmartLocation()
             
             val initialLocationList = mutableListOf<LocationWeatherData>()
+            val needsPermission = !locationProvider.hasLocationPermission()
             
-            // 현재 위치 추가 (로딩 상태)
+            // 현재 위치 항상 추가 (권한 없어도 페이지는 유지)
             if (smartLocation != null) {
                 // 법정동 이름에서 동 이름만 추출 (예: "서울특별시 강남구 역삼동" → "역삼동")
                 val shortName = smartLocation.bjdName.split(" ").lastOrNull() ?: "현재 위치"
@@ -130,6 +133,15 @@ internal class WeatherViewModel @Inject constructor(
                     LocationWeatherData(
                         locationName = shortName,
                         isCurrentLocation = true
+                    )
+                )
+            } else {
+                // 권한 없거나 위치 못 가져올 때도 "현재 위치" 페이지 유지
+                initialLocationList.add(
+                    LocationWeatherData(
+                        locationName = "현재 위치",
+                        isCurrentLocation = true,
+                        needsPermission = needsPermission
                     )
                 )
             }

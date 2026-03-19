@@ -189,7 +189,26 @@ internal fun WeatherScreen(
                                 }
                             }
 
-                            SuccessContent(locationData.airQuality, locationData.weather, onIntent)
+                            // 권한 필요 시 권한 요청 화면, 아니면 날씨 데이터
+                            if (locationData.needsPermission) {
+                                val context = LocalContext.current
+                                Box(
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    PermissionRequiredContent(
+                                        onOpenSettings = {
+                                            val intent = android.content.Intent(
+                                                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                                android.net.Uri.fromParts("package", context.packageName, null)
+                                            )
+                                            context.startActivity(intent)
+                                        }
+                                    )
+                                }
+                            } else {
+                                SuccessContent(locationData.airQuality, locationData.weather, onIntent)
+                            }
                         }
                     }
                 }
