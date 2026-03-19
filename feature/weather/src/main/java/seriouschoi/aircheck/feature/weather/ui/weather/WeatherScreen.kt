@@ -227,9 +227,14 @@ private fun SuccessContent(
     weather: WeatherContract.DataResult<WeatherData>,
     onIntent: (WeatherContract.Intent) -> Unit
 ) {
+    // 체감온도 + 미세먼지 기반 그라데이션 배경
+    val feelsLike = weather.data?.feelsLike
+    val pm25 = air.data?.pm25?.value
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .weatherGradientBackground(feelsLike, pm25)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
