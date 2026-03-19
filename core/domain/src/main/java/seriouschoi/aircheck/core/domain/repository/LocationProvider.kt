@@ -22,6 +22,11 @@ interface LocationProvider {
      * 강제 갱신 (pull-to-refresh)
      */
     fun forceRefresh()
+    
+    /**
+     * 위치 권한이 있는지 확인
+     */
+    fun hasLocationPermission(): Boolean
 }
 
 /**

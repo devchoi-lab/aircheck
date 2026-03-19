@@ -160,16 +160,23 @@ internal class WeatherViewModel @Inject constructor(
                     isRefreshing = false,
                     airQuality = airResult,
                     weather = weatherResult,
-                    error = null
+                    error = null,
+                    needsLocationPermission = false
                 )
             } else {
+                // 위치 권한이 없는지 확인
+                val needsPermission = !locationProvider.hasLocationPermission()
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isRefreshing = false,
-                    error = WeatherContract.ErrorState(
+                    needsLocationPermission = needsPermission,
+                    // 권한 없으면 캐시된 데이터도 초기화
+                    airQuality = if (needsPermission) WeatherContract.DataResult() else _uiState.value.airQuality,
+                    weather = if (needsPermission) WeatherContract.DataResult() else _uiState.value.weather,
+                    error = if (!needsPermission) WeatherContract.ErrorState(
                         message = UiText.StringResource(R.string.error_location_unavailable),
                         action = WeatherContract.Intent.Refresh
-                    )
+                    ) else null
                 )
             }
 
