@@ -14,11 +14,21 @@ import seriouschoi.aircheck.feature.weather.ui.weather.WeatherScreen
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherViewModel
 
 /** 날씨 피처 네비게이션 그래프 */
-fun NavGraphBuilder.weatherScreen(navController: NavController) {
+fun NavGraphBuilder.weatherScreen(
+    navController: NavController,
+    onRegisterPermissionCallback: ((callback: () -> Unit) -> Unit)? = null
+) {
     composable<WeatherRoute.Main> {
         val viewModel: WeatherViewModel = hiltViewModel()
         val uiState by viewModel.uiState.collectAsStateWithLifecycle()
         val multiState by viewModel.multiState.collectAsStateWithLifecycle()
+        
+        // 권한 승인 시 자동 새로고침 콜백 등록
+        LaunchedEffect(Unit) {
+            onRegisterPermissionCallback?.invoke {
+                viewModel.processIntent(seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract.Intent.Refresh)
+            }
+        }
 
         WeatherScreen(
             uiState = uiState,

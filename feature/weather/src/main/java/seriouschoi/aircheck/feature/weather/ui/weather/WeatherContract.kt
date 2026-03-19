@@ -45,7 +45,9 @@ object WeatherContract {
         val error: ErrorState? = null,
         val showInfoDialog: Boolean = false,
         /** 삭제 확인 다이얼로그 (null이면 비표시) */
-        val deleteConfirm: DeleteConfirmState? = null
+        val deleteConfirm: DeleteConfirmState? = null,
+        /** 위치 권한 필요 상태 */
+        val needsLocationPermission: Boolean = false
     )
 
     /** 삭제 확인 다이얼로그 상태 */

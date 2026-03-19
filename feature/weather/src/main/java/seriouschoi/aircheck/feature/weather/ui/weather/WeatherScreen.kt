@@ -123,6 +123,7 @@ internal fun WeatherScreen(
                     ) {
                         when {
                             uiState.isLoading -> { }
+                            uiState.needsLocationPermission -> PermissionRequiredContent()
                             uiState.error != null -> ErrorContent(uiState.error, onIntent)
                             else -> SuccessContent(uiState.airQuality, uiState.weather, onIntent)
                         }
@@ -770,6 +771,41 @@ private fun ErrorSection(title: String, message: String, onRetry: () -> Unit) {
             )
         }
         TextButton(onClick = onRetry) { Text(stringResource(CoreR.string.button_retry)) }
+    }
+}
+
+// ── 전체 오류 (위치 실패 등) ──────────────────────────────────────────────────
+
+// ── 권한 필요 화면 ───────────────────────────────────────────────────────
+
+@Composable
+private fun PermissionRequiredContent() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.padding(32.dp)
+    ) {
+        Text("📍", fontSize = 64.sp)
+        Spacer(Modifier.height(24.dp))
+        Text(
+            text = "위치 권한이 필요합니다",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text = "현재 위치의 날씨와 미세먼지 정보를\n확인하려면 위치 권한을 허용해주세요.",
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(24.dp))
+        Text(
+            text = "설정 → 앱 → 에어체크 → 권한 → 위치",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.outline,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
