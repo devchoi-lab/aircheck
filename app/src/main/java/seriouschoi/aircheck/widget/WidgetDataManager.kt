@@ -8,9 +8,11 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import seriouschoi.aircheck.core.domain.model.AqiLevel
+import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
-import seriouschoi.aircheck.core.resource.R as CoreR
+import seriouschoi.aircheck.core.ui.mapper.toIconRes
+import seriouschoi.aircheck.core.ui.mapper.toLabel
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -82,7 +84,7 @@ class WidgetDataManager @Inject constructor(
         rainProb: Int,
         feelsLike: Double
     ) {
-        val (clothing, clothingIcon) = getClothingRecommendation(feelsLike)
+        val clothing = RecommendedClothing.fromFeelsLike(feelsLike)
         val pmColor = getPmColor(pmLevel)
         
         prefs.edit()
@@ -90,8 +92,8 @@ class WidgetDataManager @Inject constructor(
             .putString(KEY_PM_LEVEL, pmLevel.label)
             .putInt(KEY_PM_COLOR, pmColor)
             .putString(KEY_RAIN_PROB, "${rainProb}%")
-            .putString(KEY_CLOTHING, clothing)
-            .putInt(KEY_CLOTHING_ICON, clothingIcon)
+            .putString(KEY_CLOTHING, clothing.toLabel(context))
+            .putInt(KEY_CLOTHING_ICON, clothing.toIconRes())
             .putString(KEY_UPDATE_TIME, "방금")
             .apply()
     }
@@ -116,15 +118,5 @@ class WidgetDataManager @Inject constructor(
         AqiLevel.VERY_UNHEALTHY -> 0xFF9C27B0.toInt()
         AqiLevel.HAZARDOUS -> 0xFF880E4F.toInt()
         AqiLevel.UNKNOWN -> 0xFF888888.toInt()
-    }
-    
-    private fun getClothingRecommendation(feelsLike: Double): Pair<String, Int> = when {
-        feelsLike >= 28 -> "민소매" to CoreR.drawable.ic_recommend_tank_top
-        feelsLike >= 23 -> "반팔" to CoreR.drawable.ic_recommend_tshirt
-        feelsLike >= 17 -> "긴팔" to CoreR.drawable.ic_recommend_long_sleeve
-        feelsLike >= 12 -> "자켓" to CoreR.drawable.ic_recommend_jacket
-        feelsLike >= 6 -> "코트" to CoreR.drawable.ic_recommend_coat
-        feelsLike >= 0 -> "패딩" to CoreR.drawable.ic_recommend_padding
-        else -> "롱패딩" to CoreR.drawable.ic_recommend_heavy_padding
     }
 }

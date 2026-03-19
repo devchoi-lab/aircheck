@@ -27,6 +27,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -42,7 +43,12 @@ import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.HourlyForecast
 import seriouschoi.aircheck.core.domain.model.PmData
 import seriouschoi.aircheck.core.domain.model.WeatherCondition
+import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.model.WeatherData
+import seriouschoi.aircheck.core.ui.mapper.toDetailedLabelRes
+import seriouschoi.aircheck.core.ui.mapper.toIconRes
+import seriouschoi.aircheck.core.ui.mapper.toLabelRes
+import seriouschoi.aircheck.core.ui.mapper.toTemperatureRange
 
 @Composable
 internal fun WeatherScreen(
@@ -456,15 +462,15 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
         Spacer(Modifier.height(4.dp))
         
         // 추천 의상 아이콘 (체감온도 기반)
-        val (clothingIcon, clothingLabel) = getClothingIcon(forecast.feelsLike)
+        val clothing = RecommendedClothing.fromFeelsLike(forecast.feelsLike)
         Icon(
-            painter = painterResource(clothingIcon),
-            contentDescription = clothingLabel,
+            painter = painterResource(clothing.toIconRes()),
+            contentDescription = stringResource(clothing.toLabelRes()),
             modifier = Modifier.size(20.dp),
             tint = Color.Unspecified
         )
         Text(
-            text = clothingLabel,
+            text = stringResource(clothing.toLabelRes()),
             fontSize = 9.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -498,26 +504,6 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
     }
 }
 
-/** 체감온도 기반 옷 추천 (이모지, 라벨) */
-private fun getOutfitRecommendation(feelsLike: Double): Pair<String, String> = when {
-    feelsLike >= 28 -> "👕" to "민소매"
-    feelsLike >= 23 -> "👕" to "반팔"
-    feelsLike >= 17 -> "👔" to "긴팔"
-    feelsLike >= 12 -> "🧥" to "자켓"
-    feelsLike >= 6 -> "🧥" to "코트"
-    feelsLike >= 0 -> "🧥" to "패딩"
-    else -> "🧣" to "두꺼운패딩"
-}
-
-private fun getClothingIcon(feelsLike: Double): Pair<Int, String> = when {
-    feelsLike >= 28 -> CoreR.drawable.ic_recommend_tank_top to "민소매"
-    feelsLike >= 23 -> CoreR.drawable.ic_recommend_tshirt to "반팔"
-    feelsLike >= 17 -> CoreR.drawable.ic_recommend_long_sleeve to "긴팔"
-    feelsLike >= 12 -> CoreR.drawable.ic_recommend_jacket to "자켓"
-    feelsLike >= 6 -> CoreR.drawable.ic_recommend_coat to "코트"
-    feelsLike >= 0 -> CoreR.drawable.ic_recommend_padding to "패딩"
-    else -> CoreR.drawable.ic_recommend_heavy_padding to "롱패딩"
-}
 
 @Composable
 private fun WeatherStat(emoji: String, label: String, value: String) {
@@ -545,39 +531,32 @@ private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?
     
     // 1. 체감온도 기반 옷 추천
     weather?.feelsLike?.let { temp ->
-        when {
-            temp >= 28 -> {
-                recommendations.add(CoreR.drawable.ic_recommend_tank_top to "민소매")
-                recommendations.add(CoreR.drawable.ic_recommend_parasol to "양산")
-            }
-            temp >= 23 -> recommendations.add(CoreR.drawable.ic_recommend_tshirt to "반팔")
-            temp >= 17 -> recommendations.add(CoreR.drawable.ic_recommend_long_sleeve to "얇은 긴팔")
-            temp >= 12 -> recommendations.add(CoreR.drawable.ic_recommend_jacket to "자켓/가디건")
-            temp >= 6 -> recommendations.add(CoreR.drawable.ic_recommend_coat to "코트/니트")
-            temp >= 0 -> recommendations.add(CoreR.drawable.ic_recommend_padding to "패딩/목도리")
-            else -> recommendations.add(CoreR.drawable.ic_recommend_heavy_padding to "두꺼운 패딩")
+        val clothing = RecommendedClothing.fromFeelsLike(temp)
+        recommendations.add(clothing.toIconRes() to stringResource(clothing.toDetailedLabelRes()))
+        if (clothing == RecommendedClothing.TANK_TOP) {
+            recommendations.add(CoreR.drawable.ic_recommend_parasol to "양산")
         }
     }
     
     // 2. 강수확률 기반 우산 (6시간 내 최대값)
     weather?.hourlyForecast?.take(6)?.maxOfOrNull { it.precipitationProbability }?.let { maxPrecip ->
         when {
-            maxPrecip >= 40 -> recommendations.add(CoreR.drawable.ic_recommend_umbrella to "우산 (${maxPrecip}%)")
-            maxPrecip >= 20 -> recommendations.add(CoreR.drawable.ic_recommend_umbrella_light to "우산 챙기기 (${maxPrecip}%)")
+            maxPrecip >= 40 -> recommendations.add(CoreR.drawable.ic_recommend_umbrella to stringResource(CoreR.string.item_umbrella_with_prob, maxPrecip))
+            maxPrecip >= 20 -> recommendations.add(CoreR.drawable.ic_recommend_umbrella_light to "${stringResource(CoreR.string.item_umbrella_take)} (${maxPrecip}%)")
         }
     }
     
     // 3. 적설량 기반 (시간별 예보 중 합계)
     weather?.hourlyForecast?.sumOf { it.snowfall }?.let { totalSnow ->
         if (totalSnow > 0) {
-            recommendations.add(CoreR.drawable.ic_recommend_snow to "눈 %.1fcm".format(totalSnow))
+            recommendations.add(CoreR.drawable.ic_recommend_snow to stringResource(CoreR.string.item_snow_cm, totalSnow))
         }
     }
     
     // 4. 대기질 민감군 주의 이상이면 마스크
     airQuality?.worstLevel?.let { level ->
         if (level.ordinal >= AqiLevel.UNHEALTHY_SENSITIVE.ordinal && level != AqiLevel.UNKNOWN) {
-            recommendations.add(CoreR.drawable.ic_recommend_mask to "마스크 (${level.label})")
+            recommendations.add(CoreR.drawable.ic_recommend_mask to stringResource(CoreR.string.item_mask, level.label))
         }
     }
     
@@ -811,6 +790,10 @@ private fun ErrorContent(
 
 // ── 공기질 기준 안내 다이얼로그 ────────────────────────────────────────────────
 
+/*
+    TODO
+        다이얼로그 자체를 별개의 코드로 분리해서 써야할것 같은데..
+     */
 @Composable
 private fun AirQualityInfoDialog(onDismiss: () -> Unit) {
     AlertDialog(
@@ -935,18 +918,8 @@ private fun GradeTable(grades: List<Triple<String, String, Color>>) {
 
 @Composable
 private fun ClothingRecommendationTable() {
-    val recommendations = listOf(
-        Triple(CoreR.drawable.ic_recommend_tank_top, "민소매 + 양산", "28°C 이상"),
-        Triple(CoreR.drawable.ic_recommend_tshirt, "반팔", "23°C ~ 27°C"),
-        Triple(CoreR.drawable.ic_recommend_long_sleeve, "얇은 긴팔", "17°C ~ 22°C"),
-        Triple(CoreR.drawable.ic_recommend_jacket, "자켓/가디건", "12°C ~ 16°C"),
-        Triple(CoreR.drawable.ic_recommend_coat, "코트/니트", "6°C ~ 11°C"),
-        Triple(CoreR.drawable.ic_recommend_padding, "패딩/목도리", "0°C ~ 5°C"),
-        Triple(CoreR.drawable.ic_recommend_heavy_padding, "두꺼운 패딩", "0°C 미만")
-    )
-    
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        recommendations.forEach { (iconRes, label, tempRange) ->
+        RecommendedClothing.entries.forEach { clothing ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -957,18 +930,18 @@ private fun ClothingRecommendationTable() {
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
-                        painter = painterResource(iconRes),
-                        contentDescription = label,
+                        painter = painterResource(clothing.toIconRes()),
+                        contentDescription = stringResource(clothing.toDetailedLabelRes()),
                         modifier = Modifier.size(24.dp),
                         tint = Color.Unspecified
                     )
                     Text(
-                        text = label,
+                        text = stringResource(clothing.toDetailedLabelRes()),
                         fontSize = 12.sp
                     )
                 }
                 Text(
-                    text = tempRange,
+                    text = clothing.toTemperatureRange(LocalContext.current),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

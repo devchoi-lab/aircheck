@@ -51,6 +51,10 @@
     <string name="outfit_coat_knit">코트/니트</string>
     <string name="outfit_padding_scarf">패딩/목도리</string>
     <string name="outfit_heavy_padding_full">두꺼운 패딩</string>
+    <string name="outfit_long_padding">롱패딩</string>
+    <string name="temp_range_above">%d°C 이상</string>
+    <string name="temp_range_between">%1$d°C ~ %2$d°C</string>
+    <string name="temp_range_below">%d°C 미만</string>
     <string name="item_parasol">양산</string>
     <string name="item_umbrella">우산</string>
     <string name="item_umbrella_take">우산 챙기기</string>

@@ -16,3 +16,4 @@ gradle/gradle-daemon-jvm.properties
 .gradle/**
 app/debug.keystore
 .claude/**
+.java-version
