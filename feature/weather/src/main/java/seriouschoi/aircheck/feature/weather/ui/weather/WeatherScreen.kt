@@ -45,8 +45,11 @@ import seriouschoi.aircheck.core.domain.model.PmData
 import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.model.WeatherData
+import seriouschoi.aircheck.core.ui.mapper.toColorHex
 import seriouschoi.aircheck.core.ui.mapper.toDetailedLabelRes
+import seriouschoi.aircheck.core.ui.mapper.toEmoji
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
+import seriouschoi.aircheck.core.ui.mapper.toLabel
 import seriouschoi.aircheck.core.ui.mapper.toLabelRes
 import seriouschoi.aircheck.core.ui.mapper.toTemperatureRange
 
@@ -300,10 +303,10 @@ private fun WeatherSection(weather: WeatherData) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(weather.condition.emoji, fontSize = 36.sp)
+            Text(weather.condition.toEmoji(), fontSize = 36.sp)
             Column {
                 Text(
-                    text = weather.condition.label,
+                    text = stringResource(weather.condition.toLabelRes()),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -417,7 +420,7 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
         Spacer(Modifier.height(4.dp))
         
         // 날씨 이모지
-        Text(forecast.condition.emoji, fontSize = 20.sp)
+        Text(forecast.condition.toEmoji(), fontSize = 20.sp)
         Spacer(Modifier.height(4.dp))
         
         // 기온
@@ -556,7 +559,7 @@ private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?
     // 4. 대기질 민감군 주의 이상이면 마스크
     airQuality?.worstLevel?.let { level ->
         if (level.ordinal >= AqiLevel.UNHEALTHY_SENSITIVE.ordinal && level != AqiLevel.UNKNOWN) {
-            recommendations.add(CoreR.drawable.ic_recommend_mask to stringResource(CoreR.string.item_mask, level.label))
+            recommendations.add(CoreR.drawable.ic_recommend_mask to stringResource(CoreR.string.item_mask, stringResource(level.toLabelRes())))
         }
     }
     
@@ -607,7 +610,7 @@ private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?
 
 @Composable
 private fun AirQualitySection(air: AirQuality) {
-    val worstColor = Color(air.worstLevel.colorHex)
+    val worstColor = Color(air.worstLevel.toColorHex())
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // 섹션 라벨
@@ -631,13 +634,13 @@ private fun AirQualitySection(air: AirQuality) {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = air.worstLevel.emoji,
+                    text = air.worstLevel.toEmoji(),
                     fontSize = 28.sp
                 )
             }
             Column {
                 Text(
-                    text = air.worstLevel.label,
+                    text = stringResource(air.worstLevel.toLabelRes()),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = worstColor
@@ -693,7 +696,7 @@ private fun AirQualitySection(air: AirQuality) {
 @Composable
 private fun PollutantRow(label: String, pmData: PmData?, mainStationName: String) {
     val level = pmData?.level ?: AqiLevel.UNKNOWN
-    val color = Color(level.colorHex)
+    val color = Color(level.toColorHex())
     
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -717,7 +720,7 @@ private fun PollutantRow(label: String, pmData: PmData?, mainStationName: String
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "${level.emoji} ${level.label}",
+                    text = "${level.toEmoji()} ${stringResource(level.toLabelRes())}",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = color
