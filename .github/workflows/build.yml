@@ -29,6 +29,11 @@ jobs:
           key: gradle-${{ hashFiles('**/*.gradle.kts', '**/libs.versions.toml') }}
           restore-keys: gradle-
 
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest
+        env:
+          ANDROID_HOME: /Users/agent/android-sdk
+
       - name: Start Emulator
         run: |
           export ANDROID_HOME=$HOME/android-sdk
