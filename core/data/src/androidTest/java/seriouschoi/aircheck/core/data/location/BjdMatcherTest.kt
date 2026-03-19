@@ -1,38 +1,37 @@
 package seriouschoi.aircheck.core.data.location
 
-import io.mockk.every
-import io.mockk.mockk
-import android.content.Context
-import android.content.res.AssetManager
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import java.io.ByteArrayInputStream
+import org.junit.runner.RunWith
 
 /**
- * BjdMatcher 단위 테스트
+ * BjdMatcher Instrumented 테스트
  * 
- * GPS 좌표 → 법정동 매칭 로직 검증
+ * 실제 Android 환경에서 assets 로드 + 좌표 매칭 검증
  */
+@RunWith(AndroidJUnit4::class)
 class BjdMatcherTest {
 
     private lateinit var bjdMatcher: BjdMatcher
 
     @Before
     fun setup() {
-        // JSON 파일을 test resources에서 로드
-        val jsonStream = javaClass.classLoader!!.getResourceAsStream("korean_regions_2.json")
-            ?: throw IllegalStateException("korean_regions_2.json not found in test resources")
-        val jsonString = jsonStream.bufferedReader().use { it.readText() }
-        
-        // Context mock
-        val mockAssetManager = mockk<AssetManager>()
-        every { mockAssetManager.open("korean_regions_2.json") } returns ByteArrayInputStream(jsonString.toByteArray())
-        
-        val mockContext = mockk<Context>()
-        every { mockContext.assets } returns mockAssetManager
-        
-        bjdMatcher = BjdMatcher(mockContext)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        bjdMatcher = BjdMatcher(context)
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Assets 로드 검증
+    // ══════════════════════════════════════════════════════════════════════════
+
+    @Test
+    fun assets_korean_regions_2_json_존재() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val assets = context.assets.list("") ?: emptyArray()
+        assertTrue("korean_regions_2.json 존재", assets.contains("korean_regions_2.json"))
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -40,8 +39,8 @@ class BjdMatcherTest {
     // ══════════════════════════════════════════════════════════════════════════
 
     @Test
-    fun `서울 강남역 좌표 - 역삼동 반환`() {
-        // Given: 강남역 좌표
+    fun 서울_강남역_좌표_강남구_반환() {
+        // Given
         val lat = 37.498095
         val lng = 127.027610
 
@@ -51,12 +50,11 @@ class BjdMatcherTest {
         // Then
         assertNotNull("결과가 있어야 함", result)
         assertTrue("서울 강남구 포함", result!!.name.contains("강남구"))
-        println("결과: ${result.name} (${result.code})")
     }
 
     @Test
-    fun `부산 해운대 좌표 - 해운대구 반환`() {
-        // Given: 해운대 해수욕장 좌표
+    fun 부산_해운대_좌표_해운대구_반환() {
+        // Given
         val lat = 35.158698
         val lng = 129.160384
 
@@ -66,12 +64,11 @@ class BjdMatcherTest {
         // Then
         assertNotNull("결과가 있어야 함", result)
         assertTrue("부산 해운대구 포함", result!!.name.contains("해운대"))
-        println("결과: ${result.name} (${result.code})")
     }
 
     @Test
-    fun `제주 서귀포 좌표 - 서귀포시 반환`() {
-        // Given: 서귀포시 좌표
+    fun 제주_서귀포_좌표_서귀포시_반환() {
+        // Given
         val lat = 33.253077
         val lng = 126.559757
 
@@ -80,8 +77,7 @@ class BjdMatcherTest {
 
         // Then
         assertNotNull("결과가 있어야 함", result)
-        assertTrue("제주 서귀포 포함", result!!.name.contains("서귀포") || result.name.contains("제주"))
-        println("결과: ${result.name} (${result.code})")
+        assertTrue("제주 포함", result!!.name.contains("서귀포") || result.name.contains("제주"))
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -89,8 +85,8 @@ class BjdMatcherTest {
     // ══════════════════════════════════════════════════════════════════════════
 
     @Test
-    fun `대한민국 최북단 좌표 - 결과 반환`() {
-        // Given: 강원도 고성 통일전망대 근처
+    fun 대한민국_최북단_좌표_결과_반환() {
+        // Given: 강원도 고성 근처
         val lat = 38.45
         val lng = 128.40
 
@@ -99,11 +95,10 @@ class BjdMatcherTest {
 
         // Then
         assertNotNull("최북단도 결과 있어야 함", result)
-        println("최북단 결과: ${result!!.name}")
     }
 
     @Test
-    fun `대한민국 최남단 좌표 - 결과 반환`() {
+    fun 대한민국_최남단_좌표_결과_반환() {
         // Given: 제주 마라도 근처
         val lat = 33.11
         val lng = 126.27
@@ -113,7 +108,6 @@ class BjdMatcherTest {
 
         // Then
         assertNotNull("최남단도 결과 있어야 함", result)
-        println("최남단 결과: ${result!!.name}")
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -121,8 +115,8 @@ class BjdMatcherTest {
     // ══════════════════════════════════════════════════════════════════════════
 
     @Test
-    fun `일본 도쿄 좌표 - null 반환`() {
-        // Given: 도쿄 좌표
+    fun 일본_도쿄_좌표_null_반환() {
+        // Given
         val lat = 35.6762
         val lng = 139.6503
 
@@ -134,8 +128,8 @@ class BjdMatcherTest {
     }
 
     @Test
-    fun `중국 베이징 좌표 - null 반환`() {
-        // Given: 베이징 좌표
+    fun 중국_베이징_좌표_null_반환() {
+        // Given
         val lat = 39.9042
         val lng = 116.4074
 
@@ -151,8 +145,8 @@ class BjdMatcherTest {
     // ══════════════════════════════════════════════════════════════════════════
 
     @Test
-    fun `반환된 centroid는 대한민국 범위 내`() {
-        // Given: 서울 좌표
+    fun 반환된_centroid는_대한민국_범위_내() {
+        // Given
         val lat = 37.5665
         val lng = 126.9780
 
@@ -161,14 +155,12 @@ class BjdMatcherTest {
 
         // Then
         assertNotNull(result)
-        // 대한민국 위도 범위: 33 ~ 39
         assertTrue("위도 범위 내", result!!.centroidLat in 33.0..39.0)
-        // 대한민국 경도 범위: 124 ~ 132
         assertTrue("경도 범위 내", result.centroidLng in 124.0..132.0)
     }
 
     @Test
-    fun `법정동 코드는 숫자 문자열`() {
+    fun 법정동_코드는_숫자_문자열() {
         // Given
         val lat = 37.5665
         val lng = 126.9780
@@ -187,8 +179,8 @@ class BjdMatcherTest {
     // ══════════════════════════════════════════════════════════════════════════
 
     @Test
-    fun `1000회 조회 성능`() {
-        // Given: 서울 좌표
+    fun 조회_1000회_1초_이내() {
+        // Given
         val lat = 37.5665
         val lng = 126.9780
 
@@ -200,30 +192,28 @@ class BjdMatcherTest {
         val elapsed = System.currentTimeMillis() - startTime
 
         // Then
-        println("1000회 조회: ${elapsed}ms (평균 ${elapsed / 1000.0}ms)")
         assertTrue("1000회 1초 이내", elapsed < 1000)
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // 다양한 지역 테스트
+    // 전국 주요 도시
     // ══════════════════════════════════════════════════════════════════════════
 
     @Test
-    fun `전국 주요 도시 매칭`() {
+    fun 전국_7대_도시_매칭() {
         val testCases = listOf(
-            Triple(37.5665, 126.9780, "서울"),    // 서울시청
-            Triple(35.1796, 129.0756, "부산"),    // 부산시청
-            Triple(35.8714, 128.6014, "대구"),    // 대구시청
-            Triple(37.4563, 126.7052, "인천"),    // 인천시청
-            Triple(35.1595, 126.8526, "광주"),    // 광주시청
-            Triple(36.3504, 127.3845, "대전"),    // 대전시청
-            Triple(35.5384, 129.3114, "울산"),    // 울산시청
+            Triple(37.5665, 126.9780, "서울"),
+            Triple(35.1796, 129.0756, "부산"),
+            Triple(35.8714, 128.6014, "대구"),
+            Triple(37.4563, 126.7052, "인천"),
+            Triple(35.1595, 126.8526, "광주"),
+            Triple(36.3504, 127.3845, "대전"),
+            Triple(35.5384, 129.3114, "울산"),
         )
 
         testCases.forEach { (lat, lng, expectedCity) ->
             val result = bjdMatcher.findNearest(lat, lng)
             assertNotNull("$expectedCity 결과 있어야 함", result)
-            println("$expectedCity: ${result!!.name}")
         }
     }
 }
