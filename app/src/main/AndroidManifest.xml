@@ -26,6 +26,7 @@
         <!-- 홈 위젯 -->
         <receiver
             android:name=".widget.AircheckWidgetProvider"
+            android:label="@string/widget_name"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
