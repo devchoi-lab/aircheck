@@ -121,9 +121,18 @@ internal fun WeatherScreen(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
+                        val context = LocalContext.current
                         when {
                             uiState.isLoading -> { }
-                            uiState.needsLocationPermission -> PermissionRequiredContent()
+                            uiState.needsLocationPermission -> PermissionRequiredContent(
+                                onOpenSettings = {
+                                    val intent = android.content.Intent(
+                                        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                        android.net.Uri.fromParts("package", context.packageName, null)
+                                    )
+                                    context.startActivity(intent)
+                                }
+                            )
                             uiState.error != null -> ErrorContent(uiState.error, onIntent)
                             else -> SuccessContent(uiState.airQuality, uiState.weather, onIntent)
                         }
@@ -779,7 +788,9 @@ private fun ErrorSection(title: String, message: String, onRetry: () -> Unit) {
 // ── 권한 필요 화면 ───────────────────────────────────────────────────────
 
 @Composable
-private fun PermissionRequiredContent() {
+private fun PermissionRequiredContent(
+    onOpenSettings: () -> Unit
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.padding(32.dp)
@@ -800,12 +811,9 @@ private fun PermissionRequiredContent() {
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(24.dp))
-        Text(
-            text = "설정 → 앱 → 에어체크 → 권한 → 위치",
-            fontSize = 12.sp,
-            color = MaterialTheme.colorScheme.outline,
-            textAlign = TextAlign.Center
-        )
+        Button(onClick = onOpenSettings) {
+            Text("설정으로 이동")
+        }
     }
 }
 
