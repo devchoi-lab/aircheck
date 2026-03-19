@@ -11,6 +11,7 @@ import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
+import seriouschoi.aircheck.core.resource.R as CoreR
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
 import seriouschoi.aircheck.core.ui.mapper.toLabel
 import javax.inject.Inject
@@ -49,7 +50,7 @@ class WidgetDataManager @Inject constructor(
         try {
             // 1. 현재 위치 가져오기
             val smartLocation = locationProvider.getCurrentSmartLocation()
-                ?: return@withContext Result.failure(Exception("위치를 가져올 수 없습니다"))
+                ?: return@withContext Result.failure(Exception(context.getString(CoreR.string.widget_error_location)))
             
             // 2. 날씨 데이터 가져오기
             val result = combinedWeatherRepository.fetch(smartLocation.lat, smartLocation.lng)
@@ -58,11 +59,11 @@ class WidgetDataManager @Inject constructor(
             val airQuality = result.airQuality.getOrNull()
             
             if (weather == null && airQuality == null) {
-                return@withContext Result.failure(Exception("데이터를 가져올 수 없습니다"))
+                return@withContext Result.failure(Exception(context.getString(CoreR.string.widget_error_data)))
             }
             
             // 3. 위젯 데이터 저장
-            val locationName = smartLocation.bjdName.split(" ").lastOrNull() ?: "현재 위치"
+            val locationName = smartLocation.bjdName.split(" ").lastOrNull() ?: context.getString(CoreR.string.widget_default_location)
             val pmLevel = airQuality?.level ?: AqiLevel.UNKNOWN
             val rainProb = weather?.precipitationProbability ?: 0
             val feelsLike = weather?.feelsLike ?: 20.0
@@ -94,7 +95,7 @@ class WidgetDataManager @Inject constructor(
             .putString(KEY_RAIN_PROB, "${rainProb}%")
             .putString(KEY_CLOTHING, clothing.toLabel(context))
             .putInt(KEY_CLOTHING_ICON, clothing.toIconRes())
-            .putString(KEY_UPDATE_TIME, "방금")
+            .putString(KEY_UPDATE_TIME, context.getString(CoreR.string.widget_update_time_now))
             .apply()
     }
     

@@ -17,8 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import seriouschoi.aircheck.core.domain.model.Region
 import seriouschoi.aircheck.core.domain.model.RegionSearchResult
+import seriouschoi.aircheck.core.resource.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,17 +29,17 @@ internal fun LocationPickerScreen(
     onIntent: (LocationPickerContract.Intent) -> Unit,
     onNavigateBack: () -> Unit
 ) {
-    val title = if (uiState.currentPath.isEmpty()) "지역 선택" else uiState.currentPath.last()
+    val title = if (uiState.currentPath.isEmpty()) stringResource(CoreR.string.location_picker_title) else uiState.currentPath.last()
 
     // 알림 다이얼로그
     uiState.alertMessage?.let { message ->
         AlertDialog(
             onDismissRequest = { onIntent(LocationPickerContract.Intent.DismissAlert) },
-            title = { Text("안내", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(CoreR.string.location_picker_guide_title), fontWeight = FontWeight.Bold) },
             text = { Text(message.asString()) },
             confirmButton = {
                 TextButton(onClick = { onIntent(LocationPickerContract.Intent.DismissAlert) }) {
-                    Text("확인")
+                    Text(stringResource(CoreR.string.button_confirm))
                 }
             }
         )
@@ -52,7 +54,7 @@ internal fun LocationPickerScreen(
                         if (uiState.currentPath.isEmpty()) onNavigateBack()
                         else onIntent(LocationPickerContract.Intent.BackClicked)
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.content_description_back))
                     }
                 }
             )
@@ -70,7 +72,7 @@ internal fun LocationPickerScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                placeholder = { Text("도, 시, 구, 동 검색...") },
+                placeholder = { Text(stringResource(CoreR.string.location_picker_search_hint)) },
                 singleLine = true
             )
 
@@ -82,7 +84,7 @@ internal fun LocationPickerScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "\"${uiState.searchQuery}\" 검색 결과가 없습니다",
+                            text = stringResource(CoreR.string.location_picker_no_result, uiState.searchQuery),
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -227,7 +229,7 @@ private fun SelectableBadge() {
             modifier = Modifier.size(14.dp)
         )
         Text(
-            text = "선택",
+            text = stringResource(CoreR.string.button_select),
             fontSize = 12.sp,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.SemiBold
