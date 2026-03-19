@@ -12,6 +12,7 @@ android {
 
     defaultConfig {
         minSdk = 26
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     compileOptions {
@@ -38,9 +39,9 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     
-    // Test
-    testImplementation(libs.junit)
-    testImplementation(libs.mockk)
-    testImplementation(libs.robolectric)
-    testImplementation("androidx.test:core:1.6.1")
+    // Android Instrumented Test
+    androidTestImplementation(libs.junit)
+    androidTestImplementation("androidx.test:core:1.6.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
 }
