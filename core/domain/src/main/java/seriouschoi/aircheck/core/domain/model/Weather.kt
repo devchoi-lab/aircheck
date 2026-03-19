@@ -22,19 +22,19 @@ data class HourlyForecast(
     val condition: WeatherCondition
 )
 
-enum class WeatherCondition(val label: String, val emoji: String) {
-    CLEAR_DAY("맑음", "☀️"),
-    CLEAR_NIGHT("맑음 (야간)", "🌙"),
-    PARTLY_CLOUDY("구름 조금", "⛅"),
-    CLOUDY("흐림", "☁️"),
-    FOG("안개", "🌫️"),
-    DRIZZLE("이슬비", "🌦️"),
-    RAIN("비", "🌧️"),
-    HEAVY_RAIN("폭우", "⛈️"),
-    SNOW("눈", "❄️"),
-    SNOW_SHOWER("소나기눈", "🌨️"),
-    THUNDERSTORM("뇌우", "⚡"),
-    UNKNOWN("알 수 없음", "❓");
+enum class WeatherCondition {
+    CLEAR_DAY,
+    CLEAR_NIGHT,
+    PARTLY_CLOUDY,
+    CLOUDY,
+    FOG,
+    DRIZZLE,
+    RAIN,
+    HEAVY_RAIN,
+    SNOW,
+    SNOW_SHOWER,
+    THUNDERSTORM,
+    UNKNOWN;
 
     companion object {
         fun from(code: Int, isDay: Boolean): WeatherCondition = when (code) {

@@ -25,14 +25,14 @@ data class AirQuality(
  * PM2.5 (24시간): AQG 15, IT-4 25, IT-3 37.5, IT-2 50, IT-1 75
  * PM10 (24시간): AQG 45, IT-4 50, IT-3 75, IT-2 100, IT-1 150
  */
-enum class AqiLevel(val label: String, val emoji: String, val colorHex: Long) {
-    GOOD("좋음", "😊", 0xFF00C853),           // AQG 이하
-    MODERATE("보통", "🙂", 0xFFFFD600),       // IT-4 이하
-    UNHEALTHY_SENSITIVE("민감군 주의", "😐", 0xFFFF9100), // IT-3 이하
-    UNHEALTHY("나쁨", "😷", 0xFFFF5722),      // IT-2 이하
-    VERY_UNHEALTHY("매우 나쁨", "🤢", 0xFF9C27B0), // IT-1 이하
-    HAZARDOUS("위험", "☠️", 0xFF7E0023),      // IT-1 초과
-    UNKNOWN("알 수 없음", "❓", 0xFF9E9E9E);
+enum class AqiLevel {
+    GOOD,              // AQG 이하
+    MODERATE,          // IT-4 이하
+    UNHEALTHY_SENSITIVE, // IT-3 이하
+    UNHEALTHY,         // IT-2 이하
+    VERY_UNHEALTHY,    // IT-1 이하
+    HAZARDOUS,         // IT-1 초과
+    UNKNOWN;
 
     companion object {
         /** 에어코리아 통합대기환경지수(KHAI) 등급 */

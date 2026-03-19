@@ -12,6 +12,7 @@ import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.resource.R as CoreR
+import seriouschoi.aircheck.core.ui.mapper.toColorHex
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
 import seriouschoi.aircheck.core.ui.mapper.toLabel
 import javax.inject.Inject
@@ -86,11 +87,11 @@ class WidgetDataManager @Inject constructor(
         feelsLike: Double
     ) {
         val clothing = RecommendedClothing.fromFeelsLike(feelsLike)
-        val pmColor = getPmColor(pmLevel)
+        val pmColor = pmLevel.toColorHex().toInt()
         
         prefs.edit()
             .putString(KEY_LOCATION, location)
-            .putString(KEY_PM_LEVEL, pmLevel.label)
+            .putString(KEY_PM_LEVEL, pmLevel.toLabel(context))
             .putInt(KEY_PM_COLOR, pmColor)
             .putString(KEY_RAIN_PROB, "${rainProb}%")
             .putString(KEY_CLOTHING, clothing.toLabel(context))
@@ -109,15 +110,5 @@ class WidgetDataManager @Inject constructor(
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
         }
         context.sendBroadcast(intent)
-    }
-    
-    private fun getPmColor(level: AqiLevel): Int = when (level) {
-        AqiLevel.GOOD -> 0xFF4CAF50.toInt()
-        AqiLevel.MODERATE -> 0xFFFFC107.toInt()
-        AqiLevel.UNHEALTHY_SENSITIVE -> 0xFFFF9800.toInt()
-        AqiLevel.UNHEALTHY -> 0xFFF44336.toInt()
-        AqiLevel.VERY_UNHEALTHY -> 0xFF9C27B0.toInt()
-        AqiLevel.HAZARDOUS -> 0xFF880E4F.toInt()
-        AqiLevel.UNKNOWN -> 0xFF888888.toInt()
     }
 }
