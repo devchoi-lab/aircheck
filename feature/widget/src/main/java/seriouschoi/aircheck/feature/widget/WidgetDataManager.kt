@@ -1,4 +1,4 @@
-package seriouschoi.aircheck.widget
+package seriouschoi.aircheck.feature.widget
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -19,11 +19,6 @@ import seriouschoi.aircheck.core.ui.mapper.toLabel
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * 위젯 데이터 관리자
- * 
- * Repository에서 데이터 fetch → SharedPreferences 저장 → 위젯 갱신
- */
 @Singleton
 class WidgetDataManager @Inject constructor(
     @ApplicationContext private val context: Context,
@@ -41,18 +36,14 @@ class WidgetDataManager @Inject constructor(
         private const val KEY_CLOTHING_ICON = "clothing_icon"
         private const val KEY_UPDATE_TIME = "update_time"
     }
-    
+
     private val prefs by lazy {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     }
-    
-    /**
-     * 위젯 데이터 갱신
-     */
+
     suspend fun refreshWidgetData(): Result<Unit> = withContext(Dispatchers.IO) {
         Log.d(TAG, "refreshWidgetData started")
         try {
-            // 1. 현재 위치 가져오기
             val smartLocation = locationProvider.getCurrentSmartLocation()
             if (smartLocation == null) {
                 Log.e(TAG, "Failed to get location")
@@ -60,7 +51,6 @@ class WidgetDataManager @Inject constructor(
             }
             Log.d(TAG, "Location: ${smartLocation.bjdName} (${smartLocation.lat}, ${smartLocation.lng})")
 
-            // 2. UseCase를 통해 날씨 데이터 가져오기 (centroid 변환 포함)
             val output = fetchWeatherUseCase(smartLocation.lat, smartLocation.lng)
             val weather = output.result.weather.getOrNull()
             val airQuality = output.result.airQuality.getOrNull()
@@ -72,18 +62,16 @@ class WidgetDataManager @Inject constructor(
                 return@withContext Result.failure(Exception(context.getString(CoreR.string.widget_error_data)))
             }
 
-            // 3. 위젯 데이터 저장
             val locationName = smartLocation.bjdName.split(" ").lastOrNull() ?: context.getString(CoreR.string.widget_default_location)
             val pmLevel = airQuality?.level ?: AqiLevel.UNKNOWN
             val rainProb = weather?.precipitationProbability ?: 0
             val feelsLike = weather?.feelsLike ?: 20.0
-            
+
             Log.d(TAG, "Saving - location: $locationName, pm: $pmLevel, rain: $rainProb, feelsLike: $feelsLike")
             saveData(locationName, pmLevel, rainProb, feelsLike)
-            
-            // 4. 위젯 갱신 요청
+
             notifyWidgetUpdate()
-            
+
             Log.d(TAG, "refreshWidgetData completed successfully")
             Result.success(Unit)
         } catch (e: Exception) {
@@ -91,7 +79,7 @@ class WidgetDataManager @Inject constructor(
             Result.failure(e)
         }
     }
-    
+
     private fun saveData(
         location: String,
         pmLevel: AqiLevel,
@@ -100,7 +88,7 @@ class WidgetDataManager @Inject constructor(
     ) {
         val clothing = RecommendedClothing.fromFeelsLike(feelsLike)
         val pmColor = pmLevel.toColorArgb()
-        
+
         prefs.edit()
             .putString(KEY_LOCATION, location)
             .putString(KEY_PM_LEVEL, pmLevel.toLabel(context))
@@ -111,7 +99,7 @@ class WidgetDataManager @Inject constructor(
             .putString(KEY_UPDATE_TIME, context.getString(CoreR.string.widget_update_time_now))
             .apply()
     }
-    
+
     private fun notifyWidgetUpdate() {
         val intent = Intent(context, AircheckWidgetProvider::class.java).apply {
             action = AppWidgetManager.ACTION_APPWIDGET_UPDATE

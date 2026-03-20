@@ -37,6 +37,7 @@ dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:ui"))
     implementation(project(":feature:weather"))
+    implementation(project(":feature:widget"))
     
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.compose.bom))

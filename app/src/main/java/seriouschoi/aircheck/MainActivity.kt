@@ -30,7 +30,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import seriouschoi.aircheck.feature.weather.navigation.WeatherRoute
 import seriouschoi.aircheck.feature.weather.navigation.weatherScreen
 import seriouschoi.aircheck.ui.theme.AirCheckTheme
-import seriouschoi.aircheck.widget.AircheckWidgetProvider
+import seriouschoi.aircheck.feature.widget.AircheckWidgetProvider
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 /** 권한 승인 콜백을 전달하기 위한 CompositionLocal */
