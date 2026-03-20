@@ -9,6 +9,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import seriouschoi.aircheck.core.config.ApiConfig
 import seriouschoi.aircheck.core.network.api.AircheckApi
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
@@ -17,25 +18,23 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "https://api.todaygonggi.com/"
-
     @Provides
     @Singleton
     fun provideJson(): Json = Json { ignoreUnknownKeys = true }
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient =
+    fun provideOkHttpClient(apiConfig: ApiConfig): OkHttpClient =
         OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(apiConfig.connectTimeoutMs, TimeUnit.MILLISECONDS)
+            .readTimeout(apiConfig.timeoutMs, TimeUnit.MILLISECONDS)
             .build()
 
     @Provides
     @Singleton
-    fun provideRetrofit(client: OkHttpClient, json: Json): Retrofit =
+    fun provideRetrofit(client: OkHttpClient, json: Json, apiConfig: ApiConfig): Retrofit =
         Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(apiConfig.baseUrl)
             .client(client)
             .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
             .build()

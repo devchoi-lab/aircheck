@@ -24,6 +24,8 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:config"))
+    
     implementation(libs.okhttp)
     implementation(libs.retrofit)
     implementation(libs.retrofit.kotlinx.serialization)

@@ -11,6 +11,7 @@ dependencyResolutionManagement {
 }
 rootProject.name = "aircheck"
 include(":app")
+include(":core:config")
 include(":core:domain")
 include(":core:data")
 include(":core:network")
