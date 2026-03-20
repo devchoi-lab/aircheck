@@ -26,11 +26,8 @@ import seriouschoi.aircheck.core.resource.UiText
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract.Effect
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract.Intent
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract.UiState
+import seriouschoi.aircheck.core.domain.util.haversineDistance
 import javax.inject.Inject
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 @HiltViewModel
 internal class LocationPickerViewModel @Inject constructor(
@@ -226,16 +223,5 @@ internal class LocationPickerViewModel @Inject constructor(
         return sortedBy { result ->
             haversineDistance(loc.latitude, loc.longitude, result.region.lat, result.region.lng)
         }
-    }
-
-    /** Haversine 공식으로 두 좌표 간 거리 (km) 계산 */
-    private fun haversineDistance(lat1: Double, lng1: Double, lat2: Double, lng2: Double): Double {
-        val r = 6371.0 // 지구 반지름 (km)
-        val dLat = Math.toRadians(lat2 - lat1)
-        val dLng = Math.toRadians(lng2 - lng1)
-        val a = sin(dLat / 2) * sin(dLat / 2) +
-                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
-                sin(dLng / 2) * sin(dLng / 2)
-        return r * 2 * atan2(sqrt(a), sqrt(1 - a))
     }
 }
