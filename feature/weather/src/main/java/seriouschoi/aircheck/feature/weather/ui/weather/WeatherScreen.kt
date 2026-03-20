@@ -269,8 +269,8 @@ private fun SuccessContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // ── 추천 아이템 (가장 위에) ─────────────────────────────
         if (weather.data != null || air.data != null) {
@@ -321,22 +321,22 @@ private fun WeatherSection(weather: WeatherData) {
         // 현재 날씨 라벨
         Text(
             text = stringResource(CoreR.string.section_current_weather),
-            fontSize = 13.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         
         // 날씨 상태 + 이모지
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(weather.condition.toEmoji(), fontSize = 36.sp)
+            Text(weather.condition.toEmoji(), fontSize = 48.sp)
             Column {
                 Text(
                     text = stringResource(weather.condition.toLabelRes()),
-                    fontSize = 18.sp,
+                    fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )
                 if (weather.precipitation > 0) {
@@ -540,16 +540,16 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
 @Composable
 private fun WeatherStat(emoji: String, label: String, value: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(emoji, fontSize = 20.sp)
-        Spacer(Modifier.height(2.dp))
+        Text(emoji, fontSize = 24.sp)
+        Spacer(Modifier.height(4.dp))
         Text(
             text = value,
-            fontSize = 16.sp,
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold
         )
         Text(
             text = label,
-            fontSize = 11.sp,
+            fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -645,38 +645,38 @@ private fun AirQualitySection(air: AirQuality) {
         // 섹션 라벨
         Text(
             text = stringResource(CoreR.string.section_air_quality),
-            fontSize = 13.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
         
         // 통합 공기질 등급 (최악 기준)
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(56.dp)
-                    .background(worstColor.copy(alpha = 0.15f), RoundedCornerShape(28.dp)),
+                    .size(64.dp)
+                    .background(worstColor.copy(alpha = 0.15f), RoundedCornerShape(32.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = air.worstLevel.toEmoji(),
-                    fontSize = 28.sp
+                    fontSize = 32.sp
                 )
             }
             Column {
                 Text(
                     text = stringResource(air.worstLevel.toLabelRes()),
-                    fontSize = 20.sp,
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = worstColor
                 )
                 Text(
                     text = stringResource(CoreR.string.air_quality_integrated),
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -735,10 +735,10 @@ private fun PollutantRow(label: String, pmData: PmData?, mainStationName: String
         ) {
             // 라벨 + 값
             Column {
-                Text(label, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(label, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     text = pmData?.let { "%.1f μg/m³".format(it.value) } ?: "- μg/m³",
-                    fontSize = 18.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -746,11 +746,11 @@ private fun PollutantRow(label: String, pmData: PmData?, mainStationName: String
             Box(
                 modifier = Modifier
                     .background(color.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
                 Text(
                     text = "${level.toEmoji()} ${stringResource(level.toLabelRes())}",
-                    fontSize = 13.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = color
                 )
