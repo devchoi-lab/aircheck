@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -182,7 +183,7 @@ internal fun SuccessContent(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
                 ) {
-                    WeatherSection(weather.data, modifier = Modifier.padding(16.dp))
+                    WeatherSection(weather.data)
                 }
             }
             weather.error != null -> ErrorSection(
@@ -227,20 +228,23 @@ internal fun SuccessContent(
 
 @Composable
 private fun WeatherSection(weather: WeatherData, modifier: Modifier = Modifier) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    val horizontalPadding = 16.dp
+    Column(modifier = modifier.fillMaxWidth().padding(vertical = 16.dp)) {
         // 현재 날씨 라벨
         Text(
             text = stringResource(CoreR.string.section_current_weather),
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(horizontal = horizontalPadding)
         )
         Spacer(Modifier.height(12.dp))
-        
+
         // 날씨 상태 + 이모지
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(horizontal = horizontalPadding)
         ) {
             Text(weather.condition.toEmoji(), fontSize = 48.sp)
             Column {
@@ -267,7 +271,7 @@ private fun WeatherSection(weather: WeatherData, modifier: Modifier = Modifier) 
 
         // 기온 / 체감온도 / 강수확률 / 강설확률
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             WeatherStat(
@@ -300,11 +304,13 @@ private fun WeatherSection(weather: WeatherData, modifier: Modifier = Modifier) 
                 text = stringResource(CoreR.string.section_hourly_forecast),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = horizontalPadding)
             )
             Spacer(Modifier.height(8.dp))
-            
+
             LazyRow(
+                contentPadding = PaddingValues(horizontal = horizontalPadding),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val grouped = weather.hourlyForecast.groupBy { it.dayLabel }

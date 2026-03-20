@@ -1,5 +1,6 @@
 package seriouschoi.aircheck.core.network.api
 
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -7,19 +8,21 @@ import retrofit2.http.POST
 import retrofit2.http.Query
 
 // ── API 응답 모델 ──────────────────────────────────────────────────────────
-
+@InternalSerializationApi
 @Serializable
 data class AircheckWeatherResponse(
     val weather: WeatherResponse? = null,
     val airQuality: AirQualityResponse? = null
 )
 
+@InternalSerializationApi
 @Serializable
 data class WeatherResponse(
     val current: CurrentWeather? = null,
     val hourlyForecast: List<HourlyForecastResponse> = emptyList()
 )
 
+@InternalSerializationApi
 @Serializable
 data class CurrentWeather(
     val temperature: Double = 0.0,
@@ -31,6 +34,7 @@ data class CurrentWeather(
     val isDay: Boolean = true
 )
 
+@InternalSerializationApi
 @Serializable
 data class HourlyForecastResponse(
     val time: String = "",
@@ -43,6 +47,7 @@ data class HourlyForecastResponse(
     val weatherCondition: String = ""
 )
 
+@InternalSerializationApi
 @Serializable
 data class AirQualityResponse(
     val stationName: String = "",
@@ -55,18 +60,20 @@ data class AirQualityResponse(
 )
 
 // ── 배치 API 모델 ──────────────────────────────────────────────────────────
-
+@InternalSerializationApi
 @Serializable
 data class BatchWeatherRequest(
     val locations: List<LocationRequest>
 )
 
+@InternalSerializationApi
 @Serializable
 data class LocationRequest(
     val lat: Double,
     val lng: Double
 )
 
+@InternalSerializationApi
 @Serializable
 data class BatchWeatherItem(
     val lat: Double = 0.0,
@@ -79,12 +86,14 @@ data class BatchWeatherItem(
 
 interface AircheckApi {
 
+    @OptIn(InternalSerializationApi::class)
     @GET("api/v1/weather")
     suspend fun getWeather(
         @Query("lat") lat: Double,
         @Query("lng") lng: Double
     ): AircheckWeatherResponse
 
+    @OptIn(InternalSerializationApi::class)
     @POST("api/v1/weather/batch")
     suspend fun getBatchWeather(
         @Body request: BatchWeatherRequest
