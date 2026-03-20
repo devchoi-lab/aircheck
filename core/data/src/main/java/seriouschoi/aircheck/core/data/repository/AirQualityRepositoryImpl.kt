@@ -3,8 +3,6 @@
 package seriouschoi.aircheck.core.data.repository
 
 import seriouschoi.aircheck.core.domain.model.AirQuality
-import seriouschoi.aircheck.core.domain.model.AqiLevel
-import seriouschoi.aircheck.core.domain.model.PmData
 import seriouschoi.aircheck.core.domain.repository.AirQualityRepository
 import seriouschoi.aircheck.core.network.api.AircheckApi
 import javax.inject.Inject
@@ -24,46 +22,7 @@ class AirQualityRepositoryImpl @Inject constructor(
     override suspend fun fetch(lat: Double, lng: Double): Result<AirQuality> {
         return try {
             val response = api.getWeather(lat, lng)
-
-            val air = response.airQuality
-                ?: return Result.failure(Exception("대기질 데이터 없음"))
-
-            val mainStation = air.stationName
-
-            val pm10Data = air.pm10?.let { value ->
-                val isFromFallback = air.pm10Station != mainStation
-                PmData(
-                    value = value.toDouble(),
-                    level = AqiLevel.fromPm10(value.toDouble()),
-                    stationName = air.pm10Station,
-                    isFromFallback = isFromFallback
-                )
-            }
-
-            val pm25Data = air.pm25?.let { value ->
-                val isFromFallback = air.pm25Station != mainStation
-                PmData(
-                    value = value.toDouble(),
-                    level = AqiLevel.fromPm25(value.toDouble()),
-                    stationName = air.pm25Station,
-                    isFromFallback = isFromFallback
-                )
-            }
-
-            val levels = listOfNotNull(pm25Data?.level, pm10Data?.level)
-            val worstLevel = levels.maxByOrNull { it.ordinal } ?: AqiLevel.UNKNOWN
-
-            Result.success(
-                AirQuality(
-                    aqi = 0,
-                    pm25 = pm25Data,
-                    pm10 = pm10Data,
-                    mainStationName = "${air.stationName} (${air.sidoName})",
-                    updatedAt = air.dataTime,
-                    level = worstLevel,
-                    worstLevel = worstLevel
-                )
-            )
+            WeatherParsingUtil.parseAirQualityData(response.airQuality)
         } catch (e: Exception) {
             Result.failure(e)
         }

@@ -99,7 +99,7 @@ internal class LocationPickerViewModel @Inject constructor(
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = UiText.DynamicString(e.message ?: "지역 데이터 로드 실패")
+                    error = UiText.StringResource(seriouschoi.aircheck.core.resource.R.string.error_region_load)
                 )
             }
         }

@@ -740,21 +740,21 @@ internal fun PermissionRequiredContent(
         Text("📍", fontSize = 64.sp)
         Spacer(Modifier.height(24.dp))
         Text(
-            text = "위치 권한이 필요합니다",
+            text = stringResource(CoreR.string.permission_title),
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            text = "현재 위치의 날씨와 미세먼지 정보를\n확인하려면 위치 권한을 허용해주세요.",
+            text = stringResource(CoreR.string.permission_message),
             fontSize = 14.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(24.dp))
         Button(onClick = onOpenSettings) {
-            Text("설정으로 이동")
+            Text(stringResource(CoreR.string.permission_go_settings))
         }
     }
 }

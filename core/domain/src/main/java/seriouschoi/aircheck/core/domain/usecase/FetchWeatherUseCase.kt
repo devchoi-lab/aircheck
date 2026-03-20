@@ -26,8 +26,8 @@ class FetchWeatherUseCase @Inject constructor(
             ?: return FetchWeatherOutput(
                 smartLocation = null,
                 result = CombinedWeatherResult(
-                    weather = Result.failure(Exception("법정동 매칭 실패")),
-                    airQuality = Result.failure(Exception("법정동 매칭 실패"))
+                    weather = Result.failure(Exception("현재 위치를 확인할 수 없어요")),
+                    airQuality = Result.failure(Exception("현재 위치를 확인할 수 없어요"))
                 )
             )
 
@@ -64,8 +64,8 @@ class FetchWeatherUseCase @Inject constructor(
                 FetchWeatherOutput(
                     smartLocation = null,
                     result = CombinedWeatherResult(
-                        weather = Result.failure(Exception("법정동 매칭 실패")),
-                        airQuality = Result.failure(Exception("법정동 매칭 실패"))
+                        weather = Result.failure(Exception("현재 위치를 확인할 수 없어요")),
+                        airQuality = Result.failure(Exception("현재 위치를 확인할 수 없어요"))
                     )
                 )
             }
