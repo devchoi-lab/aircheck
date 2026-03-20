@@ -287,14 +287,18 @@ class WeatherViewModelTest {
         every { observeWeatherUseCase() } returns flowOf(createMockWeatherState())
 
         val viewModel = createViewModel()
-        advanceUntilIdle()
-
-        // When
-        viewModel.processIntent(WeatherContract.Intent.ShowInfoDialog)
-        advanceUntilIdle()
 
         // Then
-        assertTrue("다이얼로그 표시", viewModel.screenState.value.uiControl.showInfoDialog)
+        viewModel.screenState.test {
+            awaitLoadedState() // 초기 로드 대기
+            
+            // When
+            viewModel.processIntent(WeatherContract.Intent.ShowInfoDialog)
+            
+            val state = awaitItem()
+            assertTrue("다이얼로그 표시", state.uiControl.showInfoDialog)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -303,17 +307,20 @@ class WeatherViewModelTest {
         every { observeWeatherUseCase() } returns flowOf(createMockWeatherState())
 
         val viewModel = createViewModel()
-        advanceUntilIdle()
-
-        // When
-        viewModel.processIntent(WeatherContract.Intent.RequestDeleteLocation(1, "집"))
-        advanceUntilIdle()
 
         // Then
-        val state = viewModel.screenState.value
-        assertNotNull("삭제 확인 다이얼로그", state.uiControl.deleteConfirm)
-        assertEquals("위치 ID", 1L, state.uiControl.deleteConfirm?.locationId)
-        assertEquals("위치 이름", "집", state.uiControl.deleteConfirm?.locationName)
+        viewModel.screenState.test {
+            awaitLoadedState() // 초기 로드 대기
+            
+            // When
+            viewModel.processIntent(WeatherContract.Intent.RequestDeleteLocation(1, "집"))
+            
+            val state = awaitItem()
+            assertNotNull("삭제 확인 다이얼로그", state.uiControl.deleteConfirm)
+            assertEquals("위치 ID", 1L, state.uiControl.deleteConfirm?.locationId)
+            assertEquals("위치 이름", "집", state.uiControl.deleteConfirm?.locationName)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
