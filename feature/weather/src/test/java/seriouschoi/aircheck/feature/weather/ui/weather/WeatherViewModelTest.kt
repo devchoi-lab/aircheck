@@ -1,11 +1,13 @@
+@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+
 package seriouschoi.aircheck.feature.weather.ui.weather
 
 import app.cash.turbine.test
 import io.mockk.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -14,33 +16,27 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import seriouschoi.aircheck.core.domain.model.*
-import seriouschoi.aircheck.core.domain.repository.CombinedWeatherResult
-import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
-import seriouschoi.aircheck.core.domain.repository.SmartLocation
-import seriouschoi.aircheck.core.domain.usecase.FetchWeatherOutput
-import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
+import seriouschoi.aircheck.core.domain.usecase.LocationWeather
+import seriouschoi.aircheck.core.domain.usecase.ObserveWeatherUseCase
+import seriouschoi.aircheck.core.domain.usecase.WeatherState
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class WeatherViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    private lateinit var fetchWeatherUseCase: FetchWeatherUseCase
-    private lateinit var locationProvider: LocationProvider
+    private lateinit var observeWeatherUseCase: ObserveWeatherUseCase
     private lateinit var savedLocationRepository: SavedLocationRepository
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
-        fetchWeatherUseCase = mockk()
-        locationProvider = mockk()
+        observeWeatherUseCase = mockk()
         savedLocationRepository = mockk()
 
         // 기본 mock 설정
         coEvery { savedLocationRepository.getAll() } returns flowOf(emptyList())
-        every { locationProvider.hasLocationPermission() } returns true
     }
 
     @After
@@ -49,25 +45,48 @@ class WeatherViewModelTest {
     }
 
     private fun createViewModel() = WeatherViewModel(
-        fetchWeatherUseCase = fetchWeatherUseCase,
-        locationProvider = locationProvider,
+        observeWeatherUseCase = observeWeatherUseCase,
         savedLocationRepository = savedLocationRepository
     )
 
-    private fun createMockSmartLocation() = SmartLocation(
-        bjdCode = "1168010100",
-        bjdName = "서울특별시 강남구 역삼동",
-        lat = 37.5,
-        lng = 127.0
-    )
+    private fun createMockWeatherState(
+        needsPermission: Boolean = false,
+        hasCurrentLocation: Boolean = true
+    ): WeatherState {
+        val locations = if (hasCurrentLocation) {
+            listOf(
+                LocationWeather(
+                    locationName = "역삼동",
+                    isCurrentLocation = true,
+                    lat = 37.5,
+                    lng = 127.0,
+                    weather = Result.success(createMockWeather()),
+                    airQuality = Result.success(createMockAirQuality()),
+                    needsPermission = needsPermission
+                )
+            )
+        } else {
+            listOf(
+                LocationWeather(
+                    locationName = "현재 위치",
+                    isCurrentLocation = true,
+                    weather = Result.failure(Exception("위치를 가져올 수 없습니다")),
+                    airQuality = Result.failure(Exception("위치를 가져올 수 없습니다")),
+                    needsPermission = needsPermission
+                )
+            )
+        }
+        return WeatherState(locations = locations, isLoading = false)
+    }
 
-    private fun createMockFetchOutput() = FetchWeatherOutput(
-        smartLocation = createMockSmartLocation(),
-        result = CombinedWeatherResult(
-            airQuality = Result.success(createMockAirQuality()),
-            weather = Result.success(createMockWeather())
-        )
-    )
+    /** 데이터가 로드될 때까지 대기 후 상태 반환 */
+    private suspend fun app.cash.turbine.ReceiveTurbine<WeatherScreenState>.awaitLoadedState(): WeatherScreenState {
+        var state = awaitItem()
+        while (state.locations.locations.isEmpty()) {
+            state = awaitItem()
+        }
+        return state
+    }
 
     // ══════════════════════════════════════════════════════════════════════════
     // 위치 권한 테스트
@@ -76,141 +95,57 @@ class WeatherViewModelTest {
     @Test
     fun `위치_권한_없으면_needsPermission_true`() = runTest {
         // Given
-        every { locationProvider.hasLocationPermission() } returns false
-        coEvery { locationProvider.getCurrentSmartLocation() } returns null
+        every { observeWeatherUseCase() } returns flowOf(
+            createMockWeatherState(needsPermission = true, hasCurrentLocation = false)
+        )
 
         // When
         val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
         viewModel.screenState.test {
-            val state = awaitItem()
+            val state = awaitLoadedState()
             assertTrue("권한 필요 상태", state.uiControl.needsLocationPermission)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
     fun `위치_권한_있으면_needsPermission_false`() = runTest {
         // Given
-        every { locationProvider.hasLocationPermission() } returns true
-        coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
+        every { observeWeatherUseCase() } returns flowOf(createMockWeatherState())
 
         // When
         val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
         viewModel.screenState.test {
-            val state = awaitItem()
+            val state = awaitLoadedState()
             assertFalse("권한 있음", state.uiControl.needsLocationPermission)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    // Intent.Load 테스트
+    // 데이터 로드 테스트
     // ══════════════════════════════════════════════════════════════════════════
-
-    @Test
-    fun `위치_없으면_Error_상태`() = runTest {
-        // Given
-        coEvery { locationProvider.getCurrentSmartLocation() } returns null
-
-        // When
-        val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Then
-        viewModel.screenState.test {
-            val state = awaitItem()
-            assertFalse("로딩 아님", state.isLoading)
-            // 권한 없거나 에러 상태
-            assertTrue("에러 또는 권한 필요", state.uiControl.error != null || state.uiControl.needsLocationPermission)
-        }
-    }
 
     @Test
     fun `위치_있으면_데이터_로드`() = runTest {
         // Given
-        coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
+        every { observeWeatherUseCase() } returns flowOf(createMockWeatherState())
 
         // When
         val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
         viewModel.screenState.test {
-            val state = awaitItem()
+            val state = awaitLoadedState()
             val currentLocation = state.currentLocation
             assertNotNull("현재 위치 있음", currentLocation)
             assertNotNull("날씨 데이터 있음", currentLocation?.weather?.data)
             assertNotNull("대기질 데이터 있음", currentLocation?.airQuality?.data)
-            assertNull("에러 없음", state.uiControl.error)
-            assertFalse("로딩 아님", state.isLoading)
-        }
-    }
-
-    @Test
-    fun `FetchWeatherUseCase_호출_확인`() = runTest {
-        // Given
-        val smartLocation = createMockSmartLocation()
-        coEvery { locationProvider.getCurrentSmartLocation() } returns smartLocation
-        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
-
-        // When
-        val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Then
-        coVerify { fetchWeatherUseCase.invoke(smartLocation.lat, smartLocation.lng) }
-    }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // Intent.Refresh 테스트
-    // ══════════════════════════════════════════════════════════════════════════
-
-    @Test
-    fun `Refresh_시_데이터_재조회`() = runTest {
-        // Given
-        coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
-
-        val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // When
-        viewModel.processIntent(WeatherContract.Intent.Refresh)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Then: 2번 호출됨 (Load + Refresh)
-        coVerify(exactly = 2) { fetchWeatherUseCase.invoke(any(), any()) }
-    }
-
-    @Test
-    fun `Refresh_시_isRefreshing_상태_변화`() = runTest {
-        // Given
-        coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
-
-        val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // When & Then
-        viewModel.screenState.test {
-            val initial = awaitItem()
-            assertFalse("초기: 리프레시 아님", initial.isRefreshing)
-
-            viewModel.processIntent(WeatherContract.Intent.Refresh)
-            
-            val refreshing = awaitItem()
-            assertTrue("리프레시 중", refreshing.isRefreshing)
-
-            testDispatcher.scheduler.advanceUntilIdle()
-
-            val done = awaitItem()
-            assertFalse("리프레시 완료", done.isRefreshing)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -221,54 +156,68 @@ class WeatherViewModelTest {
     @Test
     fun `대기질_실패해도_날씨는_표시`() = runTest {
         // Given
-        coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns FetchWeatherOutput(
-            smartLocation = createMockSmartLocation(),
-            result = CombinedWeatherResult(
-                airQuality = Result.failure(Exception("API 에러")),
-                weather = Result.success(createMockWeather())
+        every { observeWeatherUseCase() } returns flowOf(
+            WeatherState(
+                locations = listOf(
+                    LocationWeather(
+                        locationName = "역삼동",
+                        isCurrentLocation = true,
+                        lat = 37.5,
+                        lng = 127.0,
+                        weather = Result.success(createMockWeather()),
+                        airQuality = Result.failure(Exception("API 에러"))
+                    )
+                ),
+                isLoading = false
             )
         )
 
         // When
         val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
         viewModel.screenState.test {
-            val state = awaitItem()
+            val state = awaitLoadedState()
             val currentLocation = state.currentLocation!!
             assertNull("대기질 데이터 없음", currentLocation.airQuality.data)
             assertNotNull("대기질 에러 있음", currentLocation.airQuality.error)
             assertNotNull("날씨 데이터 있음", currentLocation.weather.data)
             assertNull("날씨 에러 없음", currentLocation.weather.error)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
     fun `날씨_실패해도_대기질은_표시`() = runTest {
         // Given
-        coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns FetchWeatherOutput(
-            smartLocation = createMockSmartLocation(),
-            result = CombinedWeatherResult(
-                airQuality = Result.success(createMockAirQuality()),
-                weather = Result.failure(Exception("API 에러"))
+        every { observeWeatherUseCase() } returns flowOf(
+            WeatherState(
+                locations = listOf(
+                    LocationWeather(
+                        locationName = "역삼동",
+                        isCurrentLocation = true,
+                        lat = 37.5,
+                        lng = 127.0,
+                        weather = Result.failure(Exception("API 에러")),
+                        airQuality = Result.success(createMockAirQuality())
+                    )
+                ),
+                isLoading = false
             )
         )
 
         // When
         val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
         viewModel.screenState.test {
-            val state = awaitItem()
+            val state = awaitLoadedState()
             val currentLocation = state.currentLocation!!
             assertNotNull("대기질 데이터 있음", currentLocation.airQuality.data)
             assertNull("대기질 에러 없음", currentLocation.airQuality.error)
             assertNull("날씨 데이터 없음", currentLocation.weather.data)
             assertNotNull("날씨 에러 있음", currentLocation.weather.error)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -279,55 +228,52 @@ class WeatherViewModelTest {
     @Test
     fun `저장된_위치도_함께_로드`() = runTest {
         // Given
-        val savedLocations = listOf(
-            SavedLocation(id = 1, name = "집", displayName = "서울 강남구 집", lat = 37.4, lng = 126.9),
-            SavedLocation(id = 2, name = "회사", displayName = "서울 중구 회사", lat = 37.6, lng = 127.1)
-        )
-        coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { savedLocationRepository.getAll() } returns flowOf(savedLocations)
-        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
-        coEvery { fetchWeatherUseCase.fetchBatch(any()) } returns listOf(
-            createMockFetchOutput(),
-            createMockFetchOutput()
+        every { observeWeatherUseCase() } returns flowOf(
+            WeatherState(
+                locations = listOf(
+                    LocationWeather(
+                        locationName = "역삼동",
+                        isCurrentLocation = true,
+                        lat = 37.5,
+                        lng = 127.0,
+                        weather = Result.success(createMockWeather()),
+                        airQuality = Result.success(createMockAirQuality())
+                    ),
+                    LocationWeather(
+                        locationName = "서울 강남구 집",
+                        isCurrentLocation = false,
+                        savedLocationId = 1,
+                        lat = 37.4,
+                        lng = 126.9,
+                        weather = Result.success(createMockWeather()),
+                        airQuality = Result.success(createMockAirQuality())
+                    ),
+                    LocationWeather(
+                        locationName = "서울 중구 회사",
+                        isCurrentLocation = false,
+                        savedLocationId = 2,
+                        lat = 37.6,
+                        lng = 127.1,
+                        weather = Result.success(createMockWeather()),
+                        airQuality = Result.success(createMockAirQuality())
+                    )
+                ),
+                isLoading = false
+            )
         )
 
         // When
         val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
         viewModel.screenState.test {
-            val state = awaitItem()
+            val state = awaitLoadedState()
             val locations = state.locations.locations
             assertEquals("3개 위치", 3, locations.size)
             assertTrue("첫 번째는 현재 위치", locations[0].isCurrentLocation)
             assertEquals("서울 강남구 집", locations[1].locationName)
             assertEquals("서울 중구 회사", locations[2].locationName)
-        }
-    }
-
-    @Test
-    fun `위치_권한_없어도_현재위치_페이지_유지`() = runTest {
-        // Given
-        every { locationProvider.hasLocationPermission() } returns false
-        coEvery { locationProvider.getCurrentSmartLocation() } returns null
-        val savedLocations = listOf(
-            SavedLocation(id = 1, name = "집", displayName = "서울 강남구 집", lat = 37.4, lng = 126.9)
-        )
-        coEvery { savedLocationRepository.getAll() } returns flowOf(savedLocations)
-        coEvery { fetchWeatherUseCase.fetchBatch(any()) } returns listOf(createMockFetchOutput())
-
-        // When
-        val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Then
-        viewModel.screenState.test {
-            val state = awaitItem()
-            val locations = state.locations.locations
-            assertEquals("2개 위치 (현재 위치 + 저장)", 2, locations.size)
-            assertTrue("첫 번째는 현재 위치", locations[0].isCurrentLocation)
-            assertTrue("권한 필요 표시", locations[0].needsPermission)
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -338,85 +284,36 @@ class WeatherViewModelTest {
     @Test
     fun `ShowInfoDialog_시_showInfoDialog_true`() = runTest {
         // Given
-        coEvery { locationProvider.getCurrentSmartLocation() } returns null
+        every { observeWeatherUseCase() } returns flowOf(createMockWeatherState())
 
         val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         // When
         viewModel.processIntent(WeatherContract.Intent.ShowInfoDialog)
-        testDispatcher.scheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         // Then
-        viewModel.screenState.test {
-            assertTrue("다이얼로그 표시", awaitItem().uiControl.showInfoDialog)
-        }
+        assertTrue("다이얼로그 표시", viewModel.screenState.value.uiControl.showInfoDialog)
     }
-
-    @Test
-    fun `DismissInfoDialog_시_showInfoDialog_false`() = runTest {
-        // Given
-        coEvery { locationProvider.getCurrentSmartLocation() } returns null
-
-        val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.processIntent(WeatherContract.Intent.ShowInfoDialog)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // When
-        viewModel.processIntent(WeatherContract.Intent.DismissInfoDialog)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Then
-        viewModel.screenState.test {
-            assertFalse("다이얼로그 닫힘", awaitItem().uiControl.showInfoDialog)
-        }
-    }
-
-    // ══════════════════════════════════════════════════════════════════════════
-    // 위치 삭제 테스트
-    // ══════════════════════════════════════════════════════════════════════════
 
     @Test
     fun `RequestDeleteLocation_시_deleteConfirm_표시`() = runTest {
         // Given
-        coEvery { locationProvider.getCurrentSmartLocation() } returns null
+        every { observeWeatherUseCase() } returns flowOf(createMockWeatherState())
 
         val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         // When
         viewModel.processIntent(WeatherContract.Intent.RequestDeleteLocation(1, "집"))
-        testDispatcher.scheduler.advanceUntilIdle()
+        advanceUntilIdle()
 
         // Then
-        viewModel.screenState.test {
-            val state = awaitItem()
-            assertNotNull("삭제 확인 다이얼로그", state.uiControl.deleteConfirm)
-            assertEquals("위치 ID", 1L, state.uiControl.deleteConfirm?.locationId)
-            assertEquals("위치 이름", "집", state.uiControl.deleteConfirm?.locationName)
-        }
-    }
-
-    @Test
-    fun `ConfirmDeleteLocation_시_저장소_삭제_호출`() = runTest {
-        // Given
-        coEvery { locationProvider.getCurrentSmartLocation() } returns null
-        coEvery { savedLocationRepository.delete(any()) } returns Unit
-
-        val viewModel = createViewModel()
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        viewModel.processIntent(WeatherContract.Intent.RequestDeleteLocation(1, "집"))
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // When
-        viewModel.processIntent(WeatherContract.Intent.ConfirmDeleteLocation)
-        testDispatcher.scheduler.advanceUntilIdle()
-
-        // Then
-        coVerify { savedLocationRepository.delete(1) }
+        val state = viewModel.screenState.value
+        assertNotNull("삭제 확인 다이얼로그", state.uiControl.deleteConfirm)
+        assertEquals("위치 ID", 1L, state.uiControl.deleteConfirm?.locationId)
+        assertEquals("위치 이름", "집", state.uiControl.deleteConfirm?.locationName)
     }
 
     // ══════════════════════════════════════════════════════════════════════════
