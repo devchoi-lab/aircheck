@@ -6,6 +6,7 @@
 package seriouschoi.aircheck.feature.weather.ui.weather
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -164,7 +165,9 @@ internal fun SuccessContent(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
-                )
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 RecommendationSection(
                     weather = weather.data, 
@@ -181,7 +184,9 @@ internal fun SuccessContent(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    )
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     WeatherSection(weather.data)
                 }
@@ -200,7 +205,9 @@ internal fun SuccessContent(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    )
+                    ),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
                     AirQualitySection(air.data, modifier = Modifier.padding(16.dp))
                 }

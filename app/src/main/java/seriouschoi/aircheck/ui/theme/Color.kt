@@ -35,6 +35,7 @@ val Error80 = Color(0xFFFFB4AB)
 val Error90 = Color(0xFFFFDAD6)
 
 // ── Neutral: 배경/서피스 ─────────────────────────────────
+val DarkNavyBg = Color(0xFF0F1520)
 val Neutral4 = Color(0xFF0D1117)
 val Neutral6 = Color(0xFF121820)
 val Neutral10 = Color(0xFF1A1C22)
