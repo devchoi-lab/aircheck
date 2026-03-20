@@ -34,14 +34,17 @@ class BjdMatcher @Inject constructor(
                 .use { it.readText() }
             
             val data = json.decodeFromString<RegionData>(jsonString)
-            
+            val nameById = data.regions.associate { it.id to it.name }
+
             // isLeaf == true (동/읍/면)만 필터링
             data.regions
                 .filter { it.isLeaf }
                 .forEach { region ->
+                    val parentName = region.parentId?.let { nameById[it] }
+                    val fullName = if (parentName != null) "$parentName ${region.name}" else region.name
                     val district = BjdDistrict(
                         code = region.id.toString(),
-                        name = region.fullName,
+                        name = fullName,
                         lat = region.lat,
                         lng = region.lng
                     )
@@ -117,12 +120,8 @@ data class Region(
     val lat: Double,
     val lng: Double,
     val isLeaf: Boolean = false,
-    val parentId: Int? = null,
-    val parentName: String? = null
-) {
-    val fullName: String
-        get() = if (parentName != null) "$parentName $name" else name
-}
+    val parentId: Int? = null
+)
 
 data class BjdDistrict(
     val code: String,

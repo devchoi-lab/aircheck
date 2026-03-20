@@ -22,8 +22,7 @@ private data class FlatRegionJson(
     val lat: Double,
     val lng: Double,
     val isLeaf: Boolean,
-    val parentId: Int? = null,
-    val parentName: String? = null
+    val parentId: Int? = null
 )
 
 @Serializable
