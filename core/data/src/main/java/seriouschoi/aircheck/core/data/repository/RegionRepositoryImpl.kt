@@ -113,9 +113,10 @@ class RegionRepositoryImpl @Inject constructor(
      * parentId == null 인 노드가 최상위.
      */
     private fun buildTree(flatList: List<FlatRegionJson>): List<Region> {
-        // parentId별로 자식 그룹핑
+        // parentId별로 자식 그룹핑 (null-safe)
         val childrenByParentId: Map<Int, List<FlatRegionJson>> =
-            flatList.filter { it.parentId != null }.groupBy { it.parentId!! }
+            flatList.mapNotNull { node -> node.parentId?.let { it to node } }
+                .groupBy({ it.first }, { it.second })
 
         fun buildNode(node: FlatRegionJson): Region {
             val children = childrenByParentId[node.id]
