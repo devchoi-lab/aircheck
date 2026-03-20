@@ -37,21 +37,7 @@ object WeatherContract {
         data object DismissDeleteDialog : Intent
     }
 
-    // ── State (UI 상태) ─────────────────────────────────────────────────────
-
-    /** 화면 전체 UI 상태 (단일 data class — 캐스팅 불필요) */
-    data class UiState(
-        val isLoading: Boolean = true,
-        val airQuality: DataResult<AirQuality> = DataResult(),
-        val weather: DataResult<WeatherData> = DataResult(),
-        val isRefreshing: Boolean = false,
-        val error: ErrorState? = null,
-        val showInfoDialog: Boolean = false,
-        /** 삭제 확인 다이얼로그 (null이면 비표시) */
-        val deleteConfirm: DeleteConfirmState? = null,
-        /** 위치 권한 필요 상태 */
-        val needsLocationPermission: Boolean = false
-    )
+    // ── 공통 데이터 타입 ─────────────────────────────────────────────────────
 
     /** 삭제 확인 다이얼로그 상태 */
     data class DeleteConfirmState(

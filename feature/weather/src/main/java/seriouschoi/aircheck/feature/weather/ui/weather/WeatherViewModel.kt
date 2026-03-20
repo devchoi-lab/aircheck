@@ -5,14 +5,16 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
@@ -23,29 +25,6 @@ import seriouschoi.aircheck.core.resource.R
 import seriouschoi.aircheck.core.resource.UiText
 import javax.inject.Inject
 
-/** 위치별 날씨 데이터 */
-internal data class LocationWeatherData(
-    val locationName: String,
-    val isCurrentLocation: Boolean,
-    /** 저장된 위치의 ID (현재 위치는 null) — 삭제 시 사용 */
-    val savedLocationId: Long? = null,
-    /** 날씨 조회용 좌표 */
-    val lat: Double = 0.0,
-    val lng: Double = 0.0,
-    val airQuality: WeatherContract.DataResult<AirQuality> = WeatherContract.DataResult(),
-    val weather: WeatherContract.DataResult<WeatherData> = WeatherContract.DataResult(),
-    /** 위치 권한 필요 (현재 위치 전용) */
-    val needsPermission: Boolean = false,
-    /** 개별 새로고침 중 */
-    val isRefreshing: Boolean = false
-)
-
-/** 전체 UI 상태 (다중 위치) */
-internal data class MultiLocationState(
-    val locations: List<LocationWeatherData> = emptyList(),
-    val isLoading: Boolean = true
-)
-
 @HiltViewModel
 internal class WeatherViewModel @Inject constructor(
     private val fetchWeatherUseCase: FetchWeatherUseCase,
@@ -53,17 +32,30 @@ internal class WeatherViewModel @Inject constructor(
     private val savedLocationRepository: SavedLocationRepository
 ) : ViewModel() {
 
-    // ── Intent (사용자 액션) ────────────────────────────────────────────────
+    // ── Intent Channel ──────────────────────────────────────────────────────
 
     private val _intent = Channel<WeatherContract.Intent>(Channel.UNLIMITED)
 
-    // ── State ───────────────────────────────────────────────────────────────
+    // ── 관심사별 분리된 상태 ─────────────────────────────────────────────────
 
-    private val _uiState = MutableStateFlow(WeatherContract.UiState())
-    val uiState: StateFlow<WeatherContract.UiState> = _uiState.asStateFlow()
+    /** 위치 목록 상태 */
+    private val _locationsState = MutableStateFlow(LocationsState())
+    
+    /** UI 컨트롤 상태 */
+    private val _uiControlState = MutableStateFlow(UiControlState())
 
-    private val _multiState = MutableStateFlow(MultiLocationState())
-    val multiState: StateFlow<MultiLocationState> = _multiState.asStateFlow()
+    // ── 통합 상태 (Screen에서 관찰) ──────────────────────────────────────────
+
+    val screenState: StateFlow<WeatherScreenState> = combine(
+        _locationsState,
+        _uiControlState
+    ) { locations, uiControl ->
+        WeatherScreenState(locations, uiControl)
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = WeatherScreenState()
+    )
 
     // ── Effect (일회성 이벤트) ───────────────────────────────────────────────
 
@@ -102,14 +94,24 @@ internal class WeatherViewModel @Inject constructor(
             is WeatherContract.Intent.Load -> load(isRefresh = false)
             is WeatherContract.Intent.Refresh -> load(isRefresh = true)
             is WeatherContract.Intent.RefreshLocation -> refreshLocation(intent.index)
-            is WeatherContract.Intent.ShowInfoDialog -> _uiState.value = _uiState.value.copy(showInfoDialog = true)
-            is WeatherContract.Intent.DismissInfoDialog -> _uiState.value = _uiState.value.copy(showInfoDialog = false)
-            is WeatherContract.Intent.RequestDeleteLocation -> _uiState.value = _uiState.value.copy(
-                deleteConfirm = WeatherContract.DeleteConfirmState(intent.locationId, intent.locationName)
-            )
+            is WeatherContract.Intent.ShowInfoDialog -> updateUiControl { copy(showInfoDialog = true) }
+            is WeatherContract.Intent.DismissInfoDialog -> updateUiControl { copy(showInfoDialog = false) }
+            is WeatherContract.Intent.RequestDeleteLocation -> updateUiControl {
+                copy(deleteConfirm = WeatherContract.DeleteConfirmState(intent.locationId, intent.locationName))
+            }
             is WeatherContract.Intent.ConfirmDeleteLocation -> confirmDelete()
-            is WeatherContract.Intent.DismissDeleteDialog -> _uiState.value = _uiState.value.copy(deleteConfirm = null)
+            is WeatherContract.Intent.DismissDeleteDialog -> updateUiControl { copy(deleteConfirm = null) }
         }
+    }
+
+    // ── 상태 업데이트 헬퍼 ───────────────────────────────────────────────────
+
+    private inline fun updateLocations(transform: LocationsState.() -> LocationsState) {
+        _locationsState.value = _locationsState.value.transform()
+    }
+
+    private inline fun updateUiControl(transform: UiControlState.() -> UiControlState) {
+        _uiControlState.value = _uiControlState.value.transform()
     }
 
     // ── Private ─────────────────────────────────────────────────────────────
@@ -118,9 +120,10 @@ internal class WeatherViewModel @Inject constructor(
         viewModelScope.launch {
             // 리프레시 중이면 현재 데이터 유지하면서 인디케이터만 표시
             if (isRefresh) {
-                _uiState.value = _uiState.value.copy(isRefreshing = true)
+                updateUiControl { copy(isRefreshing = true) }
             } else {
-                _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+                updateLocations { copy(isLoading = true) }
+                updateUiControl { copy(error = null) }
             }
 
             // 1. 먼저 위치 목록을 즉시 표시 (데이터 로딩 전)
@@ -168,39 +171,27 @@ internal class WeatherViewModel @Inject constructor(
             }
             
             // 즉시 위치 목록 표시
-            _multiState.value = MultiLocationState(
-                locations = initialLocationList,
-                isLoading = true
-            )
+            updateLocations { copy(locations = initialLocationList, isLoading = true) }
 
             // 2. 현재 위치 날씨 데이터 로드 (centroid 좌표 사용)
             if (smartLocation != null) {
                 val output = fetchWeatherUseCase(smartLocation.lat, smartLocation.lng)
                 val (airResult, weatherResult) = toDataResults(output.result)
                 updateLocationData(0, airResult, weatherResult)
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    isRefreshing = false,
-                    airQuality = airResult,
-                    weather = weatherResult,
-                    error = null,
-                    needsLocationPermission = false
-                )
+                updateLocations { copy(isLoading = false) }
+                updateUiControl { copy(isRefreshing = false, needsLocationPermission = false, error = null) }
             } else {
-                // 위치 권한이 없는지 확인
-                val needsPermission = !locationProvider.hasLocationPermission()
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    isRefreshing = false,
-                    needsLocationPermission = needsPermission,
-                    // 권한 없으면 캐시된 데이터도 초기화
-                    airQuality = if (needsPermission) WeatherContract.DataResult() else _uiState.value.airQuality,
-                    weather = if (needsPermission) WeatherContract.DataResult() else _uiState.value.weather,
-                    error = if (!needsPermission) WeatherContract.ErrorState(
-                        message = UiText.StringResource(R.string.error_location_unavailable),
-                        action = WeatherContract.Intent.Refresh
-                    ) else null
-                )
+                updateLocations { copy(isLoading = false) }
+                updateUiControl {
+                    copy(
+                        isRefreshing = false,
+                        needsLocationPermission = needsPermission,
+                        error = if (!needsPermission) WeatherContract.ErrorState(
+                            message = UiText.StringResource(R.string.error_location_unavailable),
+                            action = WeatherContract.Intent.Refresh
+                        ) else null
+                    )
+                }
             }
 
             // 3. 저장된 위치들 날씨 데이터 일괄 로드 (배치 API, centroid 변환 포함)
@@ -215,13 +206,13 @@ internal class WeatherViewModel @Inject constructor(
                 }
             }
 
-            _multiState.value = _multiState.value.copy(isLoading = false)
+            updateLocations { copy(isLoading = false) }
         }
     }
     
     /** 특정 위치만 개별 새로고침 */
     private fun refreshLocation(index: Int) {
-        val location = _multiState.value.locations.getOrNull(index) ?: return
+        val location = _locationsState.value.locations.getOrNull(index) ?: return
 
         viewModelScope.launch {
             // 해당 위치만 refreshing 표시
@@ -251,10 +242,12 @@ internal class WeatherViewModel @Inject constructor(
     }
 
     private fun updateLocationRefreshing(index: Int, isRefreshing: Boolean) {
-        val locations = _multiState.value.locations.toMutableList()
-        if (index < locations.size) {
-            locations[index] = locations[index].copy(isRefreshing = isRefreshing)
-            _multiState.value = _multiState.value.copy(locations = locations)
+        updateLocations {
+            val newLocations = locations.toMutableList()
+            if (index < newLocations.size) {
+                newLocations[index] = newLocations[index].copy(isRefreshing = isRefreshing)
+            }
+            copy(locations = newLocations)
         }
     }
 
@@ -264,13 +257,15 @@ internal class WeatherViewModel @Inject constructor(
         airResult: WeatherContract.DataResult<AirQuality>,
         weatherResult: WeatherContract.DataResult<WeatherData>
     ) {
-        val currentLocations = _multiState.value.locations.toMutableList()
-        if (index < currentLocations.size) {
-            currentLocations[index] = currentLocations[index].copy(
-                airQuality = airResult,
-                weather = weatherResult
-            )
-            _multiState.value = _multiState.value.copy(locations = currentLocations)
+        updateLocations {
+            val newLocations = locations.toMutableList()
+            if (index < newLocations.size) {
+                newLocations[index] = newLocations[index].copy(
+                    airQuality = airResult,
+                    weather = weatherResult
+                )
+            }
+            copy(locations = newLocations)
         }
     }
 
@@ -289,10 +284,10 @@ internal class WeatherViewModel @Inject constructor(
     }
 
     private fun confirmDelete() {
-        val deleteState = _uiState.value.deleteConfirm ?: return
+        val deleteState = _uiControlState.value.deleteConfirm ?: return
         viewModelScope.launch {
             savedLocationRepository.delete(deleteState.locationId)
-            _uiState.value = _uiState.value.copy(deleteConfirm = null)
+            updateUiControl { copy(deleteConfirm = null) }
             // 리로드는 savedLocationRepository.getAll() observe에서 자동 처리
         }
     }

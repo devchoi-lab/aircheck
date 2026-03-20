@@ -31,26 +31,28 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 @Composable
 internal fun LocationPager(
     pagerState: PagerState,
-    multiState: MultiLocationState,
+    state: WeatherScreenState,
     onIntent: (WeatherContract.Intent) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val locations = state.locations.locations
+    
     Column(modifier = modifier) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.weight(1f)
         ) { page ->
             LocationPage(
-                locationData = multiState.locations[page],
+                locationData = locations[page],
                 pageIndex = page,
                 onIntent = onIntent
             )
         }
 
         // 페이지 인디케이터
-        if (multiState.locations.size > 1) {
+        if (locations.size > 1) {
             PageIndicator(
-                locations = multiState.locations,
+                locations = locations,
                 currentPage = pagerState.currentPage
             )
         }

@@ -10,10 +10,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -43,22 +41,17 @@ import androidx.compose.ui.unit.sp
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualitySection
-import seriouschoi.aircheck.feature.weather.ui.weather.components.ErrorContent
 import seriouschoi.aircheck.feature.weather.ui.weather.components.ErrorSection
-import seriouschoi.aircheck.feature.weather.ui.weather.components.PermissionRequiredContent
 import seriouschoi.aircheck.feature.weather.ui.weather.components.RecommendationSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.WeatherSection
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
 internal fun WeatherScreen(
-    uiState: WeatherContract.UiState,
-    multiState: MultiLocationState,
+    state: WeatherScreenState,
     onIntent: (WeatherContract.Intent) -> Unit,
     onAddLocation: () -> Unit = {}
 ) {
-    val isRefreshing = uiState.isRefreshing || multiState.isLoading
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -79,12 +72,12 @@ internal fun WeatherScreen(
     ) { innerPadding ->
 
         // 기준 안내 다이얼로그
-        if (uiState.showInfoDialog) {
+        if (state.uiControl.showInfoDialog) {
             AirQualityInfoDialog(onDismiss = { onIntent(WeatherContract.Intent.DismissInfoDialog) })
         }
 
         // 삭제 확인 다이얼로그
-        uiState.deleteConfirm?.let { confirm ->
+        state.uiControl.deleteConfirm?.let { confirm ->
             AlertDialog(
                 onDismissRequest = { onIntent(WeatherContract.Intent.DismissDeleteDialog) },
                 title = { Text(stringResource(CoreR.string.delete_location_title), fontWeight = FontWeight.Bold) },
@@ -107,15 +100,17 @@ internal fun WeatherScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (multiState.locations.isEmpty() && uiState.isLoading) {
+            val locations = state.locations.locations
+            
+            if (locations.isEmpty() && state.isLoading) {
                 // 초기 로딩 중
                 Box(modifier = Modifier.fillMaxSize())
-            } else if (multiState.locations.isNotEmpty()) {
-                val pagerState = rememberPagerState(pageCount = { multiState.locations.size })
+            } else if (locations.isNotEmpty()) {
+                val pagerState = rememberPagerState(pageCount = { locations.size })
 
                 LocationPager(
                     pagerState = pagerState,
-                    multiState = multiState,
+                    state = state,
                     onIntent = onIntent,
                     modifier = Modifier.weight(1f)
                 )

@@ -84,9 +84,9 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        viewModel.uiState.test {
+        viewModel.screenState.test {
             val state = awaitItem()
-            assertTrue("권한 필요 상태", state.needsLocationPermission)
+            assertTrue("권한 필요 상태", state.uiControl.needsLocationPermission)
         }
     }
 
@@ -102,9 +102,9 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        viewModel.uiState.test {
+        viewModel.screenState.test {
             val state = awaitItem()
-            assertFalse("권한 있음", state.needsLocationPermission)
+            assertFalse("권한 있음", state.uiControl.needsLocationPermission)
         }
     }
 
@@ -122,11 +122,11 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        viewModel.uiState.test {
+        viewModel.screenState.test {
             val state = awaitItem()
             assertFalse("로딩 아님", state.isLoading)
             // 권한 없거나 에러 상태
-            assertTrue("에러 또는 권한 필요", state.error != null || state.needsLocationPermission)
+            assertTrue("에러 또는 권한 필요", state.uiControl.error != null || state.uiControl.needsLocationPermission)
         }
     }
 
@@ -141,11 +141,13 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        viewModel.uiState.test {
+        viewModel.screenState.test {
             val state = awaitItem()
-            assertNotNull("날씨 데이터 있음", state.weather.data)
-            assertNotNull("대기질 데이터 있음", state.airQuality.data)
-            assertNull("에러 없음", state.error)
+            val currentLocation = state.currentLocation
+            assertNotNull("현재 위치 있음", currentLocation)
+            assertNotNull("날씨 데이터 있음", currentLocation?.weather?.data)
+            assertNotNull("대기질 데이터 있음", currentLocation?.airQuality?.data)
+            assertNull("에러 없음", state.uiControl.error)
             assertFalse("로딩 아님", state.isLoading)
         }
     }
@@ -196,7 +198,7 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // When & Then
-        viewModel.uiState.test {
+        viewModel.screenState.test {
             val initial = awaitItem()
             assertFalse("초기: 리프레시 아님", initial.isRefreshing)
 
@@ -233,12 +235,13 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        viewModel.uiState.test {
+        viewModel.screenState.test {
             val state = awaitItem()
-            assertNull("대기질 데이터 없음", state.airQuality.data)
-            assertNotNull("대기질 에러 있음", state.airQuality.error)
-            assertNotNull("날씨 데이터 있음", state.weather.data)
-            assertNull("날씨 에러 없음", state.weather.error)
+            val currentLocation = state.currentLocation!!
+            assertNull("대기질 데이터 없음", currentLocation.airQuality.data)
+            assertNotNull("대기질 에러 있음", currentLocation.airQuality.error)
+            assertNotNull("날씨 데이터 있음", currentLocation.weather.data)
+            assertNull("날씨 에러 없음", currentLocation.weather.error)
         }
     }
 
@@ -259,12 +262,13 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        viewModel.uiState.test {
+        viewModel.screenState.test {
             val state = awaitItem()
-            assertNotNull("대기질 데이터 있음", state.airQuality.data)
-            assertNull("대기질 에러 없음", state.airQuality.error)
-            assertNull("날씨 데이터 없음", state.weather.data)
-            assertNotNull("날씨 에러 있음", state.weather.error)
+            val currentLocation = state.currentLocation!!
+            assertNotNull("대기질 데이터 있음", currentLocation.airQuality.data)
+            assertNull("대기질 에러 없음", currentLocation.airQuality.error)
+            assertNull("날씨 데이터 없음", currentLocation.weather.data)
+            assertNotNull("날씨 에러 있음", currentLocation.weather.error)
         }
     }
 
@@ -292,12 +296,13 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        viewModel.multiState.test {
+        viewModel.screenState.test {
             val state = awaitItem()
-            assertEquals("3개 위치", 3, state.locations.size)
-            assertTrue("첫 번째는 현재 위치", state.locations[0].isCurrentLocation)
-            assertEquals("서울 강남구 집", state.locations[1].locationName)
-            assertEquals("서울 중구 회사", state.locations[2].locationName)
+            val locations = state.locations.locations
+            assertEquals("3개 위치", 3, locations.size)
+            assertTrue("첫 번째는 현재 위치", locations[0].isCurrentLocation)
+            assertEquals("서울 강남구 집", locations[1].locationName)
+            assertEquals("서울 중구 회사", locations[2].locationName)
         }
     }
 
@@ -317,11 +322,12 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        viewModel.multiState.test {
+        viewModel.screenState.test {
             val state = awaitItem()
-            assertEquals("2개 위치 (현재 위치 + 저장)", 2, state.locations.size)
-            assertTrue("첫 번째는 현재 위치", state.locations[0].isCurrentLocation)
-            assertTrue("권한 필요 표시", state.locations[0].needsPermission)
+            val locations = state.locations.locations
+            assertEquals("2개 위치 (현재 위치 + 저장)", 2, locations.size)
+            assertTrue("첫 번째는 현재 위치", locations[0].isCurrentLocation)
+            assertTrue("권한 필요 표시", locations[0].needsPermission)
         }
     }
 
@@ -342,8 +348,8 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        viewModel.uiState.test {
-            assertTrue("다이얼로그 표시", awaitItem().showInfoDialog)
+        viewModel.screenState.test {
+            assertTrue("다이얼로그 표시", awaitItem().uiControl.showInfoDialog)
         }
     }
 
@@ -363,8 +369,8 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        viewModel.uiState.test {
-            assertFalse("다이얼로그 닫힘", awaitItem().showInfoDialog)
+        viewModel.screenState.test {
+            assertFalse("다이얼로그 닫힘", awaitItem().uiControl.showInfoDialog)
         }
     }
 
@@ -385,11 +391,11 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        viewModel.uiState.test {
+        viewModel.screenState.test {
             val state = awaitItem()
-            assertNotNull("삭제 확인 다이얼로그", state.deleteConfirm)
-            assertEquals("위치 ID", 1L, state.deleteConfirm?.locationId)
-            assertEquals("위치 이름", "집", state.deleteConfirm?.locationName)
+            assertNotNull("삭제 확인 다이얼로그", state.uiControl.deleteConfirm)
+            assertEquals("위치 ID", 1L, state.uiControl.deleteConfirm?.locationId)
+            assertEquals("위치 이름", "집", state.uiControl.deleteConfirm?.locationName)
         }
     }
 

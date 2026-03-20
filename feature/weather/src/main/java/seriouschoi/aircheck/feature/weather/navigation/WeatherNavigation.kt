@@ -20,8 +20,7 @@ fun NavGraphBuilder.weatherScreen(
 ) {
     composable<WeatherRoute.Main> {
         val viewModel: WeatherViewModel = hiltViewModel()
-        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-        val multiState by viewModel.multiState.collectAsStateWithLifecycle()
+        val state by viewModel.screenState.collectAsStateWithLifecycle()
         
         // 권한 승인 시 자동 새로고침 콜백 등록
         LaunchedEffect(Unit) {
@@ -31,8 +30,7 @@ fun NavGraphBuilder.weatherScreen(
         }
 
         WeatherScreen(
-            uiState = uiState,
-            multiState = multiState,
+            state = state,
             onIntent = viewModel::processIntent,
             onAddLocation = { navController.navigate(WeatherRoute.LocationPicker) }
         )
