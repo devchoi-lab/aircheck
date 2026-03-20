@@ -42,10 +42,17 @@ jobs:
           # 에뮬레이터 시작 (백그라운드)
           nohup emulator -avd test_avd -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect > /tmp/emulator.log 2>&1 &
           
-          # 부팅 대기 (최대 2분)
+          # 부팅 대기 (최대 2분, macOS 호환)
           adb wait-for-device
-          timeout 120 adb shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 2; done'
-          echo "Emulator booted"
+          SECONDS=0
+          while [[ -z $(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r') ]]; do
+            if [[ $SECONDS -gt 120 ]]; then
+              echo "Emulator boot timeout"
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Emulator booted in ${SECONDS}s"
 
       - name: Run Instrumented Tests
         run: ./gradlew :core:data:connectedDebugAndroidTest
