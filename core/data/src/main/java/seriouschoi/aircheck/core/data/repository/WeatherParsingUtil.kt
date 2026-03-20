@@ -12,7 +12,6 @@ import seriouschoi.aircheck.core.network.api.AirQualityResponse
 import seriouschoi.aircheck.core.network.api.HourlyForecastResponse
 import seriouschoi.aircheck.core.network.api.WeatherResponse
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 /**
  * API 응답 → 도메인 모델 변환 유틸리티
@@ -94,17 +93,11 @@ internal object WeatherParsingUtil {
         isDay: Boolean
     ): List<HourlyForecast> {
         val today = LocalDate.now()
-        val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
         return hourlyList.map { hourly ->
-            val hour = hourly.hour
-
-            val dateStr = hourly.time.substringBefore("T")
-            val forecastDate = try {
-                LocalDate.parse(dateStr, dateFormatter)
-            } catch (e: Exception) {
-                today
-            }
+            val dateTime = hourly.time
+            val forecastDate = dateTime.toLocalDate()
+            val hour = dateTime.hour
 
             val dayLabel = when (forecastDate) {
                 today -> "오늘"

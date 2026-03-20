@@ -6,6 +6,8 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
+import seriouschoi.aircheck.core.network.serializer.LocalDateTimeSerializer
+import java.time.LocalDateTime
 
 // ── API 응답 모델 ──────────────────────────────────────────────────────────
 @InternalSerializationApi
@@ -37,7 +39,8 @@ data class CurrentWeather(
 @InternalSerializationApi
 @Serializable
 data class HourlyForecastResponse(
-    val time: String = "",
+    @Serializable(with = LocalDateTimeSerializer::class)
+    val time: LocalDateTime,
     val hour: Int = 0,
     val temperature: Double = 0.0,
     val feelsLike: Double = 0.0,
