@@ -16,9 +16,11 @@ class SmartLocationRepository @Inject constructor(
 ) {
     companion object {
         private const val REFRESH_INTERVAL_MS = 30 * 60 * 1000L // 30분
+        private const val LOCATION_CACHE_TTL_MS = 10 * 60 * 1000L // 10분
     }
-    
+
     private var lastFetch: LastFetch? = null
+    private var cachedLocation: CachedLocation? = null
     
     /**
      * 위치 업데이트 Flow
@@ -44,18 +46,26 @@ class SmartLocationRepository @Inject constructor(
     }
     
     /**
-     * 현재 위치의 법정동 centroid 조회 (1회)
+     * 현재 위치의 법정동 centroid 조회 (1회, 10분 캐싱)
      */
     suspend fun getCurrentSmartLocation(): SmartLocationResult? {
+        cachedLocation?.let { cache ->
+            if (System.currentTimeMillis() - cache.timestamp < LOCATION_CACHE_TTL_MS) {
+                return cache.result
+            }
+        }
+
         val location = locationDataSource.getCurrentLocation() ?: return null
         val bjdResult = bjdMatcher.findNearest(location.lat, location.lng) ?: return null
-        
-        return SmartLocationResult(
+
+        val result = SmartLocationResult(
             bjdCode = bjdResult.code,
             bjdName = bjdResult.name,
             centroidLat = bjdResult.centroidLat,
             centroidLng = bjdResult.centroidLng
         )
+        cachedLocation = CachedLocation(result, System.currentTimeMillis())
+        return result
     }
     
     /**
@@ -92,6 +102,14 @@ class SmartLocationRepository @Inject constructor(
  */
 private data class LastFetch(
     val bjdCode: String,
+    val timestamp: Long
+)
+
+/**
+ * 위치 캐시
+ */
+private data class CachedLocation(
+    val result: SmartLocationResult,
     val timestamp: Long
 )
 

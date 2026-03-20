@@ -1,58 +1,70 @@
 @file:OptIn(
-    androidx.compose.material3.ExperimentalMaterial3Api::class,
-    androidx.compose.foundation.ExperimentalFoundationApi::class
+    ExperimentalMaterial3Api::class,
+    ExperimentalFoundationApi::class
 )
 
 package seriouschoi.aircheck.feature.weather.ui.weather
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import seriouschoi.aircheck.core.resource.R as CoreR
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.HourlyForecast
 import seriouschoi.aircheck.core.domain.model.PmData
-import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
+import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.core.ui.mapper.toColorHex
-import seriouschoi.aircheck.core.ui.theme.WeatherColors
 import seriouschoi.aircheck.core.ui.mapper.toDetailedLabelRes
 import seriouschoi.aircheck.core.ui.mapper.toEmoji
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
-import seriouschoi.aircheck.core.ui.mapper.toLabel
 import seriouschoi.aircheck.core.ui.mapper.toLabelRes
-import seriouschoi.aircheck.core.ui.mapper.toTemperatureRange
+import seriouschoi.aircheck.core.ui.theme.WeatherColors
+import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
 internal fun WeatherScreen(
@@ -111,146 +123,19 @@ internal fun WeatherScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (multiState.locations.isEmpty()) {
-                // 위치 없음 또는 로딩 중
-                PullToRefreshBox(
-                    isRefreshing = isRefreshing,
-                    onRefresh = { onIntent(WeatherContract.Intent.Refresh) },
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val context = LocalContext.current
-                        when {
-                            uiState.isLoading -> { }
-                            uiState.needsLocationPermission -> PermissionRequiredContent(
-                                onOpenSettings = {
-                                    val intent = android.content.Intent(
-                                        android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                        android.net.Uri.fromParts("package", context.packageName, null)
-                                    )
-                                    context.startActivity(intent)
-                                }
-                            )
-                            uiState.error != null -> ErrorContent(uiState.error, onIntent)
-                            else -> SuccessContent(uiState.airQuality, uiState.weather, onIntent)
-                        }
-                    }
-                }
-            } else {
-                // 다중 위치 페이저
+            if (multiState.locations.isEmpty() && uiState.isLoading) {
+                // 초기 로딩 중
+                Box(modifier = Modifier.fillMaxSize())
+            } else if (multiState.locations.isNotEmpty()) {
                 val pagerState = rememberPagerState(pageCount = { multiState.locations.size })
 
-                HorizontalPager(
-                    state = pagerState,
+                LocationPager(
+                    pagerState = pagerState,
+                    multiState = multiState,
+                    isRefreshing = isRefreshing,
+                    onIntent = onIntent,
                     modifier = Modifier.weight(1f)
-                ) { page ->
-                    val locationData = multiState.locations[page]
-
-                    PullToRefreshBox(
-                        isRefreshing = isRefreshing,
-                        onRefresh = { onIntent(WeatherContract.Intent.Refresh) },
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            // 위치명 + 삭제 버튼
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = if (locationData.isCurrentLocation) stringResource(CoreR.string.label_current_location) else stringResource(CoreR.string.label_saved_location, locationData.locationName),
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                                // 저장된 위치만 삭제 버튼 표시
-                                if (!locationData.isCurrentLocation && locationData.savedLocationId != null) {
-                                    IconButton(
-                                        onClick = {
-                                            onIntent(WeatherContract.Intent.RequestDeleteLocation(
-                                                locationId = locationData.savedLocationId,
-                                                locationName = locationData.locationName
-                                            ))
-                                        },
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = stringResource(CoreR.string.content_description_delete_location),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
-                            }
-
-                            // 권한 필요 시 권한 요청 화면, 아니면 날씨 데이터
-                            if (locationData.needsPermission) {
-                                val context = LocalContext.current
-                                Box(
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    PermissionRequiredContent(
-                                        onOpenSettings = {
-                                            val intent = android.content.Intent(
-                                                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                                android.net.Uri.fromParts("package", context.packageName, null)
-                                            )
-                                            context.startActivity(intent)
-                                        }
-                                    )
-                                }
-                            } else {
-                                SuccessContent(locationData.airQuality, locationData.weather, onIntent)
-                            }
-                        }
-                    }
-                }
-
-                // 페이지 인디케이터
-                if (multiState.locations.size > 1) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        multiState.locations.forEachIndexed { index, locationData ->
-                            val isSelected = pagerState.currentPage == index
-                            val color = if (isSelected) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-
-                            if (locationData.isCurrentLocation) {
-                                // 현재 위치: 지도 핀 아이콘
-                                Icon(
-                                    imageVector = Icons.Default.LocationOn,
-                                    contentDescription = stringResource(CoreR.string.content_description_current_location),
-                                    tint = color,
-                                    modifier = Modifier
-                                        .padding(horizontal = 2.dp)
-                                        .size(if (isSelected) 16.dp else 12.dp)
-                                )
-                            } else {
-                                // 저장된 위치: 동그라미
-                                Box(
-                                    modifier = Modifier
-                                        .padding(horizontal = 4.dp)
-                                        .size(if (isSelected) 10.dp else 8.dp)
-                                        .clip(CircleShape)
-                                        .background(color)
-                                )
-                            }
-                        }
-                    }
-                }
+                )
             }
         }
     }
@@ -261,7 +146,7 @@ internal fun WeatherScreen(
 // ── Success ───────────────────────────────────────────────────────────────────
 
 @Composable
-private fun SuccessContent(
+internal fun SuccessContent(
     air: WeatherContract.DataResult<AirQuality>,
     weather: WeatherContract.DataResult<WeatherData>,
     onIntent: (WeatherContract.Intent) -> Unit
@@ -833,7 +718,7 @@ private fun ErrorSection(title: String, message: String, onRetry: () -> Unit) {
 // ── 권한 필요 화면 ───────────────────────────────────────────────────────
 
 @Composable
-private fun PermissionRequiredContent(
+internal fun PermissionRequiredContent(
     onOpenSettings: () -> Unit
 ) {
     Column(
