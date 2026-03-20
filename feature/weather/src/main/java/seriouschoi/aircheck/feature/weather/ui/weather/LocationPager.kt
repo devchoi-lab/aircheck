@@ -30,7 +30,6 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 internal fun LocationPager(
     pagerState: PagerState,
     multiState: MultiLocationState,
-    isRefreshing: Boolean,
     onIntent: (WeatherContract.Intent) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -41,7 +40,7 @@ internal fun LocationPager(
         ) { page ->
             LocationPage(
                 locationData = multiState.locations[page],
-                isRefreshing = isRefreshing,
+                pageIndex = page,
                 onIntent = onIntent
             )
         }
@@ -59,12 +58,12 @@ internal fun LocationPager(
 @Composable
 private fun LocationPage(
     locationData: LocationWeatherData,
-    isRefreshing: Boolean,
+    pageIndex: Int,
     onIntent: (WeatherContract.Intent) -> Unit
 ) {
     PullToRefreshBox(
-        isRefreshing = isRefreshing,
-        onRefresh = { onIntent(WeatherContract.Intent.Refresh) },
+        isRefreshing = locationData.isRefreshing,
+        onRefresh = { onIntent(WeatherContract.Intent.RefreshLocation(pageIndex)) },
         modifier = Modifier.fillMaxSize()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {

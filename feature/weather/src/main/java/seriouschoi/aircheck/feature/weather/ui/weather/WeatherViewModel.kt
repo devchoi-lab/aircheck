@@ -29,10 +29,15 @@ internal data class LocationWeatherData(
     val isCurrentLocation: Boolean,
     /** 저장된 위치의 ID (현재 위치는 null) — 삭제 시 사용 */
     val savedLocationId: Long? = null,
+    /** 날씨 조회용 좌표 */
+    val lat: Double = 0.0,
+    val lng: Double = 0.0,
     val airQuality: WeatherContract.DataResult<AirQuality> = WeatherContract.DataResult(),
     val weather: WeatherContract.DataResult<WeatherData> = WeatherContract.DataResult(),
     /** 위치 권한 필요 (현재 위치 전용) */
-    val needsPermission: Boolean = false
+    val needsPermission: Boolean = false,
+    /** 개별 새로고침 중 */
+    val isRefreshing: Boolean = false
 )
 
 /** 전체 UI 상태 (다중 위치) */
@@ -96,6 +101,7 @@ internal class WeatherViewModel @Inject constructor(
         when (intent) {
             is WeatherContract.Intent.Load -> load(isRefresh = false)
             is WeatherContract.Intent.Refresh -> load(isRefresh = true)
+            is WeatherContract.Intent.RefreshLocation -> refreshLocation(intent.index)
             is WeatherContract.Intent.ShowInfoDialog -> _uiState.value = _uiState.value.copy(showInfoDialog = true)
             is WeatherContract.Intent.DismissInfoDialog -> _uiState.value = _uiState.value.copy(showInfoDialog = false)
             is WeatherContract.Intent.RequestDeleteLocation -> _uiState.value = _uiState.value.copy(
@@ -132,7 +138,9 @@ internal class WeatherViewModel @Inject constructor(
                 initialLocationList.add(
                     LocationWeatherData(
                         locationName = shortName,
-                        isCurrentLocation = true
+                        isCurrentLocation = true,
+                        lat = smartLocation.lat,
+                        lng = smartLocation.lng
                     )
                 )
             } else {
@@ -152,7 +160,9 @@ internal class WeatherViewModel @Inject constructor(
                     LocationWeatherData(
                         locationName = saved.displayName,
                         isCurrentLocation = false,
-                        savedLocationId = saved.id
+                        savedLocationId = saved.id,
+                        lat = saved.lat,
+                        lng = saved.lng
                     )
                 )
             }
@@ -209,6 +219,45 @@ internal class WeatherViewModel @Inject constructor(
         }
     }
     
+    /** 특정 위치만 개별 새로고침 */
+    private fun refreshLocation(index: Int) {
+        val location = _multiState.value.locations.getOrNull(index) ?: return
+
+        viewModelScope.launch {
+            // 해당 위치만 refreshing 표시
+            updateLocationRefreshing(index, true)
+
+            val lat: Double
+            val lng: Double
+
+            if (location.isCurrentLocation) {
+                val smart = locationProvider.getCurrentSmartLocation()
+                if (smart == null) {
+                    updateLocationRefreshing(index, false)
+                    return@launch
+                }
+                lat = smart.lat
+                lng = smart.lng
+            } else {
+                lat = location.lat
+                lng = location.lng
+            }
+
+            val output = fetchWeatherUseCase(lat, lng)
+            val (airResult, weatherResult) = toDataResults(output.result)
+            updateLocationData(index, airResult, weatherResult)
+            updateLocationRefreshing(index, false)
+        }
+    }
+
+    private fun updateLocationRefreshing(index: Int, isRefreshing: Boolean) {
+        val locations = _multiState.value.locations.toMutableList()
+        if (index < locations.size) {
+            locations[index] = locations[index].copy(isRefreshing = isRefreshing)
+            _multiState.value = _multiState.value.copy(locations = locations)
+        }
+    }
+
     /** 특정 위치의 날씨 데이터 업데이트 */
     private fun updateLocationData(
         index: Int,

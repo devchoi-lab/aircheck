@@ -132,7 +132,6 @@ internal fun WeatherScreen(
                 LocationPager(
                     pagerState = pagerState,
                     multiState = multiState,
-                    isRefreshing = isRefreshing,
                     onIntent = onIntent,
                     modifier = Modifier.weight(1f)
                 )
