@@ -34,7 +34,9 @@ jobs:
         env:
           ANDROID_HOME: /Users/agent/android-sdk
 
+      # Android Instrumented Tests - main 브랜치 push 시에만 실행
       - name: Start Emulator
+        if: github.event_name == 'push'
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools
@@ -55,19 +57,20 @@ jobs:
           echo "Emulator booted in ${SECONDS}s"
 
       - name: Run Instrumented Tests
+        if: github.event_name == 'push'
         run: ./gradlew :core:data:connectedDebugAndroidTest
         env:
           ANDROID_HOME: /Users/agent/android-sdk
 
       - name: Stop Emulator
-        if: always()
+        if: github.event_name == 'push' && always()
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$PATH:$ANDROID_HOME/platform-tools
           adb emu kill || true
 
       - name: Upload Test Results
-        if: always()
+        if: github.event_name == 'push' && always()
         uses: actions/upload-artifact@v4
         with:
           name: instrumented-test-results
