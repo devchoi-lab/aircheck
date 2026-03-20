@@ -10,8 +10,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
-import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
+import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.resource.R as CoreR
 import seriouschoi.aircheck.core.ui.mapper.toColorHex
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
@@ -27,7 +27,7 @@ import javax.inject.Singleton
 @Singleton
 class WidgetDataManager @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val combinedWeatherRepository: CombinedWeatherRepository,
+    private val fetchWeatherUseCase: FetchWeatherUseCase,
     private val locationProvider: LocationProvider
 ) {
     companion object {
@@ -59,20 +59,19 @@ class WidgetDataManager @Inject constructor(
                 return@withContext Result.failure(Exception(context.getString(CoreR.string.widget_error_location)))
             }
             Log.d(TAG, "Location: ${smartLocation.bjdName} (${smartLocation.lat}, ${smartLocation.lng})")
-            
-            // 2. 날씨 데이터 가져오기
-            val result = combinedWeatherRepository.fetch(smartLocation.lat, smartLocation.lng)
-            
-            val weather = result.weather.getOrNull()
-            val airQuality = result.airQuality.getOrNull()
-            
+
+            // 2. UseCase를 통해 날씨 데이터 가져오기 (centroid 변환 포함)
+            val output = fetchWeatherUseCase(smartLocation.lat, smartLocation.lng)
+            val weather = output.result.weather.getOrNull()
+            val airQuality = output.result.airQuality.getOrNull()
+
             Log.d(TAG, "Weather: ${weather != null}, AirQuality: ${airQuality != null}")
-            
+
             if (weather == null && airQuality == null) {
                 Log.e(TAG, "Both weather and airQuality are null")
                 return@withContext Result.failure(Exception(context.getString(CoreR.string.widget_error_data)))
             }
-            
+
             // 3. 위젯 데이터 저장
             val locationName = smartLocation.bjdName.split(" ").lastOrNull() ?: context.getString(CoreR.string.widget_default_location)
             val pmLevel = airQuality?.level ?: AqiLevel.UNKNOWN

@@ -19,6 +19,12 @@ interface LocationProvider {
     suspend fun getCurrentSmartLocation(): SmartLocation?
     
     /**
+     * 좌표 → 법정동 centroid 변환
+     * 임의의 좌표를 가장 가까운 법정동의 대표 좌표로 변환
+     */
+    suspend fun toCentroid(lat: Double, lng: Double): SmartLocation?
+
+    /**
      * 강제 갱신 (pull-to-refresh)
      */
     fun forceRefresh()

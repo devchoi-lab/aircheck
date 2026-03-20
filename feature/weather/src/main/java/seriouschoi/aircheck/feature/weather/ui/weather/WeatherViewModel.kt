@@ -14,11 +14,11 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
-import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.WeatherData
+import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.resource.R
 import seriouschoi.aircheck.core.resource.UiText
 import javax.inject.Inject
@@ -43,7 +43,7 @@ internal data class MultiLocationState(
 
 @HiltViewModel
 internal class WeatherViewModel @Inject constructor(
-    private val combinedWeatherRepository: CombinedWeatherRepository,
+    private val fetchWeatherUseCase: FetchWeatherUseCase,
     private val locationProvider: LocationProvider,
     private val savedLocationRepository: SavedLocationRepository
 ) : ViewModel() {
@@ -165,7 +165,8 @@ internal class WeatherViewModel @Inject constructor(
 
             // 2. 현재 위치 날씨 데이터 로드 (centroid 좌표 사용)
             if (smartLocation != null) {
-                val (airResult, weatherResult) = fetchWeather(smartLocation.lat, smartLocation.lng)
+                val output = fetchWeatherUseCase(smartLocation.lat, smartLocation.lng)
+                val (airResult, weatherResult) = toDataResults(output.result)
                 updateLocationData(0, airResult, weatherResult)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -192,21 +193,14 @@ internal class WeatherViewModel @Inject constructor(
                 )
             }
 
-            // 3. 저장된 위치들 날씨 데이터 일괄 로드 (배치 API)
+            // 3. 저장된 위치들 날씨 데이터 일괄 로드 (배치 API, centroid 변환 포함)
             if (savedLocations.isNotEmpty()) {
                 val startIndex = if (smartLocation != null) 1 else 0
                 val locations = savedLocations.map { it.lat to it.lng }
-                val batchResults = combinedWeatherRepository.fetchBatch(locations)
-                
-                batchResults.forEachIndexed { index, result ->
-                    val airResult = WeatherContract.DataResult(
-                        data = result.airQuality.getOrNull(),
-                        error = result.airQuality.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-                    )
-                    val weatherResult = WeatherContract.DataResult(
-                        data = result.weather.getOrNull(),
-                        error = result.weather.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-                    )
+                val batchOutputs = fetchWeatherUseCase.fetchBatch(locations)
+
+                batchOutputs.forEachIndexed { index, output ->
+                    val (airResult, weatherResult) = toDataResults(output.result)
                     updateLocationData(startIndex + index, airResult, weatherResult)
                 }
             }
@@ -231,25 +225,18 @@ internal class WeatherViewModel @Inject constructor(
         }
     }
 
-    private data class FetchResult(
-        val airQuality: WeatherContract.DataResult<AirQuality>,
-        val weather: WeatherContract.DataResult<WeatherData>
-    )
-
-    private suspend fun fetchWeather(lat: Double, lng: Double): FetchResult {
-        // 통합 API 1회 호출로 날씨 + 대기질 함께 조회
-        val combined = combinedWeatherRepository.fetch(lat, lng)
-
-        return FetchResult(
-            airQuality = WeatherContract.DataResult(
-                data = combined.airQuality.getOrNull(),
-                error = combined.airQuality.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-            ),
-            weather = WeatherContract.DataResult(
-                data = combined.weather.getOrNull(),
-                error = combined.weather.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-            )
+    private fun toDataResults(
+        result: seriouschoi.aircheck.core.domain.repository.CombinedWeatherResult
+    ): Pair<WeatherContract.DataResult<AirQuality>, WeatherContract.DataResult<WeatherData>> {
+        val airResult = WeatherContract.DataResult(
+            data = result.airQuality.getOrNull(),
+            error = result.airQuality.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
         )
+        val weatherResult = WeatherContract.DataResult(
+            data = result.weather.getOrNull(),
+            error = result.weather.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
+        )
+        return airResult to weatherResult
     }
 
     private fun confirmDelete() {

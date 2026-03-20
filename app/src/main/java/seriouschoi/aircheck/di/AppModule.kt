@@ -69,6 +69,16 @@ object AppModule {
             }
         }
         
+        override suspend fun toCentroid(lat: Double, lng: Double): SmartLocation? {
+            val result = smartLocationRepository.toCentroid(lat, lng) ?: return null
+            return SmartLocation(
+                bjdCode = result.bjdCode,
+                bjdName = result.bjdName,
+                lat = result.centroidLat,
+                lng = result.centroidLng
+            )
+        }
+
         override fun forceRefresh() {
             smartLocationRepository.forceRefresh()
         }

@@ -90,6 +90,19 @@ class SmartLocationRepository @Inject constructor(
     }
     
     /**
+     * 좌표 → 법정동 centroid 변환
+     */
+    fun toCentroid(lat: Double, lng: Double): SmartLocationResult? {
+        val bjdResult = bjdMatcher.findNearest(lat, lng) ?: return null
+        return SmartLocationResult(
+            bjdCode = bjdResult.code,
+            bjdName = bjdResult.name,
+            centroidLat = bjdResult.centroidLat,
+            centroidLng = bjdResult.centroidLng
+        )
+    }
+
+    /**
      * 강제 갱신 (pull-to-refresh 등)
      */
     fun forceRefresh() {
