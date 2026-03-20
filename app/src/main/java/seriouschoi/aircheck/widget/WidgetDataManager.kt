@@ -13,7 +13,7 @@ import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.resource.R as CoreR
-import seriouschoi.aircheck.core.ui.mapper.toColorHex
+import seriouschoi.aircheck.core.ui.mapper.toColorArgb
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
 import seriouschoi.aircheck.core.ui.mapper.toLabel
 import javax.inject.Inject
@@ -99,7 +99,7 @@ class WidgetDataManager @Inject constructor(
         feelsLike: Double
     ) {
         val clothing = RecommendedClothing.fromFeelsLike(feelsLike)
-        val pmColor = pmLevel.toColorHex().toInt()
+        val pmColor = pmLevel.toColorArgb()
         
         prefs.edit()
             .putString(KEY_LOCATION, location)

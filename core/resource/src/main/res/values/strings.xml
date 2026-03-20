@@ -119,6 +119,11 @@
     <string name="location_picker_no_result">\"%s\" 검색 결과가 없습니다</string>
     <string name="button_select">선택</string>
 
+    <!-- 백그라운드 위치 권한 -->
+    <string name="bg_location_rationale_title">위젯 위치 권한 필요</string>
+    <string name="bg_location_rationale_message">위젯이 백그라운드에서 날씨를 업데이트하려면\n위치 권한을 \"항상 허용\"으로 설정해주세요.</string>
+    <string name="bg_location_go_settings">설정으로 이동</string>
+
     <!-- 위젯 -->
     <string name="widget_location_loading">위치 로딩중…</string>
     <string name="widget_update_time_now">방금</string>

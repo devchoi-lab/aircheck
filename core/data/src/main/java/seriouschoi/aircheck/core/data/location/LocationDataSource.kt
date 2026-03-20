@@ -73,12 +73,22 @@ class LocationDataSource @Inject constructor(
     /**
      * 현재 위치 1회 조회
      */
+    @android.annotation.SuppressLint("MissingPermission")
     suspend fun getCurrentLocation(): LocationData? {
         if (!hasLocationPermission()) return null
-        
+
         return try {
-            val location = fusedLocationClient.lastLocation.await()
-            location?.let { LocationData(it.latitude, it.longitude) }
+            // 캐시된 마지막 위치 시도
+            val lastLocation = fusedLocationClient.lastLocation.await()
+            if (lastLocation != null) {
+                return LocationData(lastLocation.latitude, lastLocation.longitude)
+            }
+            // 캐시 없으면 능동적 위치 요청
+            val freshLocation = fusedLocationClient.getCurrentLocation(
+                Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                null
+            ).await()
+            freshLocation?.let { LocationData(it.latitude, it.longitude) }
         } catch (e: Exception) {
             null
         }

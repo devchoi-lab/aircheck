@@ -2,139 +2,91 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="12dp"
+    android:orientation="horizontal"
+    android:padding="8dp"
     android:background="@drawable/widget_background"
+    android:gravity="center_vertical"
     android:id="@+id/widget_container">
 
-    <!-- 상단: 위치명 + 업데이트 시간 -->
-    <LinearLayout
-        android:layout_width="match_parent"
+    <!-- 위치명 -->
+    <TextView
+        android:id="@+id/tv_location"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-        
-        <TextView
-            android:id="@+id/tv_location"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="역삼동"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:textColor="#333333"/>
-        
-        <TextView
-            android:id="@+id/tv_update_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="10분 전"
-            android:textSize="10sp"
-            android:textColor="#888888"/>
-    </LinearLayout>
+        android:layout_weight="1"
+        android:text="역삼동"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="?android:attr/textColorPrimary"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:paddingEnd="4dp"/>
 
-    <!-- 구분선: ImageView로 대체 -->
+    <!-- 미세먼지 -->
+    <TextView
+        android:id="@+id/tv_pm_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="좋음"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="#4CAF50"
+        android:paddingHorizontal="6dp"/>
+
+    <!-- 구분선 -->
     <ImageView
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginVertical="8dp"
-        android:background="#E0E0E0"
+        android:layout_width="1dp"
+        android:layout_height="16dp"
+        android:background="?android:attr/listDivider"
         android:contentDescription="@null"/>
 
-    <!-- 중앙: 3개 정보 가로 배치 -->
+    <!-- 강수확률 -->
+    <TextView
+        android:id="@+id/tv_rain_prob"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="☔ 10%"
+        android:textSize="13sp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:paddingHorizontal="6dp"/>
+
+    <!-- 구분선 -->
+    <ImageView
+        android:layout_width="1dp"
+        android:layout_height="16dp"
+        android:background="?android:attr/listDivider"
+        android:contentDescription="@null"/>
+
+    <!-- 복장 추천 -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center">
+        android:gravity="center_vertical"
+        android:paddingHorizontal="6dp">
 
-        <!-- 미세먼지 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-            
-            <TextView
-                android:id="@+id/tv_pm_value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="좋음"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#4CAF50"/>
-            
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="미세먼지"
-                android:textSize="10sp"
-                android:textColor="#666666"/>
-        </LinearLayout>
-
-        <!-- 구분선: ImageView로 대체 -->
         <ImageView
-            android:layout_width="1dp"
-            android:layout_height="40dp"
-            android:background="#E0E0E0"
+            android:id="@+id/iv_clothing"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_recommend_tshirt"
             android:contentDescription="@null"/>
 
-        <!-- 강수확률 -->
-        <LinearLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tv_clothing"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-            
-            <TextView
-                android:id="@+id/tv_rain_prob"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="10%"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:textColor="#2196F3"/>
-            
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="강수확률"
-                android:textSize="10sp"
-                android:textColor="#666666"/>
-        </LinearLayout>
-
-        <!-- 구분선: ImageView로 대체 -->
-        <ImageView
-            android:layout_width="1dp"
-            android:layout_height="40dp"
-            android:background="#E0E0E0"
-            android:contentDescription="@null"/>
-
-        <!-- 복장 추천 -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:gravity="center">
-            
-            <ImageView
-                android:id="@+id/iv_clothing"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@drawable/ic_recommend_tshirt"
-                android:contentDescription="@null"/>
-            
-            <TextView
-                android:id="@+id/tv_clothing"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="반팔"
-                android:textSize="10sp"
-                android:textColor="#666666"/>
-        </LinearLayout>
+            android:text="반팔"
+            android:textSize="12sp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:paddingStart="2dp"/>
     </LinearLayout>
+
+    <!-- 업데이트 시간 (숨김, 데이터용) -->
+    <TextView
+        android:id="@+id/tv_update_time"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone"/>
 
 </LinearLayout>

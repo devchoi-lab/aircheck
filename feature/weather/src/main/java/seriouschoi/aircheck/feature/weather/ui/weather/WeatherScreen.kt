@@ -58,7 +58,7 @@ import seriouschoi.aircheck.core.domain.model.PmData
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.domain.model.WeatherData
-import seriouschoi.aircheck.core.ui.mapper.toColorHex
+import seriouschoi.aircheck.core.ui.mapper.toColor
 import seriouschoi.aircheck.core.ui.mapper.toDetailedLabelRes
 import seriouschoi.aircheck.core.ui.mapper.toEmoji
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
@@ -550,7 +550,7 @@ private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?
 
 @Composable
 private fun AirQualitySection(air: AirQuality, modifier: Modifier = Modifier) {
-    val worstColor = Color(air.worstLevel.toColorHex())
+    val worstColor = air.worstLevel.toColor()
 
     Column(modifier = modifier.fillMaxWidth()) {
         // 섹션 라벨
@@ -636,7 +636,7 @@ private fun AirQualitySection(air: AirQuality, modifier: Modifier = Modifier) {
 @Composable
 private fun PollutantRow(label: String, pmData: PmData?, mainStationName: String) {
     val level = pmData?.level ?: AqiLevel.UNKNOWN
-    val color = Color(level.toColorHex())
+    val color = level.toColor()
     
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(

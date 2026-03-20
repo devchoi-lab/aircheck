@@ -1,22 +1,27 @@
 package seriouschoi.aircheck.widget
 
+import android.Manifest
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import seriouschoi.aircheck.R
 import seriouschoi.aircheck.MainActivity
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 class AircheckWidgetProvider : AppWidgetProvider() {
-    
+
     companion object {
         private const val TAG = "AircheckWidget"
+        const val EXTRA_REQUEST_BG_LOCATION = "request_bg_location"
     }
-    
+
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -35,6 +40,18 @@ class AircheckWidgetProvider : AppWidgetProvider() {
         super.onEnabled(context)
         // 첫 번째 위젯 추가 시 주기적 갱신 스케줄링
         WidgetUpdateWorker.schedule(context)
+
+        // 백그라운드 위치 권한이 없으면 앱을 열어 권한 요청 안내
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            val intent = Intent(context, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                putExtra(EXTRA_REQUEST_BG_LOCATION, true)
+            }
+            context.startActivity(intent)
+        }
     }
     
     override fun onDisabled(context: Context) {

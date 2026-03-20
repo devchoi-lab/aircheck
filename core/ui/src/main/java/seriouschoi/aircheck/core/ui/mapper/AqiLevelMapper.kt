@@ -57,5 +57,10 @@ private fun AqiLevel.formatRange(min: Double, max: Double): String = when (this)
 private fun Double.formatValue(): String =
     if (this == this.toLong().toDouble()) toLong().toString() else toString()
 
-/** 공기질 등급 색상 (ARGB Long - 위젯용) */
-fun AqiLevel.toColorHex(): Long = toColor().value.toLong()
+/** 공기질 등급 색상 (ARGB Int - 위젯 RemoteViews용) */
+fun AqiLevel.toColorArgb(): Int = android.graphics.Color.argb(
+    (toColor().alpha * 255).toInt(),
+    (toColor().red * 255).toInt(),
+    (toColor().green * 255).toInt(),
+    (toColor().blue * 255).toInt()
+)
