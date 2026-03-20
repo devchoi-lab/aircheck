@@ -269,20 +269,36 @@ private fun SuccessContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // ── 추천 아이템 (가장 위에) ─────────────────────────────
         if (weather.data != null || air.data != null) {
-            RecommendationSection(weather = weather.data, airQuality = air.data)
-            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            ) {
+                RecommendationSection(
+                    weather = weather.data, 
+                    airQuality = air.data,
+                    modifier = Modifier.padding(16.dp)
+                )
+            }
         }
 
         // ── 날씨 섹션 ────────────────────────────────────────
         when {
             weather.data != null -> {
-                WeatherSection(weather.data)
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    WeatherSection(weather.data, modifier = Modifier.padding(16.dp))
+                }
             }
             weather.error != null -> ErrorSection(
                 title = stringResource(CoreR.string.weather_title), 
@@ -293,7 +309,16 @@ private fun SuccessContent(
 
         // ── 공기질 섹션 ──────────────────────────────────────
         when {
-            air.data != null -> AirQualitySection(air.data)
+            air.data != null -> {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    AirQualitySection(air.data, modifier = Modifier.padding(16.dp))
+                }
+            }
             air.error != null -> ErrorSection(
                 title = stringResource(CoreR.string.air_quality_title), 
                 message = air.error.asString(), 
@@ -316,8 +341,8 @@ private fun SuccessContent(
 // ── 날씨 섹션 ─────────────────────────────────────────────────────────────────
 
 @Composable
-private fun WeatherSection(weather: WeatherData) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+private fun WeatherSection(weather: WeatherData, modifier: Modifier = Modifier) {
+    Column(modifier = modifier.fillMaxWidth()) {
         // 현재 날씨 라벨
         Text(
             text = stringResource(CoreR.string.section_current_weather),
@@ -558,7 +583,7 @@ private fun WeatherStat(emoji: String, label: String, value: String) {
 // ── 추천 아이템 섹션 ──────────────────────────────────────────────────────────
 
 @Composable
-private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?) {
+private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?, modifier: Modifier = Modifier) {
     val recommendations = mutableListOf<Pair<Int, String>>() // drawableRes to label
     
     // 1. 체감온도 기반 옷 추천
@@ -594,15 +619,15 @@ private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?
     
     if (recommendations.isEmpty()) return
     
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = stringResource(CoreR.string.recommendation_title),
-            fontSize = 14.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold
         )
         Text(
             text = stringResource(CoreR.string.recommendation_description),
-            fontSize = 11.sp,
+            fontSize = 12.sp,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Spacer(Modifier.height(12.dp))
@@ -638,10 +663,10 @@ private fun RecommendationSection(weather: WeatherData?, airQuality: AirQuality?
 // ── 공기질 섹션 ───────────────────────────────────────────────────────────────
 
 @Composable
-private fun AirQualitySection(air: AirQuality) {
+private fun AirQualitySection(air: AirQuality, modifier: Modifier = Modifier) {
     val worstColor = Color(air.worstLevel.toColorHex())
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth()) {
         // 섹션 라벨
         Text(
             text = stringResource(CoreR.string.section_air_quality),
