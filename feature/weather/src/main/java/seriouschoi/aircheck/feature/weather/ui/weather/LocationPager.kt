@@ -24,6 +24,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import seriouschoi.aircheck.feature.weather.ui.weather.components.ErrorContent
+import seriouschoi.aircheck.feature.weather.ui.weather.components.PermissionRequiredContent
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
