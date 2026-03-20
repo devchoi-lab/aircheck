@@ -14,18 +14,19 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import seriouschoi.aircheck.core.domain.model.*
-import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.CombinedWeatherResult
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
 import seriouschoi.aircheck.core.domain.repository.SmartLocation
+import seriouschoi.aircheck.core.domain.usecase.FetchWeatherOutput
+import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class WeatherViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    private lateinit var combinedWeatherRepository: CombinedWeatherRepository
+    private lateinit var fetchWeatherUseCase: FetchWeatherUseCase
     private lateinit var locationProvider: LocationProvider
     private lateinit var savedLocationRepository: SavedLocationRepository
 
@@ -33,7 +34,7 @@ class WeatherViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
-        combinedWeatherRepository = mockk()
+        fetchWeatherUseCase = mockk()
         locationProvider = mockk()
         savedLocationRepository = mockk()
 
@@ -48,7 +49,7 @@ class WeatherViewModelTest {
     }
 
     private fun createViewModel() = WeatherViewModel(
-        combinedWeatherRepository = combinedWeatherRepository,
+        fetchWeatherUseCase = fetchWeatherUseCase,
         locationProvider = locationProvider,
         savedLocationRepository = savedLocationRepository
     )
@@ -60,9 +61,12 @@ class WeatherViewModelTest {
         lng = 127.0
     )
 
-    private fun createMockCombinedResult() = CombinedWeatherResult(
-        airQuality = Result.success(createMockAirQuality()),
-        weather = Result.success(createMockWeather())
+    private fun createMockFetchOutput() = FetchWeatherOutput(
+        smartLocation = createMockSmartLocation(),
+        result = CombinedWeatherResult(
+            airQuality = Result.success(createMockAirQuality()),
+            weather = Result.success(createMockWeather())
+        )
     )
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -91,7 +95,7 @@ class WeatherViewModelTest {
         // Given
         every { locationProvider.hasLocationPermission() } returns true
         coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { combinedWeatherRepository.fetch(any(), any()) } returns createMockCombinedResult()
+        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
 
         // When
         val viewModel = createViewModel()
@@ -130,7 +134,7 @@ class WeatherViewModelTest {
     fun `위치_있으면_데이터_로드`() = runTest {
         // Given
         coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { combinedWeatherRepository.fetch(any(), any()) } returns createMockCombinedResult()
+        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
 
         // When
         val viewModel = createViewModel()
@@ -147,18 +151,18 @@ class WeatherViewModelTest {
     }
 
     @Test
-    fun `CombinedWeatherRepository_호출_확인`() = runTest {
+    fun `FetchWeatherUseCase_호출_확인`() = runTest {
         // Given
         val smartLocation = createMockSmartLocation()
         coEvery { locationProvider.getCurrentSmartLocation() } returns smartLocation
-        coEvery { combinedWeatherRepository.fetch(any(), any()) } returns createMockCombinedResult()
+        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
 
         // When
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then
-        coVerify { combinedWeatherRepository.fetch(smartLocation.lat, smartLocation.lng) }
+        coVerify { fetchWeatherUseCase.invoke(smartLocation.lat, smartLocation.lng) }
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -169,7 +173,7 @@ class WeatherViewModelTest {
     fun `Refresh_시_데이터_재조회`() = runTest {
         // Given
         coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { combinedWeatherRepository.fetch(any(), any()) } returns createMockCombinedResult()
+        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -179,14 +183,14 @@ class WeatherViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         // Then: 2번 호출됨 (Load + Refresh)
-        coVerify(exactly = 2) { combinedWeatherRepository.fetch(any(), any()) }
+        coVerify(exactly = 2) { fetchWeatherUseCase.invoke(any(), any()) }
     }
 
     @Test
     fun `Refresh_시_isRefreshing_상태_변화`() = runTest {
         // Given
         coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { combinedWeatherRepository.fetch(any(), any()) } returns createMockCombinedResult()
+        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
 
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -216,9 +220,12 @@ class WeatherViewModelTest {
     fun `대기질_실패해도_날씨는_표시`() = runTest {
         // Given
         coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { combinedWeatherRepository.fetch(any(), any()) } returns CombinedWeatherResult(
-            airQuality = Result.failure(Exception("API 에러")),
-            weather = Result.success(createMockWeather())
+        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns FetchWeatherOutput(
+            smartLocation = createMockSmartLocation(),
+            result = CombinedWeatherResult(
+                airQuality = Result.failure(Exception("API 에러")),
+                weather = Result.success(createMockWeather())
+            )
         )
 
         // When
@@ -239,9 +246,12 @@ class WeatherViewModelTest {
     fun `날씨_실패해도_대기질은_표시`() = runTest {
         // Given
         coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
-        coEvery { combinedWeatherRepository.fetch(any(), any()) } returns CombinedWeatherResult(
-            airQuality = Result.success(createMockAirQuality()),
-            weather = Result.failure(Exception("API 에러"))
+        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns FetchWeatherOutput(
+            smartLocation = createMockSmartLocation(),
+            result = CombinedWeatherResult(
+                airQuality = Result.success(createMockAirQuality()),
+                weather = Result.failure(Exception("API 에러"))
+            )
         )
 
         // When
@@ -271,10 +281,10 @@ class WeatherViewModelTest {
         )
         coEvery { locationProvider.getCurrentSmartLocation() } returns createMockSmartLocation()
         coEvery { savedLocationRepository.getAll() } returns flowOf(savedLocations)
-        coEvery { combinedWeatherRepository.fetch(any(), any()) } returns createMockCombinedResult()
-        coEvery { combinedWeatherRepository.fetchBatch(any()) } returns listOf(
-            createMockCombinedResult(),
-            createMockCombinedResult()
+        coEvery { fetchWeatherUseCase.invoke(any(), any()) } returns createMockFetchOutput()
+        coEvery { fetchWeatherUseCase.fetchBatch(any()) } returns listOf(
+            createMockFetchOutput(),
+            createMockFetchOutput()
         )
 
         // When
@@ -300,7 +310,7 @@ class WeatherViewModelTest {
             SavedLocation(id = 1, name = "집", displayName = "서울 강남구 집", lat = 37.4, lng = 126.9)
         )
         coEvery { savedLocationRepository.getAll() } returns flowOf(savedLocations)
-        coEvery { combinedWeatherRepository.fetchBatch(any()) } returns listOf(createMockCombinedResult())
+        coEvery { fetchWeatherUseCase.fetchBatch(any()) } returns listOf(createMockFetchOutput())
 
         // When
         val viewModel = createViewModel()
