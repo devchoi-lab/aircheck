@@ -46,6 +46,7 @@ import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.core.ui.mapper.toColorHex
+import seriouschoi.aircheck.core.ui.theme.WeatherColors
 import seriouschoi.aircheck.core.ui.mapper.toDetailedLabelRes
 import seriouschoi.aircheck.core.ui.mapper.toEmoji
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
@@ -277,7 +278,7 @@ private fun SuccessContent(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer
                 )
             ) {
                 RecommendationSection(
@@ -294,7 +295,7 @@ private fun SuccessContent(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
                 ) {
                     WeatherSection(weather.data, modifier = Modifier.padding(16.dp))
@@ -313,7 +314,7 @@ private fun SuccessContent(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
                     )
                 ) {
                     AirQualitySection(air.data, modifier = Modifier.padding(16.dp))
@@ -498,14 +499,14 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
             Text(
                 text = "❄️${forecast.precipitationProbability}%",
                 fontSize = 10.sp,
-                color = Color(0xFF64B5F6)
+                color = WeatherColors.Snow
             )
         } else {
             Text(
                 text = "🌧️${forecast.precipitationProbability}%",
                 fontSize = 10.sp,
                 color = if (forecast.precipitationProbability >= 40) 
-                    Color(0xFF2196F3) 
+                    WeatherColors.Precipitation 
                 else 
                     MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -543,7 +544,7 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
             Text(
                 text = stringResource(CoreR.string.item_umbrella),
                 fontSize = 9.sp,
-                color = Color(0xFF2196F3)
+                color = WeatherColors.Precipitation
             )
         } else if (forecast.snowfall > 0) {
             Icon(
@@ -555,7 +556,7 @@ private fun HourlyForecastItem(forecast: HourlyForecast) {
             Text(
                 text = stringResource(CoreR.string.item_snow),
                 fontSize = 9.sp,
-                color = Color(0xFF64B5F6)
+                color = WeatherColors.Snow
             )
         }
     }

@@ -15,11 +15,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.resource.R as CoreR
-import seriouschoi.aircheck.core.ui.mapper.toDetailedLabelRes
-import seriouschoi.aircheck.core.ui.mapper.toIconRes
-import seriouschoi.aircheck.core.ui.mapper.toTemperatureRange
+import seriouschoi.aircheck.core.ui.mapper.*
 
 @Composable
 internal fun AirQualityInfoDialog(onDismiss: () -> Unit) {
@@ -57,14 +56,15 @@ internal fun AirQualityInfoDialog(onDismiss: () -> Unit) {
                     fontSize = 14.sp
                 )
                 GradeTable(
-                    grades = listOf(
-                        Triple("😊 좋음", "0 ~ 15", Color(0xFF00C853)),
-                        Triple("🙂 보통", "16 ~ 25", Color(0xFFFFD600)),
-                        Triple("😐 민감군 주의", "26 ~ 37.5", Color(0xFFFF9100)),
-                        Triple("😷 나쁨", "37.6 ~ 50", Color(0xFFFF5722)),
-                        Triple("🤢 매우 나쁨", "51 ~ 75", Color(0xFF9C27B0)),
-                        Triple("☠️ 위험", "76+", Color(0xFF7E0023))
-                    )
+                    grades = AqiLevel.entries
+                        .filter { it != AqiLevel.UNKNOWN }
+                        .map { level ->
+                            Triple(
+                                "${level.toEmoji()} ${stringResource(level.toLabelRes())}",
+                                level.toPm25Range(),
+                                level.toColor()
+                            )
+                        }
                 )
 
                 HorizontalDivider()
@@ -76,14 +76,15 @@ internal fun AirQualityInfoDialog(onDismiss: () -> Unit) {
                     fontSize = 14.sp
                 )
                 GradeTable(
-                    grades = listOf(
-                        Triple("😊 좋음", "0 ~ 45", Color(0xFF00C853)),
-                        Triple("🙂 보통", "46 ~ 50", Color(0xFFFFD600)),
-                        Triple("😐 민감군 주의", "51 ~ 75", Color(0xFFFF9100)),
-                        Triple("😷 나쁨", "76 ~ 100", Color(0xFFFF5722)),
-                        Triple("🤢 매우 나쁨", "101 ~ 150", Color(0xFF9C27B0)),
-                        Triple("☠️ 위험", "151+", Color(0xFF7E0023))
-                    )
+                    grades = AqiLevel.entries
+                        .filter { it != AqiLevel.UNKNOWN }
+                        .map { level ->
+                            Triple(
+                                "${level.toEmoji()} ${stringResource(level.toLabelRes())}",
+                                level.toPm10Range(),
+                                level.toColor()
+                            )
+                        }
                 )
 
                 HorizontalDivider()

@@ -1,8 +1,10 @@
 package seriouschoi.aircheck.core.ui.mapper
 
 import android.content.Context
+import androidx.compose.ui.graphics.Color
 import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.resource.R as CoreR
+import seriouschoi.aircheck.core.ui.theme.AqiColors
 
 /** 공기질 등급 string resource ID */
 fun AqiLevel.toLabelRes(): Int = when (this) {
@@ -29,13 +31,31 @@ fun AqiLevel.toEmoji(): String = when (this) {
     AqiLevel.UNKNOWN -> "❓"
 }
 
-/** 공기질 등급 색상 (ARGB Long) */
-fun AqiLevel.toColorHex(): Long = when (this) {
-    AqiLevel.GOOD -> 0xFF00C853
-    AqiLevel.MODERATE -> 0xFFFFD600
-    AqiLevel.UNHEALTHY_SENSITIVE -> 0xFFFF9100
-    AqiLevel.UNHEALTHY -> 0xFFFF5722
-    AqiLevel.VERY_UNHEALTHY -> 0xFF9C27B0
-    AqiLevel.HAZARDOUS -> 0xFF7E0023
-    AqiLevel.UNKNOWN -> 0xFF9E9E9E
+/** 공기질 등급 색상 */
+fun AqiLevel.toColor(): Color = when (this) {
+    AqiLevel.GOOD -> AqiColors.Good
+    AqiLevel.MODERATE -> AqiColors.Moderate
+    AqiLevel.UNHEALTHY_SENSITIVE -> AqiColors.Sensitive
+    AqiLevel.UNHEALTHY -> AqiColors.Unhealthy
+    AqiLevel.VERY_UNHEALTHY -> AqiColors.VeryUnhealthy
+    AqiLevel.HAZARDOUS -> AqiColors.Hazardous
+    AqiLevel.UNKNOWN -> AqiColors.Unknown
 }
+
+/** PM2.5 농도 범위 문자열 (도메인 기준값 기반) */
+fun AqiLevel.toPm25Range(): String = formatRange(pm25Min, pm25Max)
+
+/** PM10 농도 범위 문자열 (도메인 기준값 기반) */
+fun AqiLevel.toPm10Range(): String = formatRange(pm10Min, pm10Max)
+
+private fun AqiLevel.formatRange(min: Double, max: Double): String = when (this) {
+    AqiLevel.UNKNOWN -> "-"
+    else -> if (max == Double.MAX_VALUE) "${min.formatValue()}+"
+            else "${min.formatValue()} ~ ${max.formatValue()}"
+}
+
+private fun Double.formatValue(): String =
+    if (this == this.toLong().toDouble()) toLong().toString() else toString()
+
+/** 공기질 등급 색상 (ARGB Long - 위젯용) */
+fun AqiLevel.toColorHex(): Long = toColor().value.toLong()
