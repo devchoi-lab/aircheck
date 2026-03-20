@@ -1,9 +1,5 @@
-@file:OptIn(kotlinx.serialization.InternalSerializationApi::class)
-
 package seriouschoi.aircheck.core.data.repository
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.HourlyForecast
@@ -12,36 +8,31 @@ import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.CombinedWeatherResult
-import seriouschoi.aircheck.core.network.api.AircheckApiClient
+import seriouschoi.aircheck.core.network.api.AircheckApi
 import seriouschoi.aircheck.core.network.api.AircheckWeatherResponse
 import seriouschoi.aircheck.core.network.api.AirQualityResponse
 import seriouschoi.aircheck.core.network.api.BatchWeatherItem
+import seriouschoi.aircheck.core.network.api.BatchWeatherRequest
 import seriouschoi.aircheck.core.network.api.HourlyForecastResponse
+import seriouschoi.aircheck.core.network.api.LocationRequest
 import seriouschoi.aircheck.core.network.api.WeatherResponse
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/**
- * 서버 API 1회 호출로 날씨 + 대기질 함께 조회
- */
 @Singleton
 class CombinedWeatherRepositoryImpl @Inject constructor(
-    private val apiClient: AircheckApiClient
+    private val api: AircheckApi
 ) : CombinedWeatherRepository {
 
-    override suspend fun fetch(lat: Double, lng: Double): CombinedWeatherResult = withContext(Dispatchers.IO) {
-        try {
-            val body = apiClient.getWeather(lat, lng)
-            val response = apiClient.json.decodeFromString<AircheckWeatherResponse>(body)
-            
-            val weatherResult = parseWeather(response)
-            val airQualityResult = parseAirQuality(response)
-            
+    override suspend fun fetch(lat: Double, lng: Double): CombinedWeatherResult {
+        return try {
+            val response = api.getWeather(lat, lng)
+
             CombinedWeatherResult(
-                weather = weatherResult,
-                airQuality = airQualityResult
+                weather = parseWeather(response),
+                airQuality = parseAirQuality(response)
             )
         } catch (e: Exception) {
             CombinedWeatherResult(
@@ -50,14 +41,16 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
             )
         }
     }
-    
-    override suspend fun fetchBatch(locations: List<Pair<Double, Double>>): List<CombinedWeatherResult> = withContext(Dispatchers.IO) {
-        if (locations.isEmpty()) return@withContext emptyList()
-        
-        try {
-            val body = apiClient.getBatchWeather(locations)
-            val items = apiClient.json.decodeFromString<List<BatchWeatherItem>>(body)
-            
+
+    override suspend fun fetchBatch(locations: List<Pair<Double, Double>>): List<CombinedWeatherResult> {
+        if (locations.isEmpty()) return emptyList()
+
+        return try {
+            val request = BatchWeatherRequest(
+                locations = locations.map { (lat, lng) -> LocationRequest(lat, lng) }
+            )
+            val items = api.getBatchWeather(request)
+
             items.map { item ->
                 CombinedWeatherResult(
                     weather = parseWeatherFromBatch(item.weather),
@@ -69,20 +62,20 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
             locations.map { (lat, lng) -> fetch(lat, lng) }
         }
     }
-    
+
     private fun parseWeatherFromBatch(weather: WeatherResponse?): Result<WeatherData> {
         weather ?: return Result.failure(Exception("날씨 데이터 없음"))
         val current = weather.current
             ?: return Result.failure(Exception("현재 날씨 데이터 없음"))
 
         val hourlyForecast = parseHourlyForecast(weather.hourlyForecast, current.isDay)
-        
+
         val next6Hours = hourlyForecast.take(6)
         val precipProb = next6Hours.maxOfOrNull { it.precipitationProbability } ?: 0
         val snowProb = if (next6Hours.any { it.snowfall > 0 }) {
             next6Hours.filter { it.snowfall > 0 }.maxOfOrNull { it.precipitationProbability } ?: 0
         } else 0
-        
+
         return Result.success(WeatherData(
             temperature = current.temperature,
             feelsLike = current.feelsLike,
@@ -95,12 +88,12 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
             hourlyForecast = hourlyForecast
         ))
     }
-    
+
     private fun parseAirQualityFromBatch(air: AirQualityResponse?): Result<AirQuality> {
         air ?: return Result.failure(Exception("대기질 데이터 없음"))
-        
+
         val mainStation = air.stationName
-        
+
         val pm10Data = air.pm10?.let { value ->
             PmData(
                 value = value.toDouble(),
@@ -109,7 +102,7 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
                 isFromFallback = air.pm10Station != mainStation
             )
         }
-        
+
         val pm25Data = air.pm25?.let { value ->
             PmData(
                 value = value.toDouble(),
@@ -118,10 +111,10 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
                 isFromFallback = air.pm25Station != mainStation
             )
         }
-        
+
         val levels = listOfNotNull(pm25Data?.level, pm10Data?.level)
         val worstLevel = levels.maxByOrNull { it.ordinal } ?: AqiLevel.UNKNOWN
-        
+
         return Result.success(AirQuality(
             aqi = 0,
             pm25 = pm25Data,
@@ -132,7 +125,7 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
             worstLevel = worstLevel
         ))
     }
-    
+
     private fun parseWeather(response: AircheckWeatherResponse): Result<WeatherData> {
         val weather = response.weather
             ?: return Result.failure(Exception("날씨 데이터 없음"))
@@ -140,13 +133,13 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
             ?: return Result.failure(Exception("현재 날씨 데이터 없음"))
 
         val hourlyForecast = parseHourlyForecast(weather.hourlyForecast, current.isDay)
-        
+
         val next6Hours = hourlyForecast.take(6)
         val precipProb = next6Hours.maxOfOrNull { it.precipitationProbability } ?: 0
         val snowProb = if (next6Hours.any { it.snowfall > 0 }) {
             next6Hours.filter { it.snowfall > 0 }.maxOfOrNull { it.precipitationProbability } ?: 0
         } else 0
-        
+
         val weatherData = WeatherData(
             temperature = current.temperature,
             feelsLike = current.feelsLike,
@@ -160,13 +153,13 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
         )
         return Result.success(weatherData)
     }
-    
+
     private fun parseAirQuality(response: AircheckWeatherResponse): Result<AirQuality> {
         val air = response.airQuality
             ?: return Result.failure(Exception("대기질 데이터 없음"))
-        
+
         val mainStation = air.stationName
-        
+
         val pm10Data = air.pm10?.let { value ->
             val isFromFallback = air.pm10Station != mainStation
             PmData(
@@ -176,7 +169,7 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
                 isFromFallback = isFromFallback
             )
         }
-        
+
         val pm25Data = air.pm25?.let { value ->
             val isFromFallback = air.pm25Station != mainStation
             PmData(
@@ -186,10 +179,10 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
                 isFromFallback = isFromFallback
             )
         }
-        
+
         val levels = listOfNotNull(pm25Data?.level, pm10Data?.level)
         val worstLevel = levels.maxByOrNull { it.ordinal } ?: AqiLevel.UNKNOWN
-        
+
         return Result.success(
             AirQuality(
                 aqi = 0,
@@ -202,31 +195,31 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
             )
         )
     }
-    
+
     private fun parseHourlyForecast(
         hourlyList: List<HourlyForecastResponse>,
         isDay: Boolean
     ): List<HourlyForecast> {
         val today = LocalDate.now()
         val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-        
+
         return hourlyList.map { hourly ->
             val hour = hourly.hour
-            
+
             val dateStr = hourly.time.substringBefore("T")
             val forecastDate = try {
                 LocalDate.parse(dateStr, dateFormatter)
             } catch (e: Exception) {
                 today
             }
-            
+
             val dayLabel = when (forecastDate) {
                 today -> "오늘"
                 today.plusDays(1) -> "내일"
                 today.plusDays(2) -> "모레"
                 else -> "${forecastDate.monthValue}/${forecastDate.dayOfMonth}"
             }
-            
+
             HourlyForecast(
                 hour = "${hour}시",
                 dayLabel = dayLabel,

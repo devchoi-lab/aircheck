@@ -1,17 +1,10 @@
-@file:OptIn(kotlinx.serialization.InternalSerializationApi::class)
-
 package seriouschoi.aircheck.core.network.api
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Query
 
 // ── API 응답 모델 ──────────────────────────────────────────────────────────
 
@@ -82,55 +75,18 @@ data class BatchWeatherItem(
     val airQuality: AirQualityResponse? = null
 )
 
-// ── API 클라이언트 ─────────────────────────────────────────────────────────
+// ── Retrofit API 인터페이스 ─────────────────────────────────────────────────
 
-@Singleton
-class AircheckApiClient @Inject constructor() {
-    
-    companion object {
-        // 프로덕션 서버 URL
-        private const val BASE_URL = "https://api.todaygonggi.com"
-    }
-    
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(30, TimeUnit.SECONDS)
-        .build()
-    
-    val json = Json { ignoreUnknownKeys = true }
-    
-    /**
-     * 날씨 + 대기질 통합 API
-     */
-    fun getWeather(lat: Double, lng: Double): String {
-        val url = "$BASE_URL/api/v1/weather?lat=$lat&lng=$lng"
-        val request = Request.Builder().url(url).build()
-        return client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw Exception("API 호출 실패: ${response.code}")
-            }
-            response.body?.string() ?: ""
-        }
-    }
-    
-    /**
-     * 다중 위치 일괄 조회 API
-     */
-    fun getBatchWeather(locations: List<Pair<Double, Double>>): String {
-        val url = "$BASE_URL/api/v1/weather/batch"
-        val requestBody = BatchWeatherRequest(
-            locations = locations.map { (lat, lng) -> LocationRequest(lat, lng) }
-        )
-        val jsonBody = json.encodeToString(requestBody)
-        val request = Request.Builder()
-            .url(url)
-            .post(jsonBody.toRequestBody("application/json".toMediaType()))
-            .build()
-        return client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw Exception("API 호출 실패: ${response.code}")
-            }
-            response.body?.string() ?: "[]"
-        }
-    }
+interface AircheckApi {
+
+    @GET("api/v1/weather")
+    suspend fun getWeather(
+        @Query("lat") lat: Double,
+        @Query("lng") lng: Double
+    ): AircheckWeatherResponse
+
+    @POST("api/v1/weather/batch")
+    suspend fun getBatchWeather(
+        @Body request: BatchWeatherRequest
+    ): List<BatchWeatherItem>
 }
