@@ -45,10 +45,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.WeatherData
+import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualityInfoDialog
 import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualitySection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.ErrorSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.RecommendationSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.WeatherSection
+import seriouschoi.aircheck.feature.weather.ui.weather.pager.LocationPager
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable

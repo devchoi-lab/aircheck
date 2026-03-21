@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalFoundationApi::class)
 
-package seriouschoi.aircheck.feature.weather.ui.weather
+package seriouschoi.aircheck.feature.weather.ui.weather.pager
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -27,6 +27,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreview
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreviewWrapper
+import seriouschoi.aircheck.feature.weather.ui.weather.LocationWeatherData
+import seriouschoi.aircheck.feature.weather.ui.weather.LocationsState
+import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
+import seriouschoi.aircheck.feature.weather.ui.weather.WeatherScreenState
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable

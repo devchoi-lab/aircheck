@@ -1,18 +1,18 @@
 @file:OptIn(ExperimentalMaterial3Api::class)
 
-package seriouschoi.aircheck.feature.weather.ui.weather
+package seriouschoi.aircheck.feature.weather.ui.weather.pager
 
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +29,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import seriouschoi.aircheck.feature.weather.ui.weather.LocationWeatherData
+import seriouschoi.aircheck.feature.weather.ui.weather.SuccessContent
+import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
 import seriouschoi.aircheck.feature.weather.ui.weather.components.PermissionRequiredContent
 import seriouschoi.aircheck.core.resource.R as CoreR
 
