@@ -42,7 +42,7 @@ internal object WeatherParsingUtil {
                 precipitation = current.precipitation,
                 precipitationProbability = precipProb,
                 snowfallProbability = snowProb,
-                condition = WeatherCondition.from(current.weatherCode, current.isDay),
+                condition = WeatherCondition.fromString(current.weatherCondition, current.isDay),
                 cloudCover = current.cloudCover,
                 isDay = current.isDay,
                 hourlyForecast = hourlyForecast
@@ -116,7 +116,7 @@ internal object WeatherParsingUtil {
                 feelsLike = hourly.feelsLike,
                 precipitationProbability = hourly.precipitationProbability,
                 snowfall = hourly.snowfall,
-                condition = WeatherCondition.from(hourly.weatherCode, hour in 6..18)
+                condition = WeatherCondition.fromString(hourly.weatherCondition, hour in 6..18)
             )
         }
     }

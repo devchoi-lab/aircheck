@@ -37,6 +37,25 @@ enum class WeatherCondition {
     UNKNOWN;
 
     companion object {
+        /**
+         * 서버에서 보내는 WeatherCondition 문자열로 변환
+         */
+        fun fromString(condition: String, isDay: Boolean): WeatherCondition = when (condition) {
+            "CLEAR" -> if (isDay) CLEAR_DAY else CLEAR_NIGHT
+            "PARTLY_CLOUDY" -> PARTLY_CLOUDY
+            "CLOUDY" -> CLOUDY
+            "FOG" -> FOG
+            "DRIZZLE" -> DRIZZLE
+            "RAIN" -> RAIN
+            "HEAVY_RAIN" -> HEAVY_RAIN
+            "SNOW" -> SNOW
+            "HEAVY_SNOW" -> SNOW  // 서버의 HEAVY_SNOW도 처리
+            "SNOW_SHOWER" -> SNOW_SHOWER
+            "THUNDERSTORM" -> THUNDERSTORM
+            else -> UNKNOWN
+        }
+
+        @Deprecated("Use fromString instead", ReplaceWith("fromString(condition, isDay)"))
         fun from(code: Int, isDay: Boolean): WeatherCondition = when (code) {
             0 -> if (isDay) CLEAR_DAY else CLEAR_NIGHT
             1, 2 -> PARTLY_CLOUDY
