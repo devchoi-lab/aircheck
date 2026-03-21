@@ -9,6 +9,13 @@ import seriouschoi.aircheck.core.resource.UiText
  */
 object LocationPickerContract {
 
+    // ── 정렬 순서 ───────────────────────────────────────────────────────────
+
+    enum class SortOrder {
+        DISTANCE,   // 거리순
+        NAME        // 가나다순
+    }
+
     // ── Intent (사용자 액션) ────────────────────────────────────────────────
 
     sealed interface Intent {
@@ -23,6 +30,9 @@ object LocationPickerContract {
 
         /** 뒤로가기 (상위 지역으로) */
         data object BackClicked : Intent
+
+        /** 정렬 순서 토글 */
+        data object ToggleSortOrder : Intent
 
         /** 알림 다이얼로그 닫기 */
         data object DismissAlert : Intent
@@ -39,6 +49,8 @@ object LocationPickerContract {
         val searchQuery: String = "",
         /** 검색 모드: 전체 계층 검색 결과 */
         val searchResults: List<RegionSearchResult> = emptyList(),
+        /** 정렬 순서 */
+        val sortOrder: SortOrder = SortOrder.DISTANCE,
         val isLoading: Boolean = true,
         val error: UiText? = null,
         /** 알림 다이얼로그 메시지 (null이면 비표시) */

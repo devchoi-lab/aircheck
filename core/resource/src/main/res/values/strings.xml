@@ -102,6 +102,8 @@
     <string name="button_delete">삭제</string>
     <string name="button_cancel">취소</string>
     <string name="button_confirm">확인</string>
+    <string name="sort_distance">거리순</string>
+    <string name="sort_name">가나다순</string>
     <string name="label_current_location">📍 현재 위치</string>
     <string name="label_saved_location">📌 %s</string>
     <string name="section_current_weather">🌤️ 현재 날씨</string>
