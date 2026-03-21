@@ -85,8 +85,16 @@ private fun LocationHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = if (locationData.isCurrentLocation) stringResource(CoreR.string.label_current_location)
-            else stringResource(CoreR.string.label_saved_location, locationData.locationName),
+            text = if (locationData.isCurrentLocation) {
+                // 현재 위치 + 법정동 이름 (있으면)
+                if (locationData.locationName.isNotEmpty() && locationData.locationName != "현재 위치") {
+                    "${stringResource(CoreR.string.label_current_location)} · ${locationData.locationName}"
+                } else {
+                    stringResource(CoreR.string.label_current_location)
+                }
+            } else {
+                stringResource(CoreR.string.label_saved_location, locationData.locationName)
+            },
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.primary
