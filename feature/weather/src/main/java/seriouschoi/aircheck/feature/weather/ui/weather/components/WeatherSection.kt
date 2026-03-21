@@ -21,9 +21,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.core.ui.mapper.toEmoji
+import seriouschoi.aircheck.core.ui.mapper.toIconRes
 import seriouschoi.aircheck.core.ui.mapper.toLabelRes
 import seriouschoi.aircheck.core.resource.R as CoreR
 
@@ -80,8 +82,8 @@ internal fun WeatherSection(weather: WeatherData, modifier: Modifier = Modifier)
                 label = stringResource(CoreR.string.label_temperature),
                 value = stringResource(CoreR.string.format_temperature, weather.temperature)
             )
-            WeatherStat(
-                emoji = "👕",
+            WeatherStatWithIcon(
+                iconRes = RecommendedClothing.fromFeelsLike(weather.feelsLike).toIconRes(),
                 label = stringResource(CoreR.string.label_feels_like),
                 value = stringResource(CoreR.string.format_temperature, weather.feelsLike)
             )
