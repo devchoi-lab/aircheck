@@ -16,10 +16,15 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,8 +46,19 @@ internal fun LocationPager(
     modifier: Modifier = Modifier,
 ) {
     val locations = state.locations.locations
+    val currentLocation = locations.getOrNull(pagerState.currentPage)
 
     Column(modifier = modifier) {
+        // 상단 헤더 (인디케이터 + 타이틀)
+        if (currentLocation != null) {
+            LocationHeader(
+                locations = locations,
+                currentPage = pagerState.currentPage,
+                currentLocation = currentLocation,
+                onIntent = onIntent
+            )
+        }
+
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.weight(1f)
@@ -51,14 +67,6 @@ internal fun LocationPager(
                 locationData = locations[page],
                 pageIndex = page,
                 onIntent = onIntent
-            )
-        }
-
-        // 페이지 인디케이터
-        if (locations.size > 1) {
-            PageIndicator(
-                locations = locations,
-                currentPage = pagerState.currentPage
             )
         }
     }
@@ -139,40 +147,92 @@ private fun LocationPagerPreviewPermission() {
 }
 
 @Composable
-private fun PageIndicator(
+private fun LocationHeader(
     locations: List<LocationWeatherData>,
     currentPage: Int,
+    currentLocation: LocationWeatherData,
+    onIntent: (WeatherContract.Intent) -> Unit,
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.Center,
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        locations.forEachIndexed { index, locationData ->
-            val isSelected = currentPage == index
-            val color = if (isSelected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        // 인디케이터 (왼쪽)
+        if (locations.size > 1) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                locations.forEachIndexed { index, locationData ->
+                    val isSelected = currentPage == index
+                    val color = if (isSelected) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
 
-            if (locationData.isCurrentLocation) {
-                Icon(
-                    imageVector = Icons.Default.LocationOn,
-                    contentDescription = stringResource(CoreR.string.content_description_current_location),
-                    tint = color,
-                    modifier = Modifier
-                        .padding(horizontal = 2.dp)
-                        .size(if (isSelected) 16.dp else 12.dp)
-                )
+                    if (locationData.isCurrentLocation) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = stringResource(CoreR.string.content_description_current_location),
+                            tint = color,
+                            modifier = Modifier
+                                .padding(horizontal = 2.dp)
+                                .size(if (isSelected) 16.dp else 12.dp)
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = 3.dp)
+                                .size(if (isSelected) 8.dp else 6.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                        )
+                    }
+                }
+            }
+        }
+
+        // 타이틀 (중앙)
+        Text(
+            text = if (currentLocation.isCurrentLocation) {
+                if (currentLocation.locationName.isNotEmpty() && currentLocation.locationName != "현재 위치") {
+                    currentLocation.locationName
+                } else {
+                    stringResource(CoreR.string.label_current_location)
+                }
             } else {
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .size(if (isSelected) 10.dp else 8.dp)
-                        .clip(CircleShape)
-                        .background(color)
+                currentLocation.locationName
+            },
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+
+        // 삭제 버튼 (오른쪽, 저장된 위치만)
+        if (!currentLocation.isCurrentLocation && currentLocation.savedLocationId != null) {
+            IconButton(
+                onClick = {
+                    onIntent(
+                        WeatherContract.Intent.RequestDeleteLocation(
+                            locationId = currentLocation.savedLocationId,
+                            locationName = currentLocation.locationName
+                        )
+                    )
+                },
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = stringResource(CoreR.string.content_description_delete_location),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
                 )
             }
+        } else if (locations.size > 1) {
+            // 균형을 위한 빈 공간
+            Box(modifier = Modifier.size(32.dp))
         }
     }
 }
