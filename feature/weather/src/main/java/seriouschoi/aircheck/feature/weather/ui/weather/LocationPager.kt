@@ -1,19 +1,35 @@
 @file:OptIn(
-    androidx.compose.foundation.ExperimentalFoundationApi::class,
-    androidx.compose.material3.ExperimentalMaterial3Api::class
+    ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class
 )
 
 package seriouschoi.aircheck.feature.weather.ui.weather
 
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,9 +38,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import seriouschoi.aircheck.feature.weather.ui.weather.components.ErrorContent
+import seriouschoi.aircheck.core.ui.theme.AirCheckPreview
+import seriouschoi.aircheck.core.ui.theme.AirCheckPreviewWrapper
+import seriouschoi.aircheck.core.ui.theme.AirCheckTheme
 import seriouschoi.aircheck.feature.weather.ui.weather.components.PermissionRequiredContent
 import seriouschoi.aircheck.core.resource.R as CoreR
 
@@ -33,10 +52,10 @@ internal fun LocationPager(
     pagerState: PagerState,
     state: WeatherScreenState,
     onIntent: (WeatherContract.Intent) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val locations = state.locations.locations
-    
+
     Column(modifier = modifier) {
         HorizontalPager(
             state = pagerState,
@@ -59,11 +78,85 @@ internal fun LocationPager(
     }
 }
 
+@AirCheckPreview
+@Composable
+private fun LocationPagerPreviewSingle() {
+    AirCheckPreviewWrapper {
+        val locations = listOf(
+            LocationWeatherData(
+                locationName = "서울",
+                isCurrentLocation = true,
+            )
+        )
+        val pagerState = rememberPagerState(pageCount = { locations.size })
+        LocationPager(
+            pagerState = pagerState,
+            state = WeatherScreenState(
+                locations = LocationsState(locations = locations, isLoading = false)
+            ),
+            onIntent = {}
+        )
+    }
+}
+
+@AirCheckPreview
+@Composable
+private fun LocationPagerPreviewMultiple() {
+    AirCheckPreviewWrapper {
+        val locations = listOf(
+            LocationWeatherData(
+                locationName = "서울",
+                isCurrentLocation = true,
+            ),
+            LocationWeatherData(
+                locationName = "부산",
+                isCurrentLocation = false,
+                savedLocationId = 1L,
+            ),
+            LocationWeatherData(
+                locationName = "제주",
+                isCurrentLocation = false,
+                savedLocationId = 2L,
+            )
+        )
+        val pagerState = rememberPagerState(pageCount = { locations.size })
+        LocationPager(
+            pagerState = pagerState,
+            state = WeatherScreenState(
+                locations = LocationsState(locations = locations, isLoading = false)
+            ),
+            onIntent = {}
+        )
+    }
+}
+
+@AirCheckPreview
+@Composable
+private fun LocationPagerPreviewPermission() {
+    AirCheckPreviewWrapper {
+        val locations = listOf(
+            LocationWeatherData(
+                locationName = "현재 위치",
+                isCurrentLocation = true,
+                needsPermission = true,
+            )
+        )
+        val pagerState = rememberPagerState(pageCount = { locations.size })
+        LocationPager(
+            pagerState = pagerState,
+            state = WeatherScreenState(
+                locations = LocationsState(locations = locations, isLoading = false)
+            ),
+            onIntent = {}
+        )
+    }
+}
+
 @Composable
 private fun LocationPage(
     locationData: LocationWeatherData,
     pageIndex: Int,
-    onIntent: (WeatherContract.Intent) -> Unit
+    onIntent: (WeatherContract.Intent) -> Unit,
 ) {
     PullToRefreshBox(
         isRefreshing = locationData.isRefreshing,
@@ -83,9 +176,9 @@ private fun LocationPage(
                 ) {
                     PermissionRequiredContent(
                         onOpenSettings = {
-                            val intent = android.content.Intent(
-                                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                android.net.Uri.fromParts("package", context.packageName, null)
+                            val intent = Intent(
+                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                Uri.fromParts("package", context.packageName, null)
                             )
                             context.startActivity(intent)
                         }
@@ -101,7 +194,7 @@ private fun LocationPage(
 @Composable
 private fun LocationHeader(
     locationData: LocationWeatherData,
-    onIntent: (WeatherContract.Intent) -> Unit
+    onIntent: (WeatherContract.Intent) -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -112,7 +205,7 @@ private fun LocationHeader(
     ) {
         Text(
             text = if (locationData.isCurrentLocation) stringResource(CoreR.string.label_current_location)
-                   else stringResource(CoreR.string.label_saved_location, locationData.locationName),
+            else stringResource(CoreR.string.label_saved_location, locationData.locationName),
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.primary
@@ -121,10 +214,12 @@ private fun LocationHeader(
         if (!locationData.isCurrentLocation && locationData.savedLocationId != null) {
             IconButton(
                 onClick = {
-                    onIntent(WeatherContract.Intent.RequestDeleteLocation(
-                        locationId = locationData.savedLocationId,
-                        locationName = locationData.locationName
-                    ))
+                    onIntent(
+                        WeatherContract.Intent.RequestDeleteLocation(
+                            locationId = locationData.savedLocationId,
+                            locationName = locationData.locationName
+                        )
+                    )
                 },
                 modifier = Modifier.size(32.dp)
             ) {
@@ -142,7 +237,7 @@ private fun LocationHeader(
 @Composable
 private fun PageIndicator(
     locations: List<LocationWeatherData>,
-    currentPage: Int
+    currentPage: Int,
 ) {
     Row(
         modifier = Modifier
@@ -154,7 +249,7 @@ private fun PageIndicator(
         locations.forEachIndexed { index, locationData ->
             val isSelected = currentPage == index
             val color = if (isSelected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+            else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
 
             if (locationData.isCurrentLocation) {
                 Icon(
