@@ -12,6 +12,7 @@ import seriouschoi.aircheck.core.network.api.AirQualityResponse
 import seriouschoi.aircheck.core.network.api.HourlyForecastResponse
 import seriouschoi.aircheck.core.network.api.WeatherResponse
 import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * API 응답 → 도메인 모델 변환 유틸리티
@@ -92,12 +93,14 @@ internal object WeatherParsingUtil {
         hourlyList: List<HourlyForecastResponse>,
         isDay: Boolean
     ): List<HourlyForecast> {
-        val today = LocalDate.now()
+        val localZone = ZoneId.systemDefault()
+        val today = LocalDate.now(localZone)
 
         return hourlyList.map { hourly ->
-            val dateTime = hourly.time
-            val forecastDate = dateTime.toLocalDate()
-            val hour = dateTime.hour
+            // UTC Instant → 로컬 시간으로 변환
+            val localDateTime = hourly.time.atZone(localZone).toLocalDateTime()
+            val forecastDate = localDateTime.toLocalDate()
+            val hour = localDateTime.hour
 
             val dayLabel = when (forecastDate) {
                 today -> "오늘"
