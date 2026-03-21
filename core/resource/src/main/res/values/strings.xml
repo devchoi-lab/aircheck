@@ -82,6 +82,7 @@
     <string name="weather_clear_day">맑음</string>
     <string name="weather_clear_night">맑음 (야간)</string>
     <string name="weather_partly_cloudy">구름 조금</string>
+    <string name="weather_partly_cloudy_night">구름 조금 (야간)</string>
     <string name="weather_cloudy">흐림</string>
     <string name="weather_fog">안개</string>
     <string name="weather_drizzle">이슬비</string>

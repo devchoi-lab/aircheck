@@ -25,7 +25,8 @@ data class HourlyForecast(
 enum class WeatherCondition {
     CLEAR_DAY,
     CLEAR_NIGHT,
-    PARTLY_CLOUDY,
+    PARTLY_CLOUDY_DAY,
+    PARTLY_CLOUDY_NIGHT,
     CLOUDY,
     FOG,
     DRIZZLE,
@@ -42,7 +43,7 @@ enum class WeatherCondition {
          */
         fun fromString(condition: String, isDay: Boolean): WeatherCondition = when (condition) {
             "CLEAR" -> if (isDay) CLEAR_DAY else CLEAR_NIGHT
-            "PARTLY_CLOUDY" -> PARTLY_CLOUDY
+            "PARTLY_CLOUDY" -> if (isDay) PARTLY_CLOUDY_DAY else PARTLY_CLOUDY_NIGHT
             "CLOUDY" -> CLOUDY
             "FOG" -> FOG
             "DRIZZLE" -> DRIZZLE
@@ -58,7 +59,7 @@ enum class WeatherCondition {
         @Deprecated("Use fromString instead", ReplaceWith("fromString(condition, isDay)"))
         fun from(code: Int, isDay: Boolean): WeatherCondition = when (code) {
             0 -> if (isDay) CLEAR_DAY else CLEAR_NIGHT
-            1, 2 -> PARTLY_CLOUDY
+            1, 2 -> if (isDay) PARTLY_CLOUDY_DAY else PARTLY_CLOUDY_NIGHT
             3 -> CLOUDY
             45, 48 -> FOG
             51, 53, 55 -> DRIZZLE
