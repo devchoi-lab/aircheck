@@ -19,6 +19,7 @@ work = "2.10.0"
 hilt-work = "1.2.0"
 
 [libraries]
+androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.15.0" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activity-compose" }
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }
 compose-ui = { group = "androidx.compose.ui", name = "ui" }

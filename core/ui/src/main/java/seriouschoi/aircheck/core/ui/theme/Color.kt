@@ -1,4 +1,4 @@
-package seriouschoi.aircheck.ui.theme
+package seriouschoi.aircheck.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
