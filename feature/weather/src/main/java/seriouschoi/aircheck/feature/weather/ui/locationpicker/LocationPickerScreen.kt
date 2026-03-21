@@ -56,6 +56,18 @@ internal fun LocationPickerScreen(
                     }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(CoreR.string.content_description_back))
                     }
+                },
+                actions = {
+                    // 정렬 토글 버튼
+                    TextButton(onClick = { onIntent(LocationPickerContract.Intent.ToggleSortOrder) }) {
+                        Text(
+                            text = when (uiState.sortOrder) {
+                                LocationPickerContract.SortOrder.DISTANCE -> stringResource(CoreR.string.sort_distance)
+                                LocationPickerContract.SortOrder.NAME -> stringResource(CoreR.string.sort_name)
+                            },
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             )
         }

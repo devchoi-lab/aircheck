@@ -77,8 +77,23 @@ internal class LocationPickerViewModel @Inject constructor(
             is Intent.RegionClicked -> onRegionClick(intent.region)
             is Intent.SearchResultClicked -> onSearchResultClick(intent.result)
             is Intent.BackClicked -> onBackClick()
+            is Intent.ToggleSortOrder -> onToggleSortOrder()
             is Intent.DismissAlert -> _uiState.value = _uiState.value.copy(alertMessage = null)
         }
+    }
+
+    private fun onToggleSortOrder() {
+        val current = _uiState.value
+        val newOrder = if (current.sortOrder == LocationPickerContract.SortOrder.DISTANCE) {
+            LocationPickerContract.SortOrder.NAME
+        } else {
+            LocationPickerContract.SortOrder.DISTANCE
+        }
+        _uiState.value = current.copy(
+            sortOrder = newOrder,
+            regions = current.regions.sortedBy(newOrder),
+            searchResults = current.searchResults.sortedResultsBy(newOrder)
+        )
     }
 
     // ── Private ──────────────────────────────────────────────────────────────
@@ -90,7 +105,7 @@ internal class LocationPickerViewModel @Inject constructor(
                 currentLocation = locationProvider.getCurrentLocation()
                 val regions = regionRepository.getTopLevelRegions()
                 _uiState.value = _uiState.value.copy(
-                    regions = regions.sortedByDistance(),
+                    regions = regions.sortedByCurrentOrder(),
                     isLoading = false
                 )
             } catch (e: Exception) {
@@ -114,14 +129,14 @@ internal class LocationPickerViewModel @Inject constructor(
                     regionRepository.getRegionByPath(currentPath)?.children ?: emptyList()
                 }
                 _uiState.value = _uiState.value.copy(
-                    regions = regions.sortedByDistance(),
+                    regions = regions.sortedByCurrentOrder(),
                     searchResults = emptyList()
                 )
             } else {
                 // 전체 계층 재귀 검색
                 val results = regionRepository.deepSearchRegions(query)
                 _uiState.value = _uiState.value.copy(
-                    searchResults = results.sortedBySearchResultDistance()
+                    searchResults = results.sortedResultsByCurrentOrder()
                 )
             }
         }
@@ -135,7 +150,7 @@ internal class LocationPickerViewModel @Inject constructor(
                 val children = regionRepository.getRegionByPath(newPath)?.children ?: emptyList()
                 _uiState.value = _uiState.value.copy(
                     currentPath = newPath,
-                    regions = children.sortedByDistance(),
+                    regions = children.sortedByCurrentOrder(),
                     searchQuery = ""
                 )
             }
@@ -152,7 +167,7 @@ internal class LocationPickerViewModel @Inject constructor(
             val newPath = result.path + region.name
             _uiState.value = _uiState.value.copy(
                 currentPath = newPath,
-                regions = region.children.sortedByDistance(),
+                regions = region.children.sortedByCurrentOrder(),
                 searchQuery = "",
                 searchResults = emptyList()
             )
@@ -174,7 +189,7 @@ internal class LocationPickerViewModel @Inject constructor(
             }
             _uiState.value = _uiState.value.copy(
                 currentPath = newPath,
-                regions = regions.sortedByDistance(),
+                regions = regions.sortedByCurrentOrder(),
                 searchQuery = ""
             )
         }
@@ -209,19 +224,41 @@ internal class LocationPickerViewModel @Inject constructor(
 
     // ── 거리 기반 정렬 ───────────────────────────────────────────────────────
 
-    /** Region 리스트를 현재 위치와 가까운 순으로 정렬 */
-    private fun List<Region>.sortedByDistance(): List<Region> {
-        val loc = currentLocation ?: return this
-        return sortedBy { region ->
-            haversineDistance(loc.latitude, loc.longitude, region.lat, region.lng)
+    // ── 정렬 ─────────────────────────────────────────────────────────────────
+
+    /** Region 리스트 정렬 (현재 정렬 순서 기준) */
+    private fun List<Region>.sortedByCurrentOrder(): List<Region> {
+        return sortedBy(_uiState.value.sortOrder)
+    }
+
+    /** Region 리스트 정렬 */
+    private fun List<Region>.sortedBy(order: LocationPickerContract.SortOrder): List<Region> {
+        return when (order) {
+            LocationPickerContract.SortOrder.DISTANCE -> {
+                val loc = currentLocation ?: return this
+                sortedBy { region ->
+                    haversineDistance(loc.latitude, loc.longitude, region.lat, region.lng)
+                }
+            }
+            LocationPickerContract.SortOrder.NAME -> sortedBy { it.name }
         }
     }
 
-    /** SearchResult 리스트를 현재 위치와 가까운 순으로 정렬 */
-    private fun List<RegionSearchResult>.sortedBySearchResultDistance(): List<RegionSearchResult> {
-        val loc = currentLocation ?: return this
-        return sortedBy { result ->
-            haversineDistance(loc.latitude, loc.longitude, result.region.lat, result.region.lng)
+    /** SearchResult 리스트 정렬 (현재 정렬 순서 기준) */
+    private fun List<RegionSearchResult>.sortedResultsByCurrentOrder(): List<RegionSearchResult> {
+        return sortedResultsBy(_uiState.value.sortOrder)
+    }
+
+    /** SearchResult 리스트 정렬 */
+    private fun List<RegionSearchResult>.sortedResultsBy(order: LocationPickerContract.SortOrder): List<RegionSearchResult> {
+        return when (order) {
+            LocationPickerContract.SortOrder.DISTANCE -> {
+                val loc = currentLocation ?: return this
+                sortedBy { result ->
+                    haversineDistance(loc.latitude, loc.longitude, result.region.lat, result.region.lng)
+                }
+            }
+            LocationPickerContract.SortOrder.NAME -> sortedBy { it.fullName }
         }
     }
 }
