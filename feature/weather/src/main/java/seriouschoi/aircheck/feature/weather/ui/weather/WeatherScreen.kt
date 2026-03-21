@@ -31,6 +31,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,10 +46,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.WeatherData
+import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualityInfoDialog
 import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualitySection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.ErrorSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.RecommendationSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.WeatherSection
+import seriouschoi.aircheck.feature.weather.ui.weather.pager.LocationPager
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
@@ -109,7 +112,18 @@ internal fun WeatherScreen(
             
             if (locations.isEmpty() && state.isLoading) {
                 // 초기 로딩 중
-                Box(modifier = Modifier.fillMaxSize())
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        CircularProgressIndicator()
+                        Text(
+                            text = stringResource(CoreR.string.loading_weather_data),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             } else if (locations.isNotEmpty()) {
                 // 이전 위치 개수 추적 (새 위치 추가 감지용)
                 var previousLocationCount by rememberSaveable { mutableIntStateOf(locations.size) }

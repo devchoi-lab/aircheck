@@ -1,4 +1,4 @@
-package seriouschoi.aircheck.ui.theme
+package seriouschoi.aircheck.core.ui.theme
 
 import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme

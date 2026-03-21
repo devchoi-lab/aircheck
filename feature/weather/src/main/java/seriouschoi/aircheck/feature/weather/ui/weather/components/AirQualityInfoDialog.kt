@@ -1,4 +1,4 @@
-package seriouschoi.aircheck.feature.weather.ui.weather
+package seriouschoi.aircheck.feature.weather.ui.weather.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

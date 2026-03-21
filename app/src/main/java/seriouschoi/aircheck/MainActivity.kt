@@ -29,7 +29,7 @@ import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import seriouschoi.aircheck.feature.weather.navigation.WeatherRoute
 import seriouschoi.aircheck.feature.weather.navigation.weatherScreen
-import seriouschoi.aircheck.ui.theme.AirCheckTheme
+import seriouschoi.aircheck.core.ui.theme.AirCheckTheme
 import seriouschoi.aircheck.feature.widget.AircheckWidgetProvider
 import seriouschoi.aircheck.core.resource.R as CoreR
 

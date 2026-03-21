@@ -1,0 +1,178 @@
+@file:OptIn(ExperimentalFoundationApi::class)
+
+package seriouschoi.aircheck.feature.weather.ui.weather.pager
+
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import seriouschoi.aircheck.core.ui.theme.AirCheckPreview
+import seriouschoi.aircheck.core.ui.theme.AirCheckPreviewWrapper
+import seriouschoi.aircheck.feature.weather.ui.weather.LocationWeatherData
+import seriouschoi.aircheck.feature.weather.ui.weather.LocationsState
+import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
+import seriouschoi.aircheck.feature.weather.ui.weather.WeatherScreenState
+import seriouschoi.aircheck.core.resource.R as CoreR
+
+@Composable
+internal fun LocationPager(
+    pagerState: PagerState,
+    state: WeatherScreenState,
+    onIntent: (WeatherContract.Intent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val locations = state.locations.locations
+
+    Column(modifier = modifier) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.weight(1f)
+        ) { page ->
+            LocationPage(
+                locationData = locations[page],
+                pageIndex = page,
+                onIntent = onIntent
+            )
+        }
+
+        // 페이지 인디케이터
+        if (locations.size > 1) {
+            PageIndicator(
+                locations = locations,
+                currentPage = pagerState.currentPage
+            )
+        }
+    }
+}
+
+@AirCheckPreview
+@Composable
+private fun LocationPagerPreviewSingle() {
+    AirCheckPreviewWrapper {
+        val locations = listOf(
+            LocationWeatherData(
+                locationName = "서울",
+                isCurrentLocation = true,
+            )
+        )
+        val pagerState = rememberPagerState(pageCount = { locations.size })
+        LocationPager(
+            pagerState = pagerState,
+            state = WeatherScreenState(
+                locations = LocationsState(locations = locations, isLoading = false)
+            ),
+            onIntent = {}
+        )
+    }
+}
+
+@AirCheckPreview
+@Composable
+private fun LocationPagerPreviewMultiple() {
+    AirCheckPreviewWrapper {
+        val locations = listOf(
+            LocationWeatherData(
+                locationName = "서울",
+                isCurrentLocation = true,
+            ),
+            LocationWeatherData(
+                locationName = "부산",
+                isCurrentLocation = false,
+                savedLocationId = 1L,
+            ),
+            LocationWeatherData(
+                locationName = "제주",
+                isCurrentLocation = false,
+                savedLocationId = 2L,
+            )
+        )
+        val pagerState = rememberPagerState(pageCount = { locations.size })
+        LocationPager(
+            pagerState = pagerState,
+            state = WeatherScreenState(
+                locations = LocationsState(locations = locations, isLoading = false)
+            ),
+            onIntent = {}
+        )
+    }
+}
+
+@AirCheckPreview
+@Composable
+private fun LocationPagerPreviewPermission() {
+    AirCheckPreviewWrapper {
+        val locations = listOf(
+            LocationWeatherData(
+                locationName = "현재 위치",
+                isCurrentLocation = true,
+                needsPermission = true,
+            )
+        )
+        val pagerState = rememberPagerState(pageCount = { locations.size })
+        LocationPager(
+            pagerState = pagerState,
+            state = WeatherScreenState(
+                locations = LocationsState(locations = locations, isLoading = false)
+            ),
+            onIntent = {}
+        )
+    }
+}
+
+@Composable
+private fun PageIndicator(
+    locations: List<LocationWeatherData>,
+    currentPage: Int,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        locations.forEachIndexed { index, locationData ->
+            val isSelected = currentPage == index
+            val color = if (isSelected) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+
+            if (locationData.isCurrentLocation) {
+                Icon(
+                    imageVector = Icons.Default.LocationOn,
+                    contentDescription = stringResource(CoreR.string.content_description_current_location),
+                    tint = color,
+                    modifier = Modifier
+                        .padding(horizontal = 2.dp)
+                        .size(if (isSelected) 16.dp else 12.dp)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp)
+                        .size(if (isSelected) 10.dp else 8.dp)
+                        .clip(CircleShape)
+                        .background(color)
+                )
+            }
+        }
+    }
+}
