@@ -32,6 +32,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -106,7 +111,18 @@ internal fun WeatherScreen(
                 // 초기 로딩 중
                 Box(modifier = Modifier.fillMaxSize())
             } else if (locations.isNotEmpty()) {
+                // 이전 위치 개수 추적 (새 위치 추가 감지용)
+                var previousLocationCount by rememberSaveable { mutableIntStateOf(locations.size) }
                 val pagerState = rememberPagerState(pageCount = { locations.size })
+                
+                // 새 위치 추가 시 해당 페이지로 스크롤
+                LaunchedEffect(locations.size) {
+                    if (locations.size > previousLocationCount) {
+                        // 새 위치가 추가됨 → 마지막 페이지로 이동
+                        pagerState.animateScrollToPage(locations.size - 1)
+                    }
+                    previousLocationCount = locations.size
+                }
 
                 LocationPager(
                     pagerState = pagerState,
