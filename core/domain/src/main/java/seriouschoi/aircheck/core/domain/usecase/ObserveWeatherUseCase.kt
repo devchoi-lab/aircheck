@@ -66,7 +66,9 @@ class ObserveWeatherUseCase @Inject constructor(
                     val needsPermission = !locationProvider.hasLocationPermission()
                     
                     if (smartLocation != null) {
-                        val shortName = smartLocation.bjdName.split(" ").lastOrNull() ?: "현재 위치"
+                        // 법정동 하위 2단계만 표시 (예: "강남구 역삼동")
+                        val parts = smartLocation.bjdName.split(" ")
+                        val shortName = parts.takeLast(2).joinToString(" ").ifEmpty { "현재 위치" }
                         val output = fetchWeatherUseCase(smartLocation.lat, smartLocation.lng)
                         locations.add(
                             LocationWeather(
