@@ -81,7 +81,7 @@ internal fun WeatherSection(weather: WeatherData, modifier: Modifier = Modifier)
                 value = stringResource(CoreR.string.format_temperature, weather.temperature)
             )
             WeatherStat(
-                emoji = "🤔",
+                emoji = "👕",
                 label = stringResource(CoreR.string.label_feels_like),
                 value = stringResource(CoreR.string.format_temperature, weather.feelsLike)
             )
