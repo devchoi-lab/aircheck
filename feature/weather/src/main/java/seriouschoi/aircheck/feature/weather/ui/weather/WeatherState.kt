@@ -46,10 +46,4 @@ internal data class WeatherScreenState(
 ) {
     /** 로딩 중 여부 (위치 로딩 또는 리프레시) */
     val isLoading: Boolean get() = locations.isLoading
-    
-    /** 리프레시 중 여부 */
-    val isRefreshing: Boolean get() = uiControl.isRefreshing
-    
-    /** 현재 위치 데이터 (첫 번째) */
-    val currentLocation: LocationWeatherData? get() = locations.locations.firstOrNull { it.isCurrentLocation }
 }

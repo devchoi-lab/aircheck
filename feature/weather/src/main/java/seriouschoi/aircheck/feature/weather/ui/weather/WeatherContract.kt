@@ -1,7 +1,5 @@
 package seriouschoi.aircheck.feature.weather.ui.weather
 
-import seriouschoi.aircheck.core.domain.model.AirQuality
-import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.core.resource.UiText
 
 /**
@@ -60,7 +58,5 @@ object WeatherContract {
     // ── Side Effect (일회성 이벤트) ──────────────────────────────────────────
 
     sealed interface Effect {
-        data class ShowToast(val message: UiText) : Effect
-        data object ScrollToTop : Effect
     }
 }

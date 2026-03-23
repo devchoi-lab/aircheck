@@ -5,7 +5,6 @@ package seriouschoi.aircheck.feature.weather.ui.weather
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -14,7 +13,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -79,11 +77,6 @@ internal class WeatherViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = WeatherScreenState()
     )
-
-    // ── Effect (일회성 이벤트) ───────────────────────────────────────────────
-
-    private val _effect = Channel<WeatherContract.Effect>(Channel.BUFFERED)
-    val effect = _effect.receiveAsFlow()
 
     // ── Intent 처리 ─────────────────────────────────────────────────────────
 

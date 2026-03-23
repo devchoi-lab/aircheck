@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Info
@@ -103,47 +104,56 @@ internal fun WeatherScreen(
             )
         }
 
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
             val locations = state.locations.locations
-            
-            if (locations.isEmpty() && state.isLoading) {
-                // 초기 로딩 중
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        CircularProgressIndicator()
+
+            when {
+                state.isLoading -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator()
+                            Text(
+                                text = stringResource(CoreR.string.loading_weather_data),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                locations.isEmpty() -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
-                            text = stringResource(CoreR.string.loading_weather_data),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = stringResource(CoreR.string.empty_location_message),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
                         )
                     }
                 }
-            } else if (locations.isNotEmpty()) {
-                // 이전 위치 개수 추적 (새 위치 추가 감지용)
-                var previousLocationCount by rememberSaveable { mutableIntStateOf(locations.size) }
-                val pagerState = rememberPagerState(pageCount = { locations.size })
-                
-                // 새 위치 추가 시 해당 페이지로 스크롤
-                LaunchedEffect(locations.size) {
-                    if (locations.size > previousLocationCount) {
-                        // 새 위치가 추가됨 → 마지막 페이지로 이동
-                        pagerState.animateScrollToPage(locations.size - 1)
-                    }
-                    previousLocationCount = locations.size
-                }
+                else -> {
+                    var previousLocationCount by rememberSaveable { mutableIntStateOf(locations.size) }
+                    val pagerState = rememberPagerState(pageCount = { locations.size })
 
-                LocationPager(
-                    pagerState = pagerState,
-                    state = state,
-                    onIntent = onIntent,
-                    modifier = Modifier.weight(1f)
-                )
+                    LaunchedEffect(locations.size) {
+                        if (locations.size > previousLocationCount) {
+                            pagerState.animateScrollToPage(locations.size - 1)
+                        }
+                        previousLocationCount = locations.size
+                    }
+
+                    LocationPager(
+                        pagerState = pagerState,
+                        state = state,
+                        onIntent = onIntent,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }
