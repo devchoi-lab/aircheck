@@ -98,9 +98,12 @@ internal class WeatherViewModel @Inject constructor(
     // ── Private ─────────────────────────────────────────────────────────────
 
     private fun refresh() {
-        viewModelScope.launch {
-            refreshTrigger.emit(Unit)
+        val currentLocations = _locationsState.value.locations
+        if (currentLocations.isEmpty()) {
+            viewModelScope.launch { refreshTrigger.emit(Unit) }
+            return
         }
+        currentLocations.indices.forEach { refreshSingleLocation(it) }
     }
 
     /**
@@ -109,16 +112,15 @@ internal class WeatherViewModel @Inject constructor(
     private fun refreshSingleLocation(index: Int) {
         val currentLocations = _locationsState.value.locations
         if (index !in currentLocations.indices) return
-        
+
         val location = currentLocations[index]
-        
+
         viewModelScope.launch {
             _uiControlState.update { it.copy(isRefreshing = true) }
-            
+
             try {
                 val output = fetchWeatherUseCase(location.lat, location.lng)
-                
-                // 해당 인덱스만 업데이트
+
                 _locationsState.update { state ->
                     state.copy(
                         locations = state.locations.mapIndexed { i, loc ->
