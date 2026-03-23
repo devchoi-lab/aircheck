@@ -16,8 +16,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
+import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.domain.usecase.ObserveWeatherUseCase
 import seriouschoi.aircheck.core.resource.UiText
 import javax.inject.Inject
@@ -25,6 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 internal class WeatherViewModel @Inject constructor(
     private val observeWeatherUseCase: ObserveWeatherUseCase,
+    private val fetchWeatherUseCase: FetchWeatherUseCase,
     private val savedLocationRepository: SavedLocationRepository
 ) : ViewModel() {
 
@@ -38,30 +41,36 @@ internal class WeatherViewModel @Inject constructor(
     
     private val _uiControlState = MutableStateFlow(UiControlState())
 
+    // ── 날씨 데이터 (로컬 캐시) ──────────────────────────────────────────────
+    
+    private val _locationsState = MutableStateFlow(LocationsState())
+
     // ── 날씨 데이터 Flow (UseCase에서 관찰) ─────────────────────────────────
     
-    private val weatherFlow = refreshTrigger
-        .flatMapLatest { 
-            observeWeatherUseCase()
-                .onStart { _uiControlState.value = _uiControlState.value.copy(isRefreshing = true) }
-                .map { state ->
-                    _uiControlState.value = _uiControlState.value.copy(
-                        isRefreshing = false,
-                        needsLocationPermission = state.locations.firstOrNull()?.needsPermission == true
-                    )
-                    state.toLocationsState()
+    init {
+        viewModelScope.launch {
+            refreshTrigger
+                .flatMapLatest { 
+                    observeWeatherUseCase()
+                        .onStart { _uiControlState.value = _uiControlState.value.copy(isRefreshing = true) }
+                        .map { state ->
+                            _uiControlState.value = _uiControlState.value.copy(
+                                isRefreshing = false,
+                                needsLocationPermission = state.locations.firstOrNull()?.needsPermission == true
+                            )
+                            state.toLocationsState()
+                        }
+                }
+                .collect { newState ->
+                    _locationsState.value = newState
                 }
         }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = LocationsState()
-        )
+    }
 
     // ── 통합 상태 (Screen에서 관찰) ──────────────────────────────────────────
 
     val screenState: StateFlow<WeatherScreenState> = combine(
-        weatherFlow,
+        _locationsState,
         _uiControlState
     ) { locations, uiControl ->
         WeatherScreenState(locations, uiControl)
@@ -82,7 +91,7 @@ internal class WeatherViewModel @Inject constructor(
         when (intent) {
             is WeatherContract.Intent.Load,
             is WeatherContract.Intent.Refresh -> refresh()
-            is WeatherContract.Intent.RefreshLocation -> refresh() // 개별 새로고침도 전체 새로고침으로
+            is WeatherContract.Intent.RefreshLocation -> refreshSingleLocation(intent.index)
             is WeatherContract.Intent.ShowInfoDialog -> updateUiControl { copy(showInfoDialog = true) }
             is WeatherContract.Intent.DismissInfoDialog -> updateUiControl { copy(showInfoDialog = false) }
             is WeatherContract.Intent.RequestDeleteLocation -> updateUiControl {
@@ -98,6 +107,50 @@ internal class WeatherViewModel @Inject constructor(
     private fun refresh() {
         viewModelScope.launch {
             refreshTrigger.emit(Unit)
+        }
+    }
+
+    /**
+     * 개별 위치 새로고침 (당겨서 새로고침)
+     */
+    private fun refreshSingleLocation(index: Int) {
+        val currentLocations = _locationsState.value.locations
+        if (index !in currentLocations.indices) return
+        
+        val location = currentLocations[index]
+        
+        viewModelScope.launch {
+            _uiControlState.update { it.copy(isRefreshing = true) }
+            
+            try {
+                val output = fetchWeatherUseCase(location.lat, location.lng)
+                
+                // 해당 인덱스만 업데이트
+                _locationsState.update { state ->
+                    state.copy(
+                        locations = state.locations.mapIndexed { i, loc ->
+                            if (i == index) {
+                                loc.copy(
+                                    weather = WeatherContract.DataResult(
+                                        data = output.result.weather.getOrNull(),
+                                        error = output.result.weather.exceptionOrNull()?.message
+                                            ?.let { UiText.DynamicString(it) }
+                                    ),
+                                    airQuality = WeatherContract.DataResult(
+                                        data = output.result.airQuality.getOrNull(),
+                                        error = output.result.airQuality.exceptionOrNull()?.message
+                                            ?.let { UiText.DynamicString(it) }
+                                    )
+                                )
+                            } else {
+                                loc
+                            }
+                        }
+                    )
+                }
+            } finally {
+                _uiControlState.update { it.copy(isRefreshing = false) }
+            }
         }
     }
 
