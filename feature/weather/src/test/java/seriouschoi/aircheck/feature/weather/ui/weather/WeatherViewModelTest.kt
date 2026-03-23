@@ -109,7 +109,7 @@ class WeatherViewModelTest {
         // Then
         viewModel.screenState.test {
             val state = awaitLoadedState()
-            assertTrue("권한 필요 상태", state.uiControl.needsLocationPermission)
+            assertTrue("권한 필요 상태", state.locations.locations.first().needsPermission)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -125,7 +125,7 @@ class WeatherViewModelTest {
         // Then
         viewModel.screenState.test {
             val state = awaitLoadedState()
-            assertFalse("권한 있음", state.uiControl.needsLocationPermission)
+            assertFalse("권한 있음", state.locations.locations.first().needsPermission)
             cancelAndIgnoreRemainingEvents()
         }
     }

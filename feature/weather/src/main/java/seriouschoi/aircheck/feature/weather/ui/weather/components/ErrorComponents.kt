@@ -21,7 +21,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
@@ -81,22 +80,6 @@ internal fun PermissionRequiredContent(
         Spacer(Modifier.height(24.dp))
         Button(onClick = onOpenSettings) {
             Text(stringResource(CoreR.string.permission_go_settings))
-        }
-    }
-}
-
-@Composable
-internal fun ErrorContent(
-    error: WeatherContract.ErrorState,
-    onIntent: (WeatherContract.Intent) -> Unit
-) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text("😵", fontSize = 48.sp)
-        Spacer(Modifier.height(16.dp))
-        Text(error.message.asString(), textAlign = TextAlign.Center, fontSize = 14.sp)
-        Spacer(Modifier.height(24.dp))
-        Button(onClick = { onIntent(error.action) }) {
-            Text(stringResource(CoreR.string.button_retry_again))
         }
     }
 }

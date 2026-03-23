@@ -12,7 +12,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -50,12 +49,7 @@ internal class WeatherViewModel @Inject constructor(
             refreshTrigger
                 .flatMapLatest { 
                     observeWeatherUseCase()
-                        .onStart { _uiControlState.value = _uiControlState.value.copy(isRefreshing = true) }
                         .map { state ->
-                            _uiControlState.value = _uiControlState.value.copy(
-                                isRefreshing = false,
-                                needsLocationPermission = state.locations.firstOrNull()?.needsPermission == true
-                            )
                             state.toLocationsState()
                         }
                 }
@@ -116,10 +110,7 @@ internal class WeatherViewModel @Inject constructor(
         val location = currentLocations[index]
 
         viewModelScope.launch {
-            _uiControlState.update { it.copy(isRefreshing = true) }
-
-            try {
-                val output = fetchWeatherUseCase(location.lat, location.lng)
+            val output = fetchWeatherUseCase(location.lat, location.lng)
 
                 _locationsState.update { state ->
                     state.copy(
@@ -143,9 +134,6 @@ internal class WeatherViewModel @Inject constructor(
                         }
                     )
                 }
-            } finally {
-                _uiControlState.update { it.copy(isRefreshing = false) }
-            }
         }
     }
 

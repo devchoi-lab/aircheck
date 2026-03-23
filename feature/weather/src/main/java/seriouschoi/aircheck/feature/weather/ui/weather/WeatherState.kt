@@ -32,11 +32,8 @@ internal data class LocationsState(
 
 /** UI 컨트롤 상태 (다이얼로그, 로딩 인디케이터 등) */
 internal data class UiControlState(
-    val isRefreshing: Boolean = false,
     val showInfoDialog: Boolean = false,
-    val deleteConfirm: WeatherContract.DeleteConfirmState? = null,
-    val needsLocationPermission: Boolean = false,
-    val error: WeatherContract.ErrorState? = null
+    val deleteConfirm: WeatherContract.DeleteConfirmState? = null
 )
 
 /** 화면 전체 통합 상태 (Screen에서 관찰) */
