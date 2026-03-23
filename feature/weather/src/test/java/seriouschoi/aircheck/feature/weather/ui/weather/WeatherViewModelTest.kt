@@ -17,6 +17,7 @@ import org.junit.Before
 import org.junit.Test
 import seriouschoi.aircheck.core.domain.model.*
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
+import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.domain.usecase.LocationWeather
 import seriouschoi.aircheck.core.domain.usecase.ObserveWeatherUseCase
 import seriouschoi.aircheck.core.domain.usecase.WeatherState
@@ -26,6 +27,7 @@ class WeatherViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
 
     private lateinit var observeWeatherUseCase: ObserveWeatherUseCase
+    private lateinit var fetchWeatherUseCase: FetchWeatherUseCase
     private lateinit var savedLocationRepository: SavedLocationRepository
 
     @Before
@@ -33,6 +35,7 @@ class WeatherViewModelTest {
         Dispatchers.setMain(testDispatcher)
 
         observeWeatherUseCase = mockk()
+        fetchWeatherUseCase = mockk()
         savedLocationRepository = mockk()
 
         // 기본 mock 설정
@@ -46,6 +49,7 @@ class WeatherViewModelTest {
 
     private fun createViewModel() = WeatherViewModel(
         observeWeatherUseCase = observeWeatherUseCase,
+        fetchWeatherUseCase = fetchWeatherUseCase,
         savedLocationRepository = savedLocationRepository
     )
 
