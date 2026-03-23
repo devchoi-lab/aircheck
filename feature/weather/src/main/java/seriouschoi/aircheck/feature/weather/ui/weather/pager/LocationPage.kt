@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import seriouschoi.aircheck.feature.weather.ui.weather.LocationWeatherData
-import seriouschoi.aircheck.feature.weather.ui.weather.SuccessContent
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
 import seriouschoi.aircheck.feature.weather.ui.weather.components.PermissionRequiredContent
 import seriouschoi.aircheck.core.resource.R as CoreR
@@ -49,7 +48,7 @@ internal fun LocationPage(
                     )
                 }
             } else {
-                SuccessContent(locationData.airQuality, locationData.weather, onIntent)
+                WeatherDetailPanel(locationData.airQuality, locationData.weather, onIntent)
             }
         }
     }
