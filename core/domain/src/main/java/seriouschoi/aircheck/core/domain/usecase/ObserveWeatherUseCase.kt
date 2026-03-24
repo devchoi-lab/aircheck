@@ -92,25 +92,20 @@ class ObserveWeatherUseCase @Inject constructor(
                         )
                     }
                     
-                    // 2. 저장된 위치들 (배치 로드)
-                    if (savedLocations.isNotEmpty()) {
-                        val coords = savedLocations.map { it.lat to it.lng }
-                        val batchOutputs = fetchWeatherUseCase.fetchBatch(coords)
-                        
-                        savedLocations.forEachIndexed { index, saved ->
-                            val output = batchOutputs[index]
-                            locations.add(
-                                LocationWeather(
-                                    locationName = saved.displayName,
-                                    isCurrentLocation = false,
-                                    savedLocationId = saved.id,
-                                    lat = saved.lat,
-                                    lng = saved.lng,
-                                    weather = output.result.weather,
-                                    airQuality = output.result.airQuality
-                                )
+                    // 2. 저장된 위치들 (개별 로드 - 캐시 히트 시 빠른 응답)
+                    for (saved in savedLocations) {
+                        val output = fetchWeatherUseCase(saved.lat, saved.lng)
+                        locations.add(
+                            LocationWeather(
+                                locationName = saved.displayName,
+                                isCurrentLocation = false,
+                                savedLocationId = saved.id,
+                                lat = saved.lat,
+                                lng = saved.lng,
+                                weather = output.result.weather,
+                                airQuality = output.result.airQuality
                             )
-                        }
+                        )
                     }
                     
                     emit(WeatherState(locations = locations, isLoading = false))
