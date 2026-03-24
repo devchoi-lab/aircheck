@@ -28,7 +28,8 @@ android {
         jvmTarget = "17"
     }
     buildFeatures { 
-        compose = true 
+        compose = true
+        buildConfig = true
     }
 }
 
@@ -36,6 +37,7 @@ dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
     implementation(project(":core:ui"))
+    implementation(project(":core:firebase"))
     implementation(project(":feature:weather"))
     implementation(project(":feature:widget"))
     

@@ -10,6 +10,7 @@ import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import seriouschoi.aircheck.core.config.ApiConfig
+import seriouschoi.aircheck.core.firebase.appcheck.AppCheckInterceptor
 import seriouschoi.aircheck.core.network.api.AircheckApi
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
@@ -24,8 +25,12 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(apiConfig: ApiConfig): OkHttpClient =
+    fun provideOkHttpClient(
+        apiConfig: ApiConfig,
+        appCheckInterceptor: AppCheckInterceptor
+    ): OkHttpClient =
         OkHttpClient.Builder()
+            .addInterceptor(appCheckInterceptor)
             .connectTimeout(apiConfig.connectTimeoutMs, TimeUnit.MILLISECONDS)
             .readTimeout(apiConfig.timeoutMs, TimeUnit.MILLISECONDS)
             .build()

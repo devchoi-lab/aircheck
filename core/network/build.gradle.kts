@@ -25,6 +25,7 @@ android {
 
 dependencies {
     implementation(project(":core:config"))
+    implementation(project(":core:firebase"))
     
     implementation(libs.okhttp)
     implementation(libs.retrofit)

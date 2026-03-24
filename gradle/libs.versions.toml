@@ -44,8 +44,11 @@ hilt-compiler = { module = "com.google.dagger:hilt-compiler", version.ref = "hil
 hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version = "1.2.0" }
 javax-inject = { module = "javax.inject:javax.inject", version.ref = "javax-inject" }
 datastore-preferences = { module = "androidx.datastore:datastore-preferences", version = "1.1.4" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version = "33.7.0" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics", version = "19.2.0" }
 firebase-analytics = { module = "com.google.firebase:firebase-analytics", version = "22.1.0" }
+firebase-appcheck-playintegrity = { module = "com.google.firebase:firebase-appcheck-playintegrity" }
+firebase-appcheck-debug = { module = "com.google.firebase:firebase-appcheck-debug" }
 work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hilt-work" }
 hilt-work-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hilt-work" }
