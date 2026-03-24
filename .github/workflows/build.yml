@@ -2,9 +2,9 @@ name: Build & Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
 
 jobs:
   test:
@@ -34,7 +34,7 @@ jobs:
         env:
           ANDROID_HOME: /Users/agent/android-sdk
 
-      # Android Instrumented Tests - main 브랜치 push 시에만 실행
+      # Android Instrumented Tests - main/develop push 시에만 실행
       - name: Start Emulator
         if: github.event_name == 'push'
         run: |
@@ -69,13 +69,14 @@ jobs:
           export PATH=$PATH:$ANDROID_HOME/platform-tools
           adb emu kill || true
 
+      # main 브랜치만 아티팩트 업로드
       - name: Upload Test Results
-        if: github.event_name == 'push' && always()
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always()
         uses: actions/upload-artifact@v4
         with:
           name: instrumented-test-results
           path: core/data/build/reports/androidTests/
-          retention-days: 7
+          retention-days: 3
 
   build:
     runs-on: self-hosted
@@ -101,7 +102,7 @@ jobs:
           restore-keys: gradle-
 
       - name: Decode Keystore
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | base64 -d > app/debug.keystore
 
@@ -110,15 +111,18 @@ jobs:
         env:
           ANDROID_HOME: /Users/agent/android-sdk
 
+      # main 브랜치만 아티팩트 업로드
       - name: Upload APK (Artifact)
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: aircheck-debug
           path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 7
+          retention-days: 3
 
+      # main 브랜치만 Firebase 배포
       - name: Deploy to Firebase App Distribution
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
