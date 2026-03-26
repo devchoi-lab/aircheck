@@ -12,6 +12,15 @@ android {
     namespace = "seriouschoi.aircheck"
     compileSdk = 35
 
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     defaultConfig {
         applicationId = "seriouschoi.aircheck"
         minSdk = 26
