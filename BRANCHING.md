@@ -9,7 +9,7 @@
 
 ## 머지 규칙
 
-### develop → main
+### develop → main (일반)
 
 ```bash
 git checkout main
@@ -20,6 +20,11 @@ git push
 - **항상 `--no-ff`** (머지 커밋 생성)
 - Fast-forward 하지 않음
 - 머지 시점이 히스토리에 명확히 남음
+
+### main → develop (예외)
+
+- **핫픽스 반영 시에만** 수행
+- 일반적으로 하지 않음
 
 ### 머지 전 체크리스트
 
