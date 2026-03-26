@@ -11,10 +11,14 @@ import javax.inject.Singleton
 @Singleton
 class AppCheckInitializer @Inject constructor() {
     
-    fun initialize(context: Context, isDebug: Boolean) {
+    fun initialize(context: Context, isDebug: Boolean, debugToken: String? = null) {
         FirebaseApp.initializeApp(context)
         
         val factory = if (isDebug) {
+            // 고정 디버그 토큰 설정
+            debugToken?.let {
+                System.setProperty("firebase.appcheck.debug.token", it)
+            }
             DebugAppCheckProviderFactory.getInstance()
         } else {
             PlayIntegrityAppCheckProviderFactory.getInstance()

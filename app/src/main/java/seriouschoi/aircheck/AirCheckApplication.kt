@@ -18,7 +18,8 @@ class AirCheckApplication : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
-        appCheckInitializer.initialize(this, BuildConfig.DEBUG)
+        val debugToken = if (BuildConfig.DEBUG) BuildConfig.APP_CHECK_DEBUG_TOKEN else null
+        appCheckInitializer.initialize(this, BuildConfig.DEBUG, debugToken)
     }
 
     override val workManagerConfiguration: Configuration

@@ -28,6 +28,15 @@ android {
         versionCode = 1
         versionName = "1.0.0"
     }
+    
+    buildTypes {
+        debug {
+            buildConfigField("String", "APP_CHECK_DEBUG_TOKEN", "\"b69f4d24-92dd-4e27-ba86-247ca838d843\"")
+        }
+        release {
+            isMinifyEnabled = false
+        }
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
