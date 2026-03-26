@@ -59,7 +59,8 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 internal fun WeatherScreen(
     state: UiWeatherScreenState,
     onIntent: (WeatherContract.Intent) -> Unit,
-    onAddLocation: () -> Unit = {}
+    onAddLocation: () -> Unit = {},
+    onManageLocations: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -151,6 +152,7 @@ internal fun WeatherScreen(
                         pagerState = pagerState,
                         state = state,
                         onIntent = onIntent,
+                        onManageLocations = onManageLocations,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

@@ -4,6 +4,7 @@ package seriouschoi.aircheck.feature.weather.ui.weather.pager
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -44,6 +45,7 @@ internal fun LocationPager(
     pagerState: PagerState,
     state: UiWeatherScreenState,
     onIntent: (WeatherContract.Intent) -> Unit,
+    onManageLocations: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val locations = state.locations.locations
@@ -56,7 +58,8 @@ internal fun LocationPager(
                 locations = locations,
                 currentPage = pagerState.currentPage,
                 currentLocation = currentLocation,
-                onIntent = onIntent
+                onIntent = onIntent,
+                onManageLocations = onManageLocations
             )
         }
 
@@ -145,6 +148,7 @@ private fun LocationHeader(
     currentPage: Int,
     currentLocation: UiLocationWeatherData,
     onIntent: (WeatherContract.Intent) -> Unit,
+    onManageLocations: () -> Unit = {},
 ) {
     Row(
         modifier = Modifier
@@ -153,10 +157,11 @@ private fun LocationHeader(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // 인디케이터 (왼쪽)
+        // 인디케이터 (왼쪽) - 탭하면 위치 관리 화면으로
         if (locations.size > 1) {
             Row(
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable(onClick = onManageLocations)
             ) {
                 locations.forEachIndexed { index, locationData ->
                     val isSelected = currentPage == index
