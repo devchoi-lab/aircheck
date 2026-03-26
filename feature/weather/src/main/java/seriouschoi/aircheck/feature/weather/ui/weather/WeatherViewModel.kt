@@ -12,20 +12,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import seriouschoi.aircheck.core.domain.model.LocationItem
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
-import seriouschoi.aircheck.core.domain.usecase.ObserveWeatherUseCase
+import seriouschoi.aircheck.core.domain.usecase.GetLocationListUseCase
 import seriouschoi.aircheck.core.resource.UiText
 import javax.inject.Inject
 
 @HiltViewModel
 internal class WeatherViewModel @Inject constructor(
-    private val observeWeatherUseCase: ObserveWeatherUseCase,
+    private val getLocationListUseCase: GetLocationListUseCase,
     private val fetchWeatherUseCase: FetchWeatherUseCase,
     private val savedLocationRepository: SavedLocationRepository,
 ) : ViewModel() {
@@ -40,19 +40,23 @@ internal class WeatherViewModel @Inject constructor(
 
     private val _uiControlState = MutableStateFlow(UiControlState())
 
-    // ── 날씨 데이터 (로컬 캐시) ──────────────────────────────────────────────
+    // ── 위치 + 날씨 상태 ─────────────────────────────────────────────────────
 
     private val _locationsState = MutableStateFlow(UiLocationsState())
 
-    // ── 날씨 데이터 Flow (UseCase에서 관찰) ─────────────────────────────────
+    // ── 위치 목록 관찰 → 날씨 개별 로드 ──────────────────────────────────────
 
     init {
         refreshTrigger.flatMapLatest {
-            observeWeatherUseCase().map { state ->
-                state.toUiLocationsState()
-            }
-        }.onEach {newState ->
-            _locationsState.value = newState
+            getLocationListUseCase()
+        }.onEach { locations ->
+            // 1. 위치 페이지 즉시 표시 (날씨는 빈 상태)
+            _locationsState.value = UiLocationsState(
+                locations = locations.map { it.toUiLocationWeatherData() },
+                isLoading = false,
+            )
+            // 2. 각 위치별 날씨를 병렬로 fetch
+            fetchWeatherForAll()
         }.launchIn(viewModelScope)
     }
 
@@ -75,7 +79,7 @@ internal class WeatherViewModel @Inject constructor(
         when (intent) {
             is WeatherContract.Intent.Load,
             is WeatherContract.Intent.Refresh,
-                -> refresh()
+                -> viewModelScope.launch { refreshTrigger.emit(Unit) }
 
             is WeatherContract.Intent.RefreshLocation -> refreshSingleLocation(intent.index)
             is WeatherContract.Intent.ShowInfoDialog -> updateUiControl { copy(showInfoDialog = true) }
@@ -96,49 +100,65 @@ internal class WeatherViewModel @Inject constructor(
 
     // ── Private ─────────────────────────────────────────────────────────────
 
-    private fun refresh() {
+    private fun fetchWeatherForAll() {
         val currentLocations = _locationsState.value.locations
-        if (currentLocations.isEmpty()) {
-            viewModelScope.launch { refreshTrigger.emit(Unit) }
-            return
+        currentLocations.forEachIndexed { index, location ->
+            if (location.locationInfo.needsPermission) return@forEachIndexed
+            viewModelScope.launch {
+                updateLocationRefreshing(index, true)
+                val output = fetchWeatherUseCase(location.locationInfo.lat, location.locationInfo.lng)
+                updateLocationWeather(index, output)
+            }
         }
-        currentLocations.indices.forEach { refreshSingleLocation(it) }
     }
 
-    /**
-     * 개별 위치 새로고침 (당겨서 새로고침)
-     */
     private fun refreshSingleLocation(index: Int) {
         val currentLocations = _locationsState.value.locations
         if (index !in currentLocations.indices) return
 
         val location = currentLocations[index]
+        if (location.locationInfo.needsPermission) return
 
         viewModelScope.launch {
+            updateLocationRefreshing(index, true)
             val output = fetchWeatherUseCase(location.locationInfo.lat, location.locationInfo.lng)
+            updateLocationWeather(index, output)
+        }
+    }
 
-            _locationsState.update { state ->
-                state.copy(
-                    locations = state.locations.mapIndexed { i, loc ->
-                        if (i == index) {
-                            loc.copy(
-                                weather = WeatherContract.DataResult(
-                                    data = output.result.weather.getOrNull(),
-                                    error = output.result.weather.exceptionOrNull()?.message
-                                        ?.let { UiText.DynamicString(it) }
-                                ),
-                                airQuality = WeatherContract.DataResult(
-                                    data = output.result.airQuality.getOrNull(),
-                                    error = output.result.airQuality.exceptionOrNull()?.message
-                                        ?.let { UiText.DynamicString(it) }
-                                )
-                            )
-                        } else {
-                            loc
-                        }
+    private fun updateLocationRefreshing(index: Int, isRefreshing: Boolean) {
+        _locationsState.update { state ->
+            state.copy(
+                locations = state.locations.mapIndexed { i, loc ->
+                    if (i == index) loc.copy(isRefreshing = isRefreshing) else loc
+                }
+            )
+        }
+    }
+
+    private fun updateLocationWeather(index: Int, output: seriouschoi.aircheck.core.domain.usecase.FetchWeatherOutput) {
+        _locationsState.update { state ->
+            state.copy(
+                locations = state.locations.mapIndexed { i, loc ->
+                    if (i == index) {
+                        loc.copy(
+                            weather = WeatherContract.DataResult(
+                                data = output.result.weather.getOrNull(),
+                                error = output.result.weather.exceptionOrNull()?.message
+                                    ?.let { UiText.DynamicString(it) }
+                            ),
+                            airQuality = WeatherContract.DataResult(
+                                data = output.result.airQuality.getOrNull(),
+                                error = output.result.airQuality.exceptionOrNull()?.message
+                                    ?.let { UiText.DynamicString(it) }
+                            ),
+                            isRefreshing = false,
+                        )
+                    } else {
+                        loc
                     }
-                )
-            }
+                }
+            )
         }
     }
 
@@ -151,36 +171,20 @@ internal class WeatherViewModel @Inject constructor(
         viewModelScope.launch {
             savedLocationRepository.delete(deleteState.locationId)
             updateUiControl { copy(deleteConfirm = null) }
-            // savedLocationRepository 변경 시 자동 새로고침 (Flow 연결)
         }
     }
 
     // ── Mapper ──────────────────────────────────────────────────────────────
 
-    private fun seriouschoi.aircheck.core.domain.usecase.WeatherState.toUiLocationsState(): UiLocationsState {
-        return UiLocationsState(
-            locations = locations.map { it.toUiLocationWeatherData() },
-            isLoading = isLoading
-        )
-    }
-
-    private fun seriouschoi.aircheck.core.domain.usecase.LocationWeather.toUiLocationWeatherData(): UiLocationWeatherData {
+    private fun LocationItem.toUiLocationWeatherData(): UiLocationWeatherData {
         return UiLocationWeatherData(
             locationInfo = UiLocationInfo(
-                name = locationName,
+                name = name,
                 isCurrentLocation = isCurrentLocation,
                 savedLocationId = savedLocationId,
                 lat = lat,
                 lng = lng,
                 needsPermission = needsPermission,
-            ),
-            weather = WeatherContract.DataResult(
-                data = weather.getOrNull(),
-                error = weather.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
-            ),
-            airQuality = WeatherContract.DataResult(
-                data = airQuality.getOrNull(),
-                error = airQuality.exceptionOrNull()?.message?.let { UiText.DynamicString(it) }
             ),
         )
     }
