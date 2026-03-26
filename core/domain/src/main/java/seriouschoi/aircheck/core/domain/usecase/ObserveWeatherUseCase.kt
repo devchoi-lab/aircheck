@@ -3,12 +3,11 @@
 package seriouschoi.aircheck.core.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.flow
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.WeatherData
+import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.CombinedWeatherResult
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
@@ -45,7 +44,7 @@ data class WeatherState(
  */
 @Singleton
 class ObserveWeatherUseCase @Inject constructor(
-    private val fetchWeatherUseCase: FetchWeatherUseCase,
+    private val weatherRepository: CombinedWeatherRepository,
     private val locationProvider: LocationProvider,
     private val savedLocationRepository: SavedLocationRepository
 ) {
@@ -69,15 +68,20 @@ class ObserveWeatherUseCase @Inject constructor(
                         // 법정동 하위 2단계만 표시 (예: "강남구 역삼동")
                         val parts = smartLocation.bjdName.split(" ")
                         val shortName = parts.takeLast(2).joinToString(" ").ifEmpty { "현재 위치" }
-                        val output = fetchWeatherUseCase(smartLocation.lat, smartLocation.lng)
+                        val centroid = locationProvider.toCentroid(smartLocation.lat, smartLocation.lng)
+                        val result = centroid?.let { weatherRepository.fetch(it.lat, it.lng) }
+                            ?: CombinedWeatherResult(
+                                weather = Result.failure(Exception("현재 위치를 확인할 수 없어요")),
+                                airQuality = Result.failure(Exception("현재 위치를 확인할 수 없어요"))
+                            )
                         locations.add(
                             LocationWeather(
                                 locationName = shortName,
                                 isCurrentLocation = true,
                                 lat = smartLocation.lat,
                                 lng = smartLocation.lng,
-                                weather = output.result.weather,
-                                airQuality = output.result.airQuality
+                                weather = result.weather,
+                                airQuality = result.airQuality
                             )
                         )
                     } else {
@@ -94,7 +98,12 @@ class ObserveWeatherUseCase @Inject constructor(
                     
                     // 2. 저장된 위치들 (개별 로드 - 캐시 히트 시 빠른 응답)
                     for (saved in savedLocations) {
-                        val output = fetchWeatherUseCase(saved.lat, saved.lng)
+                        val centroid = locationProvider.toCentroid(saved.lat, saved.lng)
+                        val result = centroid?.let { weatherRepository.fetch(it.lat, it.lng) }
+                            ?: CombinedWeatherResult(
+                                weather = Result.failure(Exception("현재 위치를 확인할 수 없어요")),
+                                airQuality = Result.failure(Exception("현재 위치를 확인할 수 없어요"))
+                            )
                         locations.add(
                             LocationWeather(
                                 locationName = saved.displayName,
@@ -102,8 +111,8 @@ class ObserveWeatherUseCase @Inject constructor(
                                 savedLocationId = saved.id,
                                 lat = saved.lat,
                                 lng = saved.lng,
-                                weather = output.result.weather,
-                                airQuality = output.result.airQuality
+                                weather = result.weather,
+                                airQuality = result.airQuality
                             )
                         )
                     }
