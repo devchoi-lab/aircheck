@@ -111,6 +111,15 @@ internal fun WeatherSection(weather: WeatherData, modifier: Modifier = Modifier)
                 modifier = Modifier.padding(horizontal = horizontalPadding)
             )
             Spacer(Modifier.height(8.dp))
+            
+            // 48시간 요약 정보
+            weather.hourlyForecast.toSummaryData()?.let { summary ->
+                WeatherSummary(
+                    summary = summary,
+                    modifier = Modifier.padding(horizontal = horizontalPadding)
+                )
+                Spacer(Modifier.height(12.dp))
+            }
 
             LazyRow(
                 contentPadding = PaddingValues(horizontal = horizontalPadding),
