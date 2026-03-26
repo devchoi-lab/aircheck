@@ -58,6 +58,7 @@ data class TimePeriod(
     val startHour: String,
     val endDayLabel: String,
     val endHour: String,
+    val maxProbability: Int? = null,  // 강수/강설 최대 확률
 )
 
 /**
@@ -75,10 +76,16 @@ fun List<HourlyForecast>.toSummaryData(): WeatherSummaryData? {
     val maxFeelsLikeForecast = maxByOrNull { it.feelsLike } ?: return null
 
     // 강수 구간 (첫 번째 구간만)
-    val precipitationPeriod = findFirstPeriod { it.precipitationProbability >= 30 }
+    val precipitationPeriod = findFirstPeriodWithProbability(
+        predicate = { it.precipitationProbability >= 30 },
+        probability = { it.precipitationProbability }
+    )
 
     // 강설 구간 (첫 번째 구간만)
-    val snowfallPeriod = findFirstPeriod { it.snowfall > 0 }
+    val snowfallPeriod = findFirstPeriodWithProbability(
+        predicate = { it.snowfall > 0 },
+        probability = { it.precipitationProbability }  // 강설도 강수확률 사용
+    )
 
     return WeatherSummaryData(
         minTemp = TempWithTime(
@@ -109,11 +116,15 @@ fun List<HourlyForecast>.toSummaryData(): WeatherSummaryData? {
 }
 
 /**
- * 조건을 만족하는 첫 번째 연속 구간을 찾는다
+ * 조건을 만족하는 첫 번째 연속 구간을 찾고, 해당 구간의 최대 확률도 반환한다
  */
-private fun List<HourlyForecast>.findFirstPeriod(predicate: (HourlyForecast) -> Boolean): TimePeriod? {
+private fun List<HourlyForecast>.findFirstPeriodWithProbability(
+    predicate: (HourlyForecast) -> Boolean,
+    probability: (HourlyForecast) -> Int,
+): TimePeriod? {
     var startIndex: Int? = null
     var endIndex: Int? = null
+    var maxProb = 0
 
     for ((index, forecast) in withIndex()) {
         if (predicate(forecast)) {
@@ -121,6 +132,7 @@ private fun List<HourlyForecast>.findFirstPeriod(predicate: (HourlyForecast) -> 
                 startIndex = index
             }
             endIndex = index
+            maxProb = maxOf(maxProb, probability(forecast))
         } else if (startIndex != null) {
             // 구간이 끝남
             break
@@ -137,6 +149,7 @@ private fun List<HourlyForecast>.findFirstPeriod(predicate: (HourlyForecast) -> 
         startHour = startForecast.hour,
         endDayLabel = endForecast.dayLabel,
         endHour = endForecast.hour,
+        maxProbability = maxProb,
     )
 }
 
@@ -319,7 +332,12 @@ private fun PeriodRow(
         )
         Spacer(Modifier.weight(1f))
         Text(
-            text = "${period.startDayLabel} ${period.startHour} ~ ${period.endDayLabel} ${period.endHour}",
+            text = buildString {
+                append("${period.startDayLabel} ${period.startHour} ~ ${period.endDayLabel} ${period.endHour}")
+                period.maxProbability?.let { prob ->
+                    append(" (${prob}%)")
+                }
+            },
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium,
         )
