@@ -16,17 +16,17 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import seriouschoi.aircheck.core.domain.model.*
+import seriouschoi.aircheck.core.domain.repository.CombinedWeatherResult
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
+import seriouschoi.aircheck.core.domain.usecase.FetchWeatherOutput
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
-import seriouschoi.aircheck.core.domain.usecase.LocationWeather
-import seriouschoi.aircheck.core.domain.usecase.ObserveWeatherUseCase
-import seriouschoi.aircheck.core.domain.usecase.WeatherState
+import seriouschoi.aircheck.core.domain.usecase.GetLocationListUseCase
 
 class WeatherViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
 
-    private lateinit var observeWeatherUseCase: ObserveWeatherUseCase
+    private lateinit var getLocationListUseCase: GetLocationListUseCase
     private lateinit var fetchWeatherUseCase: FetchWeatherUseCase
     private lateinit var savedLocationRepository: SavedLocationRepository
 
@@ -34,7 +34,7 @@ class WeatherViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
 
-        observeWeatherUseCase = mockk()
+        getLocationListUseCase = mockk()
         fetchWeatherUseCase = mockk()
         savedLocationRepository = mockk()
 
@@ -48,45 +48,64 @@ class WeatherViewModelTest {
     }
 
     private fun createViewModel() = WeatherViewModel(
-        observeWeatherUseCase = observeWeatherUseCase,
+        getLocationListUseCase = getLocationListUseCase,
         fetchWeatherUseCase = fetchWeatherUseCase,
         savedLocationRepository = savedLocationRepository
     )
 
-    private fun createMockWeatherState(
+    private fun createMockLocationList(
         needsPermission: Boolean = false,
         hasCurrentLocation: Boolean = true
-    ): WeatherState {
-        val locations = if (hasCurrentLocation) {
+    ): List<LocationItem> {
+        return if (hasCurrentLocation) {
             listOf(
-                LocationWeather(
-                    locationName = "역삼동",
+                LocationItem(
+                    name = "역삼동",
                     isCurrentLocation = true,
                     lat = 37.5,
                     lng = 127.0,
-                    weather = Result.success(createMockWeather()),
-                    airQuality = Result.success(createMockAirQuality()),
                     needsPermission = needsPermission
                 )
             )
         } else {
             listOf(
-                LocationWeather(
-                    locationName = "현재 위치",
+                LocationItem(
+                    name = "현재 위치",
                     isCurrentLocation = true,
-                    weather = Result.failure(Exception("위치를 가져올 수 없습니다")),
-                    airQuality = Result.failure(Exception("위치를 가져올 수 없습니다")),
+                    lat = 0.0,
+                    lng = 0.0,
                     needsPermission = needsPermission
                 )
             )
         }
-        return WeatherState(locations = locations, isLoading = false)
     }
 
-    /** 데이터가 로드될 때까지 대기 후 상태 반환 */
-    private suspend fun app.cash.turbine.ReceiveTurbine<WeatherScreenState>.awaitLoadedState(): WeatherScreenState {
+    private fun createMockFetchOutput(
+        weatherSuccess: Boolean = true,
+        airQualitySuccess: Boolean = true
+    ) = FetchWeatherOutput(
+        smartLocation = null,
+        result = CombinedWeatherResult(
+            weather = if (weatherSuccess) Result.success(createMockWeather())
+            else Result.failure(Exception("API 에러")),
+            airQuality = if (airQualitySuccess) Result.success(createMockAirQuality())
+            else Result.failure(Exception("API 에러"))
+        )
+    )
+
+    /** 위치 목록이 로드될 때까지 대기 후 상태 반환 */
+    private suspend fun app.cash.turbine.ReceiveTurbine<UiWeatherScreenState>.awaitLoadedState(): UiWeatherScreenState {
         var state = awaitItem()
         while (state.locations.locations.isEmpty()) {
+            state = awaitItem()
+        }
+        return state
+    }
+
+    /** 날씨 데이터까지 로드될 때까지 대기 후 상태 반환 */
+    private suspend fun app.cash.turbine.ReceiveTurbine<UiWeatherScreenState>.awaitWeatherLoadedState(): UiWeatherScreenState {
+        var state = awaitLoadedState()
+        while (state.locations.locations.any { !it.locationInfo.needsPermission && it.weather.data == null && it.weather.error == null }) {
             state = awaitItem()
         }
         return state
@@ -99,8 +118,8 @@ class WeatherViewModelTest {
     @Test
     fun `위치_권한_없으면_needsPermission_true`() = runTest {
         // Given
-        every { observeWeatherUseCase() } returns flowOf(
-            createMockWeatherState(needsPermission = true, hasCurrentLocation = false)
+        every { getLocationListUseCase() } returns flowOf(
+            createMockLocationList(needsPermission = true, hasCurrentLocation = false)
         )
 
         // When
@@ -109,7 +128,7 @@ class WeatherViewModelTest {
         // Then
         viewModel.screenState.test {
             val state = awaitLoadedState()
-            assertTrue("권한 필요 상태", state.uiControl.needsLocationPermission)
+            assertTrue("권한 필요 상태", state.locations.locations.first().locationInfo.needsPermission)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -117,7 +136,8 @@ class WeatherViewModelTest {
     @Test
     fun `위치_권한_있으면_needsPermission_false`() = runTest {
         // Given
-        every { observeWeatherUseCase() } returns flowOf(createMockWeatherState())
+        every { getLocationListUseCase() } returns flowOf(createMockLocationList())
+        coEvery { fetchWeatherUseCase(any(), any()) } returns createMockFetchOutput()
 
         // When
         val viewModel = createViewModel()
@@ -125,7 +145,7 @@ class WeatherViewModelTest {
         // Then
         viewModel.screenState.test {
             val state = awaitLoadedState()
-            assertFalse("권한 있음", state.uiControl.needsLocationPermission)
+            assertFalse("권한 있음", state.locations.locations.first().locationInfo.needsPermission)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -137,15 +157,16 @@ class WeatherViewModelTest {
     @Test
     fun `위치_있으면_데이터_로드`() = runTest {
         // Given
-        every { observeWeatherUseCase() } returns flowOf(createMockWeatherState())
+        every { getLocationListUseCase() } returns flowOf(createMockLocationList())
+        coEvery { fetchWeatherUseCase(any(), any()) } returns createMockFetchOutput()
 
         // When
         val viewModel = createViewModel()
 
         // Then
         viewModel.screenState.test {
-            val state = awaitLoadedState()
-            val currentLocation = state.locations.locations.firstOrNull { it.isCurrentLocation }
+            val state = awaitWeatherLoadedState()
+            val currentLocation = state.locations.locations.firstOrNull { it.locationInfo.isCurrentLocation }
             assertNotNull("현재 위치 있음", currentLocation)
             assertNotNull("날씨 데이터 있음", currentLocation?.weather?.data)
             assertNotNull("대기질 데이터 있음", currentLocation?.airQuality?.data)
@@ -160,20 +181,10 @@ class WeatherViewModelTest {
     @Test
     fun `대기질_실패해도_날씨는_표시`() = runTest {
         // Given
-        every { observeWeatherUseCase() } returns flowOf(
-            WeatherState(
-                locations = listOf(
-                    LocationWeather(
-                        locationName = "역삼동",
-                        isCurrentLocation = true,
-                        lat = 37.5,
-                        lng = 127.0,
-                        weather = Result.success(createMockWeather()),
-                        airQuality = Result.failure(Exception("API 에러"))
-                    )
-                ),
-                isLoading = false
-            )
+        every { getLocationListUseCase() } returns flowOf(createMockLocationList())
+        coEvery { fetchWeatherUseCase(any(), any()) } returns createMockFetchOutput(
+            weatherSuccess = true,
+            airQualitySuccess = false
         )
 
         // When
@@ -181,8 +192,8 @@ class WeatherViewModelTest {
 
         // Then
         viewModel.screenState.test {
-            val state = awaitLoadedState()
-            val currentLocation = state.locations.locations.firstOrNull { it.isCurrentLocation }!!
+            val state = awaitWeatherLoadedState()
+            val currentLocation = state.locations.locations.firstOrNull { it.locationInfo.isCurrentLocation }!!
             assertNull("대기질 데이터 없음", currentLocation.airQuality.data)
             assertNotNull("대기질 에러 있음", currentLocation.airQuality.error)
             assertNotNull("날씨 데이터 있음", currentLocation.weather.data)
@@ -194,20 +205,10 @@ class WeatherViewModelTest {
     @Test
     fun `날씨_실패해도_대기질은_표시`() = runTest {
         // Given
-        every { observeWeatherUseCase() } returns flowOf(
-            WeatherState(
-                locations = listOf(
-                    LocationWeather(
-                        locationName = "역삼동",
-                        isCurrentLocation = true,
-                        lat = 37.5,
-                        lng = 127.0,
-                        weather = Result.failure(Exception("API 에러")),
-                        airQuality = Result.success(createMockAirQuality())
-                    )
-                ),
-                isLoading = false
-            )
+        every { getLocationListUseCase() } returns flowOf(createMockLocationList())
+        coEvery { fetchWeatherUseCase(any(), any()) } returns createMockFetchOutput(
+            weatherSuccess = false,
+            airQualitySuccess = true
         )
 
         // When
@@ -215,8 +216,8 @@ class WeatherViewModelTest {
 
         // Then
         viewModel.screenState.test {
-            val state = awaitLoadedState()
-            val currentLocation = state.locations.locations.firstOrNull { it.isCurrentLocation }!!
+            val state = awaitWeatherLoadedState()
+            val currentLocation = state.locations.locations.firstOrNull { it.locationInfo.isCurrentLocation }!!
             assertNotNull("대기질 데이터 있음", currentLocation.airQuality.data)
             assertNull("대기질 에러 없음", currentLocation.airQuality.error)
             assertNull("날씨 데이터 없음", currentLocation.weather.data)
@@ -232,39 +233,14 @@ class WeatherViewModelTest {
     @Test
     fun `저장된_위치도_함께_로드`() = runTest {
         // Given
-        every { observeWeatherUseCase() } returns flowOf(
-            WeatherState(
-                locations = listOf(
-                    LocationWeather(
-                        locationName = "역삼동",
-                        isCurrentLocation = true,
-                        lat = 37.5,
-                        lng = 127.0,
-                        weather = Result.success(createMockWeather()),
-                        airQuality = Result.success(createMockAirQuality())
-                    ),
-                    LocationWeather(
-                        locationName = "서울 강남구 집",
-                        isCurrentLocation = false,
-                        savedLocationId = 1,
-                        lat = 37.4,
-                        lng = 126.9,
-                        weather = Result.success(createMockWeather()),
-                        airQuality = Result.success(createMockAirQuality())
-                    ),
-                    LocationWeather(
-                        locationName = "서울 중구 회사",
-                        isCurrentLocation = false,
-                        savedLocationId = 2,
-                        lat = 37.6,
-                        lng = 127.1,
-                        weather = Result.success(createMockWeather()),
-                        airQuality = Result.success(createMockAirQuality())
-                    )
-                ),
-                isLoading = false
+        every { getLocationListUseCase() } returns flowOf(
+            listOf(
+                LocationItem(name = "역삼동", isCurrentLocation = true, lat = 37.5, lng = 127.0),
+                LocationItem(name = "서울 강남구 집", isCurrentLocation = false, savedLocationId = 1, lat = 37.4, lng = 126.9),
+                LocationItem(name = "서울 중구 회사", isCurrentLocation = false, savedLocationId = 2, lat = 37.6, lng = 127.1),
             )
         )
+        coEvery { fetchWeatherUseCase(any(), any()) } returns createMockFetchOutput()
 
         // When
         val viewModel = createViewModel()
@@ -274,9 +250,9 @@ class WeatherViewModelTest {
             val state = awaitLoadedState()
             val locations = state.locations.locations
             assertEquals("3개 위치", 3, locations.size)
-            assertTrue("첫 번째는 현재 위치", locations[0].isCurrentLocation)
-            assertEquals("서울 강남구 집", locations[1].locationName)
-            assertEquals("서울 중구 회사", locations[2].locationName)
+            assertTrue("첫 번째는 현재 위치", locations[0].locationInfo.isCurrentLocation)
+            assertEquals("서울 강남구 집", locations[1].locationInfo.name)
+            assertEquals("서울 중구 회사", locations[2].locationInfo.name)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -288,17 +264,18 @@ class WeatherViewModelTest {
     @Test
     fun `ShowInfoDialog_시_showInfoDialog_true`() = runTest {
         // Given
-        every { observeWeatherUseCase() } returns flowOf(createMockWeatherState())
+        every { getLocationListUseCase() } returns flowOf(createMockLocationList())
+        coEvery { fetchWeatherUseCase(any(), any()) } returns createMockFetchOutput()
 
         val viewModel = createViewModel()
 
         // Then
         viewModel.screenState.test {
             awaitLoadedState() // 초기 로드 대기
-            
+
             // When
             viewModel.processIntent(WeatherContract.Intent.ShowInfoDialog)
-            
+
             val state = awaitItem()
             assertTrue("다이얼로그 표시", state.uiControl.showInfoDialog)
             cancelAndIgnoreRemainingEvents()
@@ -308,17 +285,18 @@ class WeatherViewModelTest {
     @Test
     fun `RequestDeleteLocation_시_deleteConfirm_표시`() = runTest {
         // Given
-        every { observeWeatherUseCase() } returns flowOf(createMockWeatherState())
+        every { getLocationListUseCase() } returns flowOf(createMockLocationList())
+        coEvery { fetchWeatherUseCase(any(), any()) } returns createMockFetchOutput()
 
         val viewModel = createViewModel()
 
         // Then
         viewModel.screenState.test {
             awaitLoadedState() // 초기 로드 대기
-            
+
             // When
             viewModel.processIntent(WeatherContract.Intent.RequestDeleteLocation(1, "집"))
-            
+
             val state = awaitItem()
             assertNotNull("삭제 확인 다이얼로그", state.uiControl.deleteConfirm)
             assertEquals("위치 ID", 1L, state.uiControl.deleteConfirm?.locationId)

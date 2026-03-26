@@ -43,12 +43,6 @@ object WeatherContract {
         val locationName: String
     )
 
-    /** 에러 상태 (메시지 + 버튼 액션) */
-    data class ErrorState(
-        val message: UiText,
-        val action: Intent = Intent.Refresh
-    )
-
     /** 데이터 결과 (성공/에러) */
     data class DataResult<T>(
         val data: T? = null,

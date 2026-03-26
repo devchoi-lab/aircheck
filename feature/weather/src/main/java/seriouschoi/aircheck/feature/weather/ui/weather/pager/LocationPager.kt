@@ -32,16 +32,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreview
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreviewWrapper
-import seriouschoi.aircheck.feature.weather.ui.weather.LocationWeatherData
-import seriouschoi.aircheck.feature.weather.ui.weather.LocationsState
+import seriouschoi.aircheck.feature.weather.ui.weather.UiLocationInfo
+import seriouschoi.aircheck.feature.weather.ui.weather.UiLocationWeatherData
+import seriouschoi.aircheck.feature.weather.ui.weather.UiLocationsState
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
-import seriouschoi.aircheck.feature.weather.ui.weather.WeatherScreenState
+import seriouschoi.aircheck.feature.weather.ui.weather.UiWeatherScreenState
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
 internal fun LocationPager(
     pagerState: PagerState,
-    state: WeatherScreenState,
+    state: UiWeatherScreenState,
     onIntent: (WeatherContract.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -77,16 +78,15 @@ internal fun LocationPager(
 private fun LocationPagerPreviewSingle() {
     AirCheckPreviewWrapper {
         val locations = listOf(
-            LocationWeatherData(
-                locationName = "서울",
-                isCurrentLocation = true,
+            UiLocationWeatherData(
+                locationInfo = UiLocationInfo(name = "서울", isCurrentLocation = true),
             )
         )
         val pagerState = rememberPagerState(pageCount = { locations.size })
         LocationPager(
             pagerState = pagerState,
-            state = WeatherScreenState(
-                locations = LocationsState(locations = locations, isLoading = false)
+            state = UiWeatherScreenState(
+                locations = UiLocationsState(locations = locations, isLoading = false)
             ),
             onIntent = {}
         )
@@ -98,26 +98,21 @@ private fun LocationPagerPreviewSingle() {
 private fun LocationPagerPreviewMultiple() {
     AirCheckPreviewWrapper {
         val locations = listOf(
-            LocationWeatherData(
-                locationName = "서울",
-                isCurrentLocation = true,
+            UiLocationWeatherData(
+                locationInfo = UiLocationInfo(name = "서울", isCurrentLocation = true),
             ),
-            LocationWeatherData(
-                locationName = "부산",
-                isCurrentLocation = false,
-                savedLocationId = 1L,
+            UiLocationWeatherData(
+                locationInfo = UiLocationInfo(name = "부산", isCurrentLocation = false, savedLocationId = 1L),
             ),
-            LocationWeatherData(
-                locationName = "제주",
-                isCurrentLocation = false,
-                savedLocationId = 2L,
-            )
+            UiLocationWeatherData(
+                locationInfo = UiLocationInfo(name = "제주", isCurrentLocation = false, savedLocationId = 2L),
+            ),
         )
         val pagerState = rememberPagerState(pageCount = { locations.size })
         LocationPager(
             pagerState = pagerState,
-            state = WeatherScreenState(
-                locations = LocationsState(locations = locations, isLoading = false)
+            state = UiWeatherScreenState(
+                locations = UiLocationsState(locations = locations, isLoading = false)
             ),
             onIntent = {}
         )
@@ -129,17 +124,15 @@ private fun LocationPagerPreviewMultiple() {
 private fun LocationPagerPreviewPermission() {
     AirCheckPreviewWrapper {
         val locations = listOf(
-            LocationWeatherData(
-                locationName = "현재 위치",
-                isCurrentLocation = true,
-                needsPermission = true,
+            UiLocationWeatherData(
+                locationInfo = UiLocationInfo(name = "현재 위치", isCurrentLocation = true, needsPermission = true),
             )
         )
         val pagerState = rememberPagerState(pageCount = { locations.size })
         LocationPager(
             pagerState = pagerState,
-            state = WeatherScreenState(
-                locations = LocationsState(locations = locations, isLoading = false)
+            state = UiWeatherScreenState(
+                locations = UiLocationsState(locations = locations, isLoading = false)
             ),
             onIntent = {}
         )
@@ -148,9 +141,9 @@ private fun LocationPagerPreviewPermission() {
 
 @Composable
 private fun LocationHeader(
-    locations: List<LocationWeatherData>,
+    locations: List<UiLocationWeatherData>,
     currentPage: Int,
-    currentLocation: LocationWeatherData,
+    currentLocation: UiLocationWeatherData,
     onIntent: (WeatherContract.Intent) -> Unit,
 ) {
     Row(
@@ -170,7 +163,7 @@ private fun LocationHeader(
                     val color = if (isSelected) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
 
-                    if (locationData.isCurrentLocation) {
+                    if (locationData.locationInfo.isCurrentLocation) {
                         Icon(
                             imageVector = Icons.Default.LocationOn,
                             contentDescription = stringResource(CoreR.string.content_description_current_location),
@@ -194,14 +187,14 @@ private fun LocationHeader(
 
         // 타이틀 (중앙)
         Text(
-            text = if (currentLocation.isCurrentLocation) {
-                if (currentLocation.locationName.isNotEmpty() && currentLocation.locationName != "현재 위치") {
-                    currentLocation.locationName
+            text = if (currentLocation.locationInfo.isCurrentLocation) {
+                if (currentLocation.locationInfo.name.isNotEmpty() && currentLocation.locationInfo.name != "현재 위치") {
+                    currentLocation.locationInfo.name
                 } else {
                     stringResource(CoreR.string.label_current_location)
                 }
             } else {
-                currentLocation.locationName
+                currentLocation.locationInfo.name
             },
             fontSize = 16.sp,
             fontWeight = FontWeight.SemiBold,
@@ -211,13 +204,13 @@ private fun LocationHeader(
         )
 
         // 삭제 버튼 (오른쪽, 저장된 위치만)
-        if (!currentLocation.isCurrentLocation && currentLocation.savedLocationId != null) {
+        if (!currentLocation.locationInfo.isCurrentLocation && currentLocation.locationInfo.savedLocationId != null) {
             IconButton(
                 onClick = {
                     onIntent(
                         WeatherContract.Intent.RequestDeleteLocation(
-                            locationId = currentLocation.savedLocationId,
-                            locationName = currentLocation.locationName
+                            locationId = currentLocation.locationInfo.savedLocationId!!,
+                            locationName = currentLocation.locationInfo.name
                         )
                     )
                 },
