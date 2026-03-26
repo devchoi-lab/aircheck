@@ -42,14 +42,14 @@ internal class WeatherViewModel @Inject constructor(
 
     // ── 날씨 데이터 (로컬 캐시) ──────────────────────────────────────────────
 
-    private val _locationsState = MutableStateFlow(LocationsState())
+    private val _locationsState = MutableStateFlow(UiLocationsState())
 
     // ── 날씨 데이터 Flow (UseCase에서 관찰) ─────────────────────────────────
 
     init {
         refreshTrigger.flatMapLatest {
             observeWeatherUseCase().map { state ->
-                state.toLocationsState()
+                state.toUiLocationsState()
             }
         }.onEach {newState ->
             _locationsState.value = newState
@@ -58,15 +58,15 @@ internal class WeatherViewModel @Inject constructor(
 
     // ── 통합 상태 (Screen에서 관찰) ──────────────────────────────────────────
 
-    val screenState: StateFlow<WeatherScreenState> = combine(
+    val screenState: StateFlow<UiWeatherScreenState> = combine(
         _locationsState,
         _uiControlState
     ) { locations, uiControl ->
-        WeatherScreenState(locations, uiControl)
+        UiWeatherScreenState(locations, uiControl)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = WeatherScreenState()
+        initialValue = UiWeatherScreenState()
     )
 
     // ── Intent 처리 ─────────────────────────────────────────────────────────
@@ -157,16 +157,16 @@ internal class WeatherViewModel @Inject constructor(
 
     // ── Mapper ──────────────────────────────────────────────────────────────
 
-    private fun seriouschoi.aircheck.core.domain.usecase.WeatherState.toLocationsState(): LocationsState {
-        return LocationsState(
-            locations = locations.map { it.toLocationWeatherData() },
+    private fun seriouschoi.aircheck.core.domain.usecase.WeatherState.toUiLocationsState(): UiLocationsState {
+        return UiLocationsState(
+            locations = locations.map { it.toUiLocationWeatherData() },
             isLoading = isLoading
         )
     }
 
-    private fun seriouschoi.aircheck.core.domain.usecase.LocationWeather.toLocationWeatherData(): LocationWeatherData {
-        return LocationWeatherData(
-            locationInfo = LocationInfo(
+    private fun seriouschoi.aircheck.core.domain.usecase.LocationWeather.toUiLocationWeatherData(): UiLocationWeatherData {
+        return UiLocationWeatherData(
+            locationInfo = UiLocationInfo(
                 name = locationName,
                 isCurrentLocation = isCurrentLocation,
                 savedLocationId = savedLocationId,

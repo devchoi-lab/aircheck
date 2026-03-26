@@ -57,7 +57,7 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
 internal fun WeatherScreen(
-    state: WeatherScreenState,
+    state: UiWeatherScreenState,
     onIntent: (WeatherContract.Intent) -> Unit,
     onAddLocation: () -> Unit = {}
 ) {

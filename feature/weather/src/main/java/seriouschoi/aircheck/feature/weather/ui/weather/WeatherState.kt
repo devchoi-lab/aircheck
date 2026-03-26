@@ -8,7 +8,7 @@ import seriouschoi.aircheck.core.domain.model.WeatherData
  */
 
 /** 위치 정보 (UI 전용) */
-internal data class LocationInfo(
+internal data class UiLocationInfo(
     val name: String,
     val isCurrentLocation: Boolean,
     /** 저장된 위치의 ID (현재 위치는 null) — 삭제 시 사용 */
@@ -21,8 +21,8 @@ internal data class LocationInfo(
 )
 
 /** 위치별 날씨 데이터 */
-internal data class LocationWeatherData(
-    val locationInfo: LocationInfo,
+internal data class UiLocationWeatherData(
+    val locationInfo: UiLocationInfo,
     val airQuality: WeatherContract.DataResult<AirQuality> = WeatherContract.DataResult(),
     val weather: WeatherContract.DataResult<WeatherData> = WeatherContract.DataResult(),
     /** 개별 새로고침 중 */
@@ -30,8 +30,8 @@ internal data class LocationWeatherData(
 )
 
 /** 위치 목록 상태 */
-internal data class LocationsState(
-    val locations: List<LocationWeatherData> = emptyList(),
+internal data class UiLocationsState(
+    val locations: List<UiLocationWeatherData> = emptyList(),
     val isLoading: Boolean = true
 )
 
@@ -42,8 +42,8 @@ internal data class UiControlState(
 )
 
 /** 화면 전체 통합 상태 (Screen에서 관찰) */
-internal data class WeatherScreenState(
-    val locations: LocationsState = LocationsState(),
+internal data class UiWeatherScreenState(
+    val locations: UiLocationsState = UiLocationsState(),
     val uiControl: UiControlState = UiControlState()
 ) {
     /** 로딩 중 여부 (위치 로딩 또는 리프레시) */

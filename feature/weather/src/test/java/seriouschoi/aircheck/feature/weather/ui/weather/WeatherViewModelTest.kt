@@ -84,7 +84,7 @@ class WeatherViewModelTest {
     }
 
     /** 데이터가 로드될 때까지 대기 후 상태 반환 */
-    private suspend fun app.cash.turbine.ReceiveTurbine<WeatherScreenState>.awaitLoadedState(): WeatherScreenState {
+    private suspend fun app.cash.turbine.ReceiveTurbine<UiWeatherScreenState>.awaitLoadedState(): UiWeatherScreenState {
         var state = awaitItem()
         while (state.locations.locations.isEmpty()) {
             state = awaitItem()

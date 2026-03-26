@@ -14,14 +14,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import seriouschoi.aircheck.feature.weather.ui.weather.LocationWeatherData
+import seriouschoi.aircheck.feature.weather.ui.weather.UiLocationWeatherData
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
 import seriouschoi.aircheck.feature.weather.ui.weather.components.PermissionRequiredContent
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
 internal fun LocationPage(
-    locationData: LocationWeatherData,
+    locationData: UiLocationWeatherData,
     pageIndex: Int,
     onIntent: (WeatherContract.Intent) -> Unit,
 ) {
