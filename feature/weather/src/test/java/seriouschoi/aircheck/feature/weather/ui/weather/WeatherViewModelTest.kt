@@ -109,7 +109,7 @@ class WeatherViewModelTest {
         // Then
         viewModel.screenState.test {
             val state = awaitLoadedState()
-            assertTrue("권한 필요 상태", state.locations.locations.first().needsPermission)
+            assertTrue("권한 필요 상태", state.locations.locations.first().locationInfo.needsPermission)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -125,7 +125,7 @@ class WeatherViewModelTest {
         // Then
         viewModel.screenState.test {
             val state = awaitLoadedState()
-            assertFalse("권한 있음", state.locations.locations.first().needsPermission)
+            assertFalse("권한 있음", state.locations.locations.first().locationInfo.needsPermission)
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -145,7 +145,7 @@ class WeatherViewModelTest {
         // Then
         viewModel.screenState.test {
             val state = awaitLoadedState()
-            val currentLocation = state.locations.locations.firstOrNull { it.isCurrentLocation }
+            val currentLocation = state.locations.locations.firstOrNull { it.locationInfo.isCurrentLocation }
             assertNotNull("현재 위치 있음", currentLocation)
             assertNotNull("날씨 데이터 있음", currentLocation?.weather?.data)
             assertNotNull("대기질 데이터 있음", currentLocation?.airQuality?.data)
@@ -182,7 +182,7 @@ class WeatherViewModelTest {
         // Then
         viewModel.screenState.test {
             val state = awaitLoadedState()
-            val currentLocation = state.locations.locations.firstOrNull { it.isCurrentLocation }!!
+            val currentLocation = state.locations.locations.firstOrNull { it.locationInfo.isCurrentLocation }!!
             assertNull("대기질 데이터 없음", currentLocation.airQuality.data)
             assertNotNull("대기질 에러 있음", currentLocation.airQuality.error)
             assertNotNull("날씨 데이터 있음", currentLocation.weather.data)
@@ -216,7 +216,7 @@ class WeatherViewModelTest {
         // Then
         viewModel.screenState.test {
             val state = awaitLoadedState()
-            val currentLocation = state.locations.locations.firstOrNull { it.isCurrentLocation }!!
+            val currentLocation = state.locations.locations.firstOrNull { it.locationInfo.isCurrentLocation }!!
             assertNotNull("대기질 데이터 있음", currentLocation.airQuality.data)
             assertNull("대기질 에러 없음", currentLocation.airQuality.error)
             assertNull("날씨 데이터 없음", currentLocation.weather.data)
@@ -274,9 +274,9 @@ class WeatherViewModelTest {
             val state = awaitLoadedState()
             val locations = state.locations.locations
             assertEquals("3개 위치", 3, locations.size)
-            assertTrue("첫 번째는 현재 위치", locations[0].isCurrentLocation)
-            assertEquals("서울 강남구 집", locations[1].locationName)
-            assertEquals("서울 중구 회사", locations[2].locationName)
+            assertTrue("첫 번째는 현재 위치", locations[0].locationInfo.isCurrentLocation)
+            assertEquals("서울 강남구 집", locations[1].locationInfo.name)
+            assertEquals("서울 중구 회사", locations[2].locationInfo.name)
             cancelAndIgnoreRemainingEvents()
         }
     }

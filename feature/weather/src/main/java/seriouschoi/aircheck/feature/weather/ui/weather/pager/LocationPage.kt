@@ -31,7 +31,7 @@ internal fun LocationPage(
         modifier = Modifier.fillMaxSize()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            if (locationData.needsPermission) {
+            if (locationData.locationInfo.needsPermission) {
                 val context = LocalContext.current
                 Box(
                     modifier = Modifier.fillMaxSize(),
