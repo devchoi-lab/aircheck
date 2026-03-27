@@ -6,7 +6,7 @@ import javax.inject.Singleton
 
 /**
  * 스마트 위치 Repository
- * 
+ *
  * GPS 좌표 → 법정동 centroid 변환 + 30분 갱신 로직
  */
 @Singleton
@@ -21,20 +21,32 @@ class SmartLocationRepository @Inject constructor(
 
     private var lastFetch: LastFetch? = null
     private var cachedLocation: CachedLocation? = null
-    
+
+    /** 강제 갱신 시 즉시 위치를 emit하기 위한 트리거 */
+    private val refreshTrigger = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
     /**
      * 위치 업데이트 Flow
-     * 
-     * 법정동이 바뀌거나 30분이 지나면 새 위치 emit
+     *
+     * 법정동이 바뀌거나 30분이 지나면 새 위치 emit.
+     * forceRefresh() 호출 시 즉시 현재 위치를 가져와 emit.
      */
     fun smartLocationFlow(): Flow<SmartLocationResult> {
-        return locationDataSource.locationFlow()
+        val periodicFlow = locationDataSource.locationFlow()
             .mapNotNull { location ->
                 bjdMatcher.findNearest(location.lat, location.lng)
             }
             .filter { bjdResult ->
                 shouldFetch(bjdResult.code)
             }
+
+        val refreshFlow = refreshTrigger
+            .mapNotNull {
+                val location = locationDataSource.getCurrentLocation() ?: return@mapNotNull null
+                bjdMatcher.findNearest(location.lat, location.lng)
+            }
+
+        return merge(periodicFlow, refreshFlow)
             .map { bjdResult ->
                 SmartLocationResult(
                     bjdCode = bjdResult.code,
@@ -104,9 +116,12 @@ class SmartLocationRepository @Inject constructor(
 
     /**
      * 강제 갱신 (pull-to-refresh 등)
+     * shouldFetch 필터를 초기화하고, 즉시 현재 위치를 가져와 emit
      */
     fun forceRefresh() {
         lastFetch = null
+        cachedLocation = null
+        refreshTrigger.tryEmit(Unit)
     }
 }
 
