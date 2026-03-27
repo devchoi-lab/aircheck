@@ -37,9 +37,13 @@ android {
     buildTypes {
         debug {
             buildConfigField("String", "APP_CHECK_DEBUG_TOKEN", "\"b69f4d24-92dd-4e27-ba86-247ca838d843\"")
+            // AdMob 테스트 App ID
+            manifestPlaceholders["ADMOB_APP_ID"] = "ca-app-pub-3940256099942544~3347511713"
         }
         release {
             isMinifyEnabled = false
+            // TODO: 실제 AdMob App ID로 교체 필요
+            manifestPlaceholders["ADMOB_APP_ID"] = "ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX"
         }
     }
 
@@ -86,6 +90,9 @@ dependencies {
     // Firebase
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
+    
+    // Ads
+    implementation(libs.play.services.ads)
     
     debugImplementation(libs.compose.ui.tooling)
 }
