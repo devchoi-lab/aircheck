@@ -33,12 +33,14 @@ fun BannerAd(
 }
 
 /**
- * 테스트용 배너 광고 ID
+ * 테스트용 광고 ID
  */
 object AdUnitIds {
     // Google 공식 테스트 광고 ID
     const val BANNER_TEST = "ca-app-pub-3940256099942544/6300978111"
+    const val NATIVE_TEST = "ca-app-pub-3940256099942544/2247696110"
     
     // TODO: 실제 광고 ID로 교체
     const val BANNER_WEATHER_BOTTOM = "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"
+    const val NATIVE_WEATHER_CARD = "ca-app-pub-XXXXXXXXXXXXXXXX/XXXXXXXXXX"
 }
