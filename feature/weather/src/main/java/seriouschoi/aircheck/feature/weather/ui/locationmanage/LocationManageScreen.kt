@@ -1,6 +1,8 @@
 package seriouschoi.aircheck.feature.weather.ui.locationmanage
 
 import androidx.compose.foundation.background
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,13 +16,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -34,13 +35,17 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import seriouschoi.aircheck.core.domain.model.SavedLocation
 import seriouschoi.aircheck.core.resource.R as CoreR
 
@@ -93,31 +98,35 @@ internal fun LocationManageScreen(
                                 .fillMaxWidth()
                         )
                     } else {
+                        val lazyListState = rememberLazyListState()
+                        val reorderableLazyListState = rememberReorderableLazyListState(lazyListState) { from, to ->
+                            onIntent(LocationManageContract.Intent.MoveLocation(from.index, to.index))
+                        }
+
                         LazyColumn(
+                            state = lazyListState,
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             itemsIndexed(
                                 items = uiState.savedLocations,
                                 key = { _, item -> item.id }
-                            ) { index, location ->
-                                SavedLocationItem(
-                                    location = location,
-                                    canMoveUp = index > 0,
-                                    canMoveDown = index < uiState.savedLocations.size - 1,
-                                    onMoveUp = {
-                                        onIntent(LocationManageContract.Intent.MoveLocation(index, index - 1))
-                                    },
-                                    onMoveDown = {
-                                        onIntent(LocationManageContract.Intent.MoveLocation(index, index + 1))
-                                    },
-                                    onDelete = {
-                                        onIntent(LocationManageContract.Intent.DeleteLocation(location.id))
-                                    },
-                                    modifier = Modifier.padding(horizontal = 16.dp)
-                                )
+                            ) { _, location ->
+                                ReorderableItem(reorderableLazyListState, key = location.id) { isDragging ->
+                                    SavedLocationItem(
+                                        location = location,
+                                        isDragging = isDragging,
+                                        onDelete = {
+                                            onIntent(LocationManageContract.Intent.DeleteLocation(location.id))
+                                        },
+                                        modifier = Modifier
+                                            .padding(horizontal = 16.dp)
+                                            .animateItem(),
+                                        dragModifier = Modifier.draggableHandle()
+                                    )
+                                }
                             }
-                            
+
                             item {
                                 Spacer(Modifier.height(8.dp))
                             }
@@ -181,15 +190,25 @@ private fun CurrentLocationItem(modifier: Modifier = Modifier) {
 @Composable
 private fun SavedLocationItem(
     location: SavedLocation,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit,
+    isDragging: Boolean,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
+    dragModifier: Modifier = Modifier,
 ) {
+    val elevation by animateDpAsState(
+        targetValue = if (isDragging) 8.dp else 0.dp,
+        label = "dragElevation"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isDragging) 1.03f else 1f,
+        label = "dragScale"
+    )
+
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .graphicsLayer { scaleX = scale; scaleY = scale },
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
@@ -197,39 +216,19 @@ private fun SavedLocationItem(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // 순서 변경 버튼
-            Column {
-                IconButton(
-                    onClick = onMoveUp,
-                    enabled = canMoveUp,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowUp,
-                        contentDescription = stringResource(CoreR.string.content_description_move_up),
-                        tint = if (canMoveUp) MaterialTheme.colorScheme.onSurface 
-                               else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                    )
-                }
-                IconButton(
-                    onClick = onMoveDown,
-                    enabled = canMoveDown,
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = stringResource(CoreR.string.content_description_move_down),
-                        tint = if (canMoveDown) MaterialTheme.colorScheme.onSurface 
-                               else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                    )
-                }
-            }
-            
-            Spacer(Modifier.width(8.dp))
-            
+            // 드래그 핸들
+            Icon(
+                imageVector = Icons.Default.DragHandle,
+                contentDescription = stringResource(CoreR.string.content_description_reorder),
+                modifier = dragModifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(Modifier.width(12.dp))
+
             // 위치 정보
             Column(modifier = Modifier.weight(1f)) {
                 Text(
@@ -243,7 +242,7 @@ private fun SavedLocationItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            
+
             // 삭제 버튼
             IconButton(onClick = onDelete) {
                 Icon(
