@@ -51,6 +51,7 @@ import seriouschoi.aircheck.feature.weather.ui.weather.components.ErrorSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.RecommendationSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.WeatherSection
 import seriouschoi.aircheck.feature.weather.ui.weather.pager.LocationPager
+import seriouschoi.aircheck.core.domain.model.LocationItem
 import seriouschoi.aircheck.core.ui.ads.AdUnitIds
 import seriouschoi.aircheck.core.ui.ads.BannerAd
 import seriouschoi.aircheck.core.resource.R as CoreR
@@ -66,14 +67,17 @@ internal fun WeatherScreen(
     val pagerState = rememberPagerState(pageCount = { locations.size.coerceAtLeast(1) })
     val currentLocation = locations.getOrNull(pagerState.currentPage)
 
+    val currentLocationLabel = stringResource(CoreR.string.label_current_location_name)
     val titleText = currentLocation?.let { loc ->
         if (loc.locationInfo.isCurrentLocation) {
-            loc.locationInfo.name.takeIf { it.isNotEmpty() && it != "현재 위치" }
-                ?: stringResource(CoreR.string.label_current_location)
+            loc.locationInfo.name.takeIf { 
+                it.isNotEmpty() && 
+                it != LocationItem.CURRENT_LOCATION_PLACEHOLDER 
+            } ?: currentLocationLabel
         } else {
             loc.locationInfo.name
         }
-    } ?: stringResource(CoreR.string.label_current_location)
+    } ?: currentLocationLabel
 
     Scaffold(
         topBar = {

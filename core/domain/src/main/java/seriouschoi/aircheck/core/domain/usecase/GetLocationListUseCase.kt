@@ -41,7 +41,7 @@ class GetLocationListUseCase @Inject constructor(
                 } else {
                     add(
                         LocationItem(
-                            name = "현재 위치",
+                            name = LocationItem.CURRENT_LOCATION_PLACEHOLDER,
                             isCurrentLocation = true,
                             lat = 0.0,
                             lng = 0.0,

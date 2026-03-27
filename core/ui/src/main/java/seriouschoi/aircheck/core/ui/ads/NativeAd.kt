@@ -23,10 +23,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import seriouschoi.aircheck.core.resource.R as CoreR
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
@@ -34,7 +36,7 @@ import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.nativead.NativeAd
 import com.google.android.gms.ads.nativead.NativeAdOptions
 import com.google.android.gms.ads.nativead.NativeAdView
-import seriouschoi.aircheck.core.ui.R
+import seriouschoi.aircheck.core.ui.R as UiR
 
 /**
  * 네이티브 광고 Composable
@@ -93,7 +95,7 @@ fun NativeAdCard(
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "광고",
+                    text = stringResource(CoreR.string.label_ad),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -104,7 +106,7 @@ fun NativeAdCard(
             AndroidView(
                 factory = { ctx ->
                     val view = LayoutInflater.from(ctx)
-                        .inflate(R.layout.native_ad_layout, null) as NativeAdView
+                        .inflate(UiR.layout.native_ad_layout, null) as NativeAdView
                     view
                 },
                 update = { adView ->
@@ -120,21 +122,21 @@ fun NativeAdCard(
 
 private fun populateNativeAdView(nativeAd: NativeAd, adView: NativeAdView) {
     // 헤드라인
-    adView.headlineView = adView.findViewById(R.id.ad_headline)
+    adView.headlineView = adView.findViewById(UiR.id.ad_headline)
     (adView.headlineView as? TextView)?.text = nativeAd.headline
     
     // 본문
-    adView.bodyView = adView.findViewById(R.id.ad_body)
+    adView.bodyView = adView.findViewById(UiR.id.ad_body)
     (adView.bodyView as? TextView)?.text = nativeAd.body
     
     // 아이콘
-    adView.iconView = adView.findViewById(R.id.ad_icon)
+    adView.iconView = adView.findViewById(UiR.id.ad_icon)
     nativeAd.icon?.let { icon ->
         (adView.iconView as? ImageView)?.setImageDrawable(icon.drawable)
     }
     
     // CTA 버튼
-    adView.callToActionView = adView.findViewById(R.id.ad_call_to_action)
+    adView.callToActionView = adView.findViewById(UiR.id.ad_call_to_action)
     (adView.callToActionView as? Button)?.text = nativeAd.callToAction
     
     // 광고 등록

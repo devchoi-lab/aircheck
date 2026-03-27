@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.domain.model.WeatherData
+import seriouschoi.aircheck.core.ui.mapper.toDisplayString
 import seriouschoi.aircheck.core.ui.mapper.toEmoji
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
 import seriouschoi.aircheck.core.ui.mapper.toLabelRes
@@ -129,6 +130,7 @@ internal fun WeatherSection(weather: WeatherData, modifier: Modifier = Modifier)
                 grouped.forEach { (dayLabel, forecasts) ->
                     // 날짜 헤더
                     item {
+                        val displayLabel = dayLabel.toDisplayString()
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center,
@@ -140,7 +142,7 @@ internal fun WeatherSection(weather: WeatherData, modifier: Modifier = Modifier)
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = dayLabel,
+                                text = displayLabel,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary

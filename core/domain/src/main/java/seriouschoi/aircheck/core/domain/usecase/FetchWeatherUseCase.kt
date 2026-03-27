@@ -1,5 +1,6 @@
 package seriouschoi.aircheck.core.domain.usecase
 
+import seriouschoi.aircheck.core.domain.model.DataError
 import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.CombinedWeatherResult
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
@@ -26,8 +27,8 @@ class FetchWeatherUseCase @Inject constructor(
             ?: return FetchWeatherOutput(
                 smartLocation = null,
                 result = CombinedWeatherResult(
-                    weather = Result.failure(Exception("현재 위치를 확인할 수 없어요")),
-                    airQuality = Result.failure(Exception("현재 위치를 확인할 수 없어요"))
+                    weather = Result.failure(DataError.LocationUnavailable),
+                    airQuality = Result.failure(DataError.LocationUnavailable)
                 )
             )
 
@@ -64,8 +65,8 @@ class FetchWeatherUseCase @Inject constructor(
                 FetchWeatherOutput(
                     smartLocation = null,
                     result = CombinedWeatherResult(
-                        weather = Result.failure(Exception("현재 위치를 확인할 수 없어요")),
-                        airQuality = Result.failure(Exception("현재 위치를 확인할 수 없어요"))
+                        weather = Result.failure(DataError.LocationUnavailable),
+                        airQuality = Result.failure(DataError.LocationUnavailable)
                     )
                 )
             }

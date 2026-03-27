@@ -4,6 +4,8 @@ package seriouschoi.aircheck.core.data.repository
 
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.AqiLevel
+import seriouschoi.aircheck.core.domain.model.DataError
+import seriouschoi.aircheck.core.domain.model.DayLabel
 import seriouschoi.aircheck.core.domain.model.HourlyForecast
 import seriouschoi.aircheck.core.domain.model.PmData
 import seriouschoi.aircheck.core.domain.model.WeatherCondition
@@ -23,9 +25,9 @@ import java.time.ZoneId
 internal object WeatherParsingUtil {
 
     fun parseWeatherData(weather: WeatherResponse?): Result<WeatherData> {
-        weather ?: return Result.failure(Exception("날씨 정보를 가져올 수 없어요"))
+        weather ?: return Result.failure(DataError.WeatherUnavailable)
         val current = weather.current
-            ?: return Result.failure(Exception("날씨 정보를 가져올 수 없어요"))
+            ?: return Result.failure(DataError.WeatherUnavailable)
 
         val hourlyForecast = parseHourlyForecast(weather.hourlyForecast, current.isDay)
 
@@ -51,7 +53,7 @@ internal object WeatherParsingUtil {
     }
 
     fun parseAirQualityData(air: AirQualityResponse?): Result<AirQuality> {
-        air ?: return Result.failure(Exception("미세먼지 정보를 가져올 수 없어요"))
+        air ?: return Result.failure(DataError.AirQualityUnavailable)
 
         val mainStation = air.stationName
 
@@ -103,10 +105,10 @@ internal object WeatherParsingUtil {
             val hour = localDateTime.hour
 
             val dayLabel = when (forecastDate) {
-                today -> "오늘"
-                today.plusDays(1) -> "내일"
-                today.plusDays(2) -> "모레"
-                else -> "${forecastDate.monthValue}/${forecastDate.dayOfMonth}"
+                today -> DayLabel.Today
+                today.plusDays(1) -> DayLabel.Tomorrow
+                today.plusDays(2) -> DayLabel.DayAfterTomorrow
+                else -> DayLabel.Date(forecastDate.monthValue, forecastDate.dayOfMonth)
             }
 
             HourlyForecast(
