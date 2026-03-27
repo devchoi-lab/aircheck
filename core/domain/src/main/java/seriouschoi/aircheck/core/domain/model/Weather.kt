@@ -14,7 +14,7 @@ data class WeatherData(
 
 data class HourlyForecast(
     val hour: String,
-    val dayLabel: String,  // "오늘", "내일", "모레"
+    val dayLabel: DayLabel,
     val temperature: Double,
     val feelsLike: Double,
     val precipitationProbability: Int,

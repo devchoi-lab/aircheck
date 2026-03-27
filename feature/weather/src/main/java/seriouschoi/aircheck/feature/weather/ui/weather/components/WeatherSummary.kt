@@ -22,8 +22,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import seriouschoi.aircheck.core.domain.model.DayLabel
 import seriouschoi.aircheck.core.domain.model.HourlyForecast
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
+import seriouschoi.aircheck.core.ui.mapper.toDisplayString
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
 import seriouschoi.aircheck.core.ui.mapper.toLabelRes
 import seriouschoi.aircheck.core.resource.R as CoreR
@@ -42,21 +44,21 @@ data class WeatherSummaryData(
 
 data class TempWithTime(
     val temperature: Double,
-    val dayLabel: String,
+    val dayLabel: DayLabel,
     val hour: String,
 )
 
 data class FeelsLikeWithTime(
     val temperature: Double,
-    val dayLabel: String,
+    val dayLabel: DayLabel,
     val hour: String,
     val clothing: RecommendedClothing,
 )
 
 data class TimePeriod(
-    val startDayLabel: String,
+    val startDayLabel: DayLabel,
     val startHour: String,
-    val endDayLabel: String,
+    val endDayLabel: DayLabel,
     val endHour: String,
     val maxProbability: Int? = null,  // 강수/강설 최대 확률
 )
@@ -209,6 +211,9 @@ private fun TemperatureSummaryRow(
     min: TempWithTime,
     max: TempWithTime,
 ) {
+    val minDayLabel = min.dayLabel.toDisplayString()
+    val maxDayLabel = max.dayLabel.toDisplayString()
+    
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
@@ -222,7 +227,7 @@ private fun TemperatureSummaryRow(
         )
         Spacer(Modifier.weight(1f))
         Text(
-            text = "${formatTemp(min.temperature)} (${min.dayLabel} ${min.hour})",
+            text = "${formatTemp(min.temperature)} ($minDayLabel ${min.hour})",
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.primary,
         )
@@ -232,7 +237,7 @@ private fun TemperatureSummaryRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Text(
-            text = "${formatTemp(max.temperature)} (${max.dayLabel} ${max.hour})",
+            text = "${formatTemp(max.temperature)} ($maxDayLabel ${max.hour})",
             fontSize = 13.sp,
             color = MaterialTheme.colorScheme.error,
         )
@@ -244,6 +249,9 @@ private fun FeelsLikeSummaryRow(
     min: FeelsLikeWithTime,
     max: FeelsLikeWithTime,
 ) {
+    val minDayLabel = min.dayLabel.toDisplayString()
+    val maxDayLabel = max.dayLabel.toDisplayString()
+    
     Column {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -258,7 +266,7 @@ private fun FeelsLikeSummaryRow(
             )
             Spacer(Modifier.weight(1f))
             Text(
-                text = "${formatTemp(min.temperature)} (${min.dayLabel} ${min.hour})",
+                text = "${formatTemp(min.temperature)} ($minDayLabel ${min.hour})",
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.primary,
             )
@@ -268,7 +276,7 @@ private fun FeelsLikeSummaryRow(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                text = "${formatTemp(max.temperature)} (${max.dayLabel} ${max.hour})",
+                text = "${formatTemp(max.temperature)} ($maxDayLabel ${max.hour})",
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.error,
             )
