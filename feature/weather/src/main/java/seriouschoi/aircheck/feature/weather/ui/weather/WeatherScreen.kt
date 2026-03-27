@@ -21,7 +21,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,7 +29,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
@@ -57,9 +55,10 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
 internal fun WeatherScreen(
-    state: WeatherScreenState,
+    state: UiWeatherScreenState,
     onIntent: (WeatherContract.Intent) -> Unit,
-    onAddLocation: () -> Unit = {}
+    onAddLocation: () -> Unit = {},
+    onManageLocations: () -> Unit = {},
 ) {
     Scaffold(
         topBar = {
@@ -83,25 +82,6 @@ internal fun WeatherScreen(
         // 기준 안내 다이얼로그
         if (state.uiControl.showInfoDialog) {
             AirQualityInfoDialog(onDismiss = { onIntent(WeatherContract.Intent.DismissInfoDialog) })
-        }
-
-        // 삭제 확인 다이얼로그
-        state.uiControl.deleteConfirm?.let { confirm ->
-            AlertDialog(
-                onDismissRequest = { onIntent(WeatherContract.Intent.DismissDeleteDialog) },
-                title = { Text(stringResource(CoreR.string.delete_location_title), fontWeight = FontWeight.Bold) },
-                text = { Text(stringResource(CoreR.string.delete_location_message, confirm.locationName)) },
-                confirmButton = {
-                    TextButton(onClick = { onIntent(WeatherContract.Intent.ConfirmDeleteLocation) }) {
-                        Text(stringResource(CoreR.string.button_delete), color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { onIntent(WeatherContract.Intent.DismissDeleteDialog) }) {
-                        Text(stringResource(CoreR.string.button_cancel))
-                    }
-                }
-            )
         }
 
         Box(
@@ -151,6 +131,7 @@ internal fun WeatherScreen(
                         pagerState = pagerState,
                         state = state,
                         onIntent = onIntent,
+                        onManageLocations = onManageLocations,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

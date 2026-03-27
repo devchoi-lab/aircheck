@@ -9,4 +9,7 @@ sealed interface WeatherRoute {
     
     @Serializable
     data object LocationPicker : WeatherRoute
+    
+    @Serializable
+    data object LocationManage : WeatherRoute
 }

@@ -7,6 +7,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
+import seriouschoi.aircheck.feature.weather.ui.locationmanage.LocationManageContract
+import seriouschoi.aircheck.feature.weather.ui.locationmanage.LocationManageScreen
+import seriouschoi.aircheck.feature.weather.ui.locationmanage.LocationManageViewModel
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerScreen
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerViewModel
@@ -32,7 +35,8 @@ fun NavGraphBuilder.weatherScreen(
         WeatherScreen(
             state = state,
             onIntent = viewModel::processIntent,
-            onAddLocation = { navController.navigate(WeatherRoute.LocationPicker) }
+            onAddLocation = { navController.navigate(WeatherRoute.LocationPicker) },
+            onManageLocations = { navController.navigate(WeatherRoute.LocationManage) }
         )
     }
 
@@ -52,6 +56,18 @@ fun NavGraphBuilder.weatherScreen(
             uiState = uiState,
             onIntent = viewModel::processIntent,
             onNavigateBack = { navController.popBackStack() }
+        )
+    }
+    
+    composable<WeatherRoute.LocationManage> {
+        val viewModel: LocationManageViewModel = hiltViewModel()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+        LocationManageScreen(
+            uiState = uiState,
+            onIntent = viewModel::processIntent,
+            onNavigateBack = { navController.popBackStack() },
+            onAddLocation = { navController.navigate(WeatherRoute.LocationPicker) }
         )
     }
 }

@@ -31,6 +31,8 @@
     <string name="label_feels_like">체감온도</string>
     <string name="label_precipitation_prob">강수확률</string>
     <string name="label_snowfall_prob">강설확률</string>
+    <string name="label_rain">비</string>
+    <string name="label_snow">눈</string>
     <string name="format_temperature">%.1f°C</string>
     <string name="format_percent">%d%%</string>
     <string name="format_feels_like">체감 %.0f°</string>
@@ -96,6 +98,12 @@
     
     <!-- 날씨 화면 -->
     <string name="content_description_add_location">위치 추가</string>
+    <string name="content_description_reorder">순서 변경</string>
+    <string name="title_location_manage">위치 관리</string>
+    <string name="hint_current_location_fixed">항상 첫 번째에 표시됩니다</string>
+    <string name="button_add_location">위치 추가</string>
+    <string name="empty_saved_locations">저장된 위치가 없습니다</string>
+    <string name="max_saved_locations_reached">위치는 최대 %d개까지 저장할 수 있습니다</string>
     <string name="content_description_delete_location">위치 삭제</string>
     <string name="content_description_current_location">현재 위치</string>
     <string name="delete_location_title">위치 삭제</string>
