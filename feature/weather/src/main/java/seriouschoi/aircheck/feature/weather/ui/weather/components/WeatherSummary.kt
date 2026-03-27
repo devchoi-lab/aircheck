@@ -22,139 +22,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import seriouschoi.aircheck.core.domain.model.DayLabel
-import seriouschoi.aircheck.core.domain.model.HourlyForecast
-import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.ui.mapper.toDisplayString
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
 import seriouschoi.aircheck.core.ui.mapper.toLabelRes
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 /**
- * 48시간 예보 요약 정보
+ * 48시간 예보 요약 UI
  */
-data class WeatherSummaryData(
-    val minTemp: TempWithTime,
-    val maxTemp: TempWithTime,
-    val minFeelsLike: FeelsLikeWithTime,
-    val maxFeelsLike: FeelsLikeWithTime,
-    val precipitationPeriod: TimePeriod?,
-    val snowfallPeriod: TimePeriod?,
-)
-
-data class TempWithTime(
-    val temperature: Double,
-    val dayLabel: DayLabel,
-    val hour: String,
-)
-
-data class FeelsLikeWithTime(
-    val temperature: Double,
-    val dayLabel: DayLabel,
-    val hour: String,
-    val clothing: RecommendedClothing,
-)
-
-data class TimePeriod(
-    val startDayLabel: DayLabel,
-    val startHour: String,
-    val endDayLabel: DayLabel,
-    val endHour: String,
-    val maxProbability: Int? = null,  // 강수/강설 최대 확률
-)
-
-/**
- * HourlyForecast 목록에서 요약 데이터 계산
- */
-fun List<HourlyForecast>.toSummaryData(): WeatherSummaryData? {
-    if (isEmpty()) return null
-
-    // 최저/최고 기온
-    val minTempForecast = minByOrNull { it.temperature } ?: return null
-    val maxTempForecast = maxByOrNull { it.temperature } ?: return null
-
-    // 최저/최고 체감온도
-    val minFeelsLikeForecast = minByOrNull { it.feelsLike } ?: return null
-    val maxFeelsLikeForecast = maxByOrNull { it.feelsLike } ?: return null
-
-    // 강수 구간 (첫 번째 구간만)
-    val precipitationPeriod = findFirstPeriodWithProbability(
-        predicate = { it.precipitationProbability >= 30 },
-        probability = { it.precipitationProbability }
-    )
-
-    // 강설 구간 (첫 번째 구간만)
-    val snowfallPeriod = findFirstPeriodWithProbability(
-        predicate = { it.snowfall > 0 },
-        probability = { it.precipitationProbability }  // 강설도 강수확률 사용
-    )
-
-    return WeatherSummaryData(
-        minTemp = TempWithTime(
-            temperature = minTempForecast.temperature,
-            dayLabel = minTempForecast.dayLabel,
-            hour = minTempForecast.hour,
-        ),
-        maxTemp = TempWithTime(
-            temperature = maxTempForecast.temperature,
-            dayLabel = maxTempForecast.dayLabel,
-            hour = maxTempForecast.hour,
-        ),
-        minFeelsLike = FeelsLikeWithTime(
-            temperature = minFeelsLikeForecast.feelsLike,
-            dayLabel = minFeelsLikeForecast.dayLabel,
-            hour = minFeelsLikeForecast.hour,
-            clothing = RecommendedClothing.fromFeelsLike(minFeelsLikeForecast.feelsLike),
-        ),
-        maxFeelsLike = FeelsLikeWithTime(
-            temperature = maxFeelsLikeForecast.feelsLike,
-            dayLabel = maxFeelsLikeForecast.dayLabel,
-            hour = maxFeelsLikeForecast.hour,
-            clothing = RecommendedClothing.fromFeelsLike(maxFeelsLikeForecast.feelsLike),
-        ),
-        precipitationPeriod = precipitationPeriod,
-        snowfallPeriod = snowfallPeriod,
-    )
-}
-
-/**
- * 조건을 만족하는 첫 번째 연속 구간을 찾고, 해당 구간의 최대 확률도 반환한다
- */
-private fun List<HourlyForecast>.findFirstPeriodWithProbability(
-    predicate: (HourlyForecast) -> Boolean,
-    probability: (HourlyForecast) -> Int,
-): TimePeriod? {
-    var startIndex: Int? = null
-    var endIndex: Int? = null
-    var maxProb = 0
-
-    for ((index, forecast) in withIndex()) {
-        if (predicate(forecast)) {
-            if (startIndex == null) {
-                startIndex = index
-            }
-            endIndex = index
-            maxProb = maxOf(maxProb, probability(forecast))
-        } else if (startIndex != null) {
-            // 구간이 끝남
-            break
-        }
-    }
-
-    if (startIndex == null || endIndex == null) return null
-
-    val startForecast = this[startIndex]
-    val endForecast = this[endIndex]
-
-    return TimePeriod(
-        startDayLabel = startForecast.dayLabel,
-        startHour = startForecast.hour,
-        endDayLabel = endForecast.dayLabel,
-        endHour = endForecast.hour,
-        maxProbability = maxProb,
-    )
-}
-
 @Composable
 internal fun WeatherSummary(
     summary: WeatherSummaryData,
@@ -170,7 +45,6 @@ internal fun WeatherSummary(
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // 기온 요약
         TemperatureSummaryRow(
             emoji = "🌡️",
             label = stringResource(CoreR.string.label_temperature),
@@ -178,13 +52,11 @@ internal fun WeatherSummary(
             max = summary.maxTemp,
         )
 
-        // 체감온도 요약 (의상 포함)
         FeelsLikeSummaryRow(
             min = summary.minFeelsLike,
             max = summary.maxFeelsLike,
         )
 
-        // 강수 정보
         summary.precipitationPeriod?.let { period ->
             PeriodRow(
                 emoji = "🌧️",
@@ -193,7 +65,6 @@ internal fun WeatherSummary(
             )
         }
 
-        // 강설 정보
         summary.snowfallPeriod?.let { period ->
             PeriodRow(
                 emoji = "❄️",
@@ -282,7 +153,6 @@ private fun FeelsLikeSummaryRow(
             )
         }
         Spacer(Modifier.height(4.dp))
-        // 의상 추천
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.End,
@@ -327,6 +197,9 @@ private fun PeriodRow(
     label: String,
     period: TimePeriod,
 ) {
+    val startLabel = period.startDayLabel.toDisplayString()
+    val endLabel = period.endDayLabel.toDisplayString()
+    
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
@@ -341,7 +214,7 @@ private fun PeriodRow(
         Spacer(Modifier.weight(1f))
         Text(
             text = buildString {
-                append("${period.startDayLabel} ${period.startHour} ~ ${period.endDayLabel} ${period.endHour}")
+                append("$startLabel ${period.startHour} ~ $endLabel ${period.endHour}")
                 period.maxProbability?.let { prob ->
                     append(" (${prob}%)")
                 }
@@ -352,6 +225,4 @@ private fun PeriodRow(
     }
 }
 
-private fun formatTemp(temp: Double): String {
-    return "${temp.toInt()}°"
-}
+private fun formatTemp(temp: Double): String = "${temp.toInt()}°"
