@@ -7,14 +7,10 @@ import android.widget.TextView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -25,12 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
-import seriouschoi.aircheck.core.resource.R as CoreR
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdLoader
 import com.google.android.gms.ads.AdRequest
@@ -42,9 +34,9 @@ import seriouschoi.aircheck.core.ui.R as UiR
 
 /**
  * 네이티브 광고 Composable
- * 상단에 "광고" 라벨을 명확히 표시하여 어르신들도 구분 가능
+ * "광고" 라벨이 NativeAdView 안에 포함되어 AdMob 정책 준수
  * 
- * @param adUnitId 광고 단위 ID (테스트: ca-app-pub-3940256099942544/2247696110)
+ * @param adUnitId 광고 단위 ID
  * @param modifier Modifier
  */
 @Composable
@@ -84,7 +76,7 @@ fun NativeAdCard(
     // 광고 로딩 실패 시 표시 안 함
     if (!isLoading && nativeAd == null) return
     
-    Column(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .height(AD_HEIGHT)  // 고정 높이로 레이아웃 시프트 방지
@@ -92,40 +84,22 @@ fun NativeAdCard(
             .border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
     ) {
-        // 상단 "광고" 라벨 (어르신용 명확한 구분)
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color.Gray.copy(alpha = 0.2f))
-                .padding(horizontal = 12.dp, vertical = 6.dp)
-        ) {
-            Text(
-                text = stringResource(CoreR.string.label_ad),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        
         if (nativeAd != null) {
-            // 네이티브 광고 콘텐츠
+            // 네이티브 광고 (XML에 "광고" 라벨 포함)
             AndroidView(
                 factory = { ctx ->
-                    val view = LayoutInflater.from(ctx)
+                    LayoutInflater.from(ctx)
                         .inflate(UiR.layout.native_ad_layout, null) as NativeAdView
-                    view
                 },
                 update = { adView ->
                     nativeAd?.let { ad ->
                         populateNativeAdView(ad, adView)
                     }
                 },
-                modifier = Modifier.padding(12.dp)
+                modifier = Modifier.fillMaxWidth()
             )
-        } else {
-            // 로딩 중 placeholder
-            Spacer(Modifier.weight(1f))
         }
+        // 로딩 중에는 빈 Box 유지 (높이 예약)
     }
 }
 
