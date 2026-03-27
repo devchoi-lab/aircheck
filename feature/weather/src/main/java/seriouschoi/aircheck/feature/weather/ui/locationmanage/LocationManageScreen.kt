@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import seriouschoi.aircheck.core.domain.model.SavedLocation
+import seriouschoi.aircheck.core.domain.usecase.AddSavedLocationUseCase
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -133,16 +134,28 @@ internal fun LocationManageScreen(
                         }
                     }
                     
-                    // 위치 추가 버튼
-                    FilledTonalButton(
-                        onClick = onAddLocation,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(CoreR.string.button_add_location))
+                    // 위치 추가 버튼 또는 최대 개수 안내
+                    if (uiState.savedLocations.size >= AddSavedLocationUseCase.MAX_SAVED_LOCATIONS) {
+                        Text(
+                            text = stringResource(CoreR.string.max_saved_locations_reached, AddSavedLocationUseCase.MAX_SAVED_LOCATIONS),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 14.sp
+                        )
+                    } else {
+                        FilledTonalButton(
+                            onClick = onAddLocation,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            Icon(Icons.Default.Add, contentDescription = null)
+                            Spacer(Modifier.width(8.dp))
+                            Text(stringResource(CoreR.string.button_add_location))
+                        }
                     }
                 }
             }

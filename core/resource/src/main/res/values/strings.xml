@@ -103,6 +103,7 @@
     <string name="hint_current_location_fixed">항상 첫 번째에 표시됩니다</string>
     <string name="button_add_location">위치 추가</string>
     <string name="empty_saved_locations">저장된 위치가 없습니다</string>
+    <string name="max_saved_locations_reached">위치는 최대 %d개까지 저장할 수 있습니다</string>
     <string name="content_description_delete_location">위치 삭제</string>
     <string name="content_description_current_location">현재 위치</string>
     <string name="delete_location_title">위치 삭제</string>
