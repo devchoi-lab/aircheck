@@ -22,8 +22,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,8 +53,6 @@ internal fun LocationPager(
             LocationHeader(
                 locations = locations,
                 currentPage = pagerState.currentPage,
-                currentLocation = currentLocation,
-                onIntent = onIntent,
                 onManageLocations = onManageLocations
             )
         }
@@ -144,67 +140,41 @@ private fun LocationPagerPreviewPermission() {
 private fun LocationHeader(
     locations: List<UiLocationWeatherData>,
     currentPage: Int,
-    currentLocation: UiLocationWeatherData,
-    onIntent: (WeatherContract.Intent) -> Unit,
     onManageLocations: () -> Unit = {},
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 인디케이터 (왼쪽) - 탭하면 위치 관리 화면으로
-        if (locations.size > 1) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable(onClick = onManageLocations)
-            ) {
-                locations.forEachIndexed { index, locationData ->
-                    val isSelected = currentPage == index
-                    val color = if (isSelected) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    if (locations.size > 1) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onManageLocations)
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            locations.forEachIndexed { index, locationData ->
+                val isSelected = currentPage == index
+                val color = if (isSelected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
 
-                    if (locationData.locationInfo.isCurrentLocation) {
-                        Icon(
-                            imageVector = Icons.Default.LocationOn,
-                            contentDescription = stringResource(CoreR.string.content_description_current_location),
-                            tint = color,
-                            modifier = Modifier
-                                .padding(horizontal = 2.dp)
-                                .size(if (isSelected) 16.dp else 12.dp)
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .padding(horizontal = 3.dp)
-                                .size(if (isSelected) 8.dp else 6.dp)
-                                .clip(CircleShape)
-                                .background(color)
-                        )
-                    }
+                if (locationData.locationInfo.isCurrentLocation) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = stringResource(CoreR.string.content_description_current_location),
+                        tint = color,
+                        modifier = Modifier
+                            .padding(horizontal = 2.dp)
+                            .size(if (isSelected) 16.dp else 12.dp)
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 3.dp)
+                            .size(if (isSelected) 8.dp else 6.dp)
+                            .clip(CircleShape)
+                            .background(color)
+                    )
                 }
             }
         }
-
-        // 타이틀 (중앙)
-        Text(
-            text = if (currentLocation.locationInfo.isCurrentLocation) {
-                if (currentLocation.locationInfo.name.isNotEmpty() && currentLocation.locationInfo.name != "현재 위치") {
-                    currentLocation.locationInfo.name
-                } else {
-                    stringResource(CoreR.string.label_current_location)
-                }
-            } else {
-                currentLocation.locationInfo.name
-            },
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.End
-        )
-
     }
 }

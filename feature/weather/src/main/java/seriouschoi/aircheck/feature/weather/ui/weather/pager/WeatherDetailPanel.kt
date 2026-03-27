@@ -25,6 +25,8 @@ import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualitySect
 import seriouschoi.aircheck.feature.weather.ui.weather.components.ErrorSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.RecommendationSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.WeatherSection
+import seriouschoi.aircheck.core.ui.ads.AdUnitIds
+import seriouschoi.aircheck.core.ui.ads.NativeAdCard
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
@@ -57,6 +59,12 @@ internal fun WeatherDetailPanel(
                 )
             }
         }
+
+        // ── 네이티브 광고 ────────────────────────────────────
+        NativeAdCard(
+            adUnitId = AdUnitIds.NATIVE_TEST,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         // ── 날씨 섹션 ────────────────────────────────────────
         when {
@@ -100,14 +108,5 @@ internal fun WeatherDetailPanel(
             )
         }
 
-        // 업데이트 시간
-        air.data?.updatedAt?.takeIf { it.isNotEmpty() }?.let {
-            Text(
-                text = stringResource(CoreR.string.air_quality_update, it),
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-        }
     }
 }

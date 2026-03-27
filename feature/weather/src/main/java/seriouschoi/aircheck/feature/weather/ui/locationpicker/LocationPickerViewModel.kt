@@ -1,6 +1,5 @@
 package seriouschoi.aircheck.feature.weather.ui.locationpicker
 
-import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,8 +17,8 @@ import seriouschoi.aircheck.core.domain.model.SavedLocation
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.RegionRepository
 import seriouschoi.aircheck.core.domain.usecase.AddSavedLocationUseCase
-import seriouschoi.aircheck.core.domain.usecase.DuplicateLocationException
-import seriouschoi.aircheck.core.domain.usecase.LimitExceededException
+import seriouschoi.aircheck.core.domain.model.Coordinate
+import seriouschoi.aircheck.core.domain.model.DataError
 import seriouschoi.aircheck.core.resource.R as CoreR
 import seriouschoi.aircheck.core.resource.UiText
 
@@ -51,7 +50,7 @@ internal class LocationPickerViewModel @Inject constructor(
     val effect = _effect.receiveAsFlow()
 
     /** 현재 위치 (init 시 한 번 조회) */
-    private var currentLocation: Location? = null
+    private var currentLocation: Coordinate? = null
 
     init {
         _intent.receiveAsFlow()
@@ -208,12 +207,12 @@ internal class LocationPickerViewModel @Inject constructor(
                 .onSuccess { _effect.send(Effect.LocationSaved) }
                 .onFailure { e ->
                     val message = when (e) {
-                        is DuplicateLocationException -> UiText.StringResource(
+                        is DataError.DuplicateLocation -> UiText.StringResource(
                             CoreR.string.error_duplicate_location
                         )
-                        is LimitExceededException -> UiText.StringResource(
+                        is DataError.SavedLocationLimitExceeded -> UiText.StringResource(
                             CoreR.string.error_saved_location_limit,
-                            AddSavedLocationUseCase.MAX_SAVED_LOCATIONS
+                            e.limit
                         )
                         else -> UiText.StringResource(CoreR.string.error_save_failed)
                     }

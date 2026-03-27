@@ -51,7 +51,12 @@ import seriouschoi.aircheck.feature.weather.ui.weather.components.ErrorSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.RecommendationSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.WeatherSection
 import seriouschoi.aircheck.feature.weather.ui.weather.pager.LocationPager
+import seriouschoi.aircheck.core.domain.model.LocationItem
+import seriouschoi.aircheck.core.ui.ads.AdUnitIds
+import seriouschoi.aircheck.core.ui.ads.BannerAd
 import seriouschoi.aircheck.core.resource.R as CoreR
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 internal fun WeatherScreen(
@@ -60,10 +65,44 @@ internal fun WeatherScreen(
     onAddLocation: () -> Unit = {},
     onManageLocations: () -> Unit = {},
 ) {
+    val locations = state.locations.locations
+    val pagerState = rememberPagerState(pageCount = { locations.size.coerceAtLeast(1) })
+    val currentLocation = locations.getOrNull(pagerState.currentPage)
+
+    val currentLocationLabel = stringResource(CoreR.string.label_current_location_name)
+    val titleText = currentLocation?.let { loc ->
+        if (loc.locationInfo.isCurrentLocation) {
+            loc.locationInfo.name.takeIf { 
+                it.isNotEmpty() && 
+                it != LocationItem.CURRENT_LOCATION_PLACEHOLDER 
+            } ?: currentLocationLabel
+        } else {
+            loc.locationInfo.name
+        }
+    } ?: currentLocationLabel
+
+    // 새로고침 시각 포맷
+    val lastRefreshedText = currentLocation?.lastRefreshedAt?.let { instant ->
+        val localTime = instant.atZone(ZoneId.systemDefault()).toLocalTime()
+        val formatter = DateTimeFormatter.ofPattern("HH:mm")
+        stringResource(CoreR.string.last_updated_at, localTime.format(formatter))
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(CoreR.string.app_name), fontWeight = FontWeight.Bold) },
+                title = {
+                    Column {
+                        Text(titleText, fontWeight = FontWeight.Bold)
+                        lastRefreshedText?.let {
+                            Text(
+                                text = it,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                },
                 actions = {
                     IconButton(onClick = onAddLocation) {
                         Icon(Icons.Default.Add, contentDescription = stringResource(CoreR.string.content_description_add_location))
@@ -84,58 +123,64 @@ internal fun WeatherScreen(
             AirQualityInfoDialog(onDismiss = { onIntent(WeatherContract.Intent.DismissInfoDialog) })
         }
 
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            val locations = state.locations.locations
-
-            when {
-                state.isLoading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            CircularProgressIndicator()
+            // 메인 콘텐츠
+            Box(modifier = Modifier.weight(1f)) {
+                when {
+                    state.isLoading -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                CircularProgressIndicator()
+                                Text(
+                                    text = stringResource(CoreR.string.loading_weather_data),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    locations.isEmpty() -> {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text(
-                                text = stringResource(CoreR.string.loading_weather_data),
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                text = stringResource(CoreR.string.empty_location_message),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
-                }
-                locations.isEmpty() -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = stringResource(CoreR.string.empty_location_message),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
+                    else -> {
+                        var previousLocationCount by rememberSaveable { mutableIntStateOf(locations.size) }
+
+                        LaunchedEffect(locations.size) {
+                            if (locations.size > previousLocationCount) {
+                                pagerState.animateScrollToPage(locations.size - 1)
+                            }
+                            previousLocationCount = locations.size
+                        }
+
+                        LocationPager(
+                            pagerState = pagerState,
+                            state = state,
+                            onIntent = onIntent,
+                            onManageLocations = onManageLocations,
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
-                else -> {
-                    var previousLocationCount by rememberSaveable { mutableIntStateOf(locations.size) }
-                    val pagerState = rememberPagerState(pageCount = { locations.size })
-
-                    LaunchedEffect(locations.size) {
-                        if (locations.size > previousLocationCount) {
-                            pagerState.animateScrollToPage(locations.size - 1)
-                        }
-                        previousLocationCount = locations.size
-                    }
-
-                    LocationPager(
-                        pagerState = pagerState,
-                        state = state,
-                        onIntent = onIntent,
-                        onManageLocations = onManageLocations,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
             }
+            
+            // 하단 배너 광고
+            BannerAd(
+                adUnitId = AdUnitIds.BANNER_TEST,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }

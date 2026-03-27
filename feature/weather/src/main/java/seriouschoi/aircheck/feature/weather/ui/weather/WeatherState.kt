@@ -2,6 +2,7 @@ package seriouschoi.aircheck.feature.weather.ui.weather
 
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.WeatherData
+import java.time.Instant
 
 /**
  * 관심사별 분리된 상태 정의
@@ -27,6 +28,8 @@ internal data class UiLocationWeatherData(
     val weather: WeatherContract.DataResult<WeatherData> = WeatherContract.DataResult(),
     /** 개별 새로고침 중 */
     val isRefreshing: Boolean = false,
+    /** 마지막 새로고침 시각 */
+    val lastRefreshedAt: Instant? = null,
 )
 
 /** 위치 목록 상태 */
