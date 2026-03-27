@@ -13,8 +13,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import seriouschoi.aircheck.core.domain.model.LocationItem
+import seriouschoi.aircheck.core.domain.repository.LocationProvider
+import seriouschoi.aircheck.core.domain.repository.SmartLocation
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
+import seriouschoi.aircheck.core.domain.usecase.FetchWeatherOutput
 import seriouschoi.aircheck.core.domain.usecase.GetLocationListUseCase
+import seriouschoi.aircheck.core.domain.util.shortenBjdName
 import seriouschoi.aircheck.core.resource.UiText
 import javax.inject.Inject
 
@@ -22,7 +26,7 @@ import javax.inject.Inject
 internal class WeatherViewModel @Inject constructor(
     private val getLocationListUseCase: GetLocationListUseCase,
     private val fetchWeatherUseCase: FetchWeatherUseCase,
-    private val locationProvider: seriouschoi.aircheck.core.domain.repository.LocationProvider,
+    private val locationProvider: LocationProvider,
 ) : ViewModel() {
 
     // ── UI 컨트롤 상태 ──────────────────────────────────────────────────────
@@ -78,40 +82,25 @@ internal class WeatherViewModel @Inject constructor(
 
     private fun refresh() {
         viewModelScope.launch {
-            // 캐시 초기화 후 현재 위치를 즉시 재조회
             locationProvider.forceRefresh()
-            val smartLocation = locationProvider.getCurrentSmartLocation()
-
-            // 현재 위치 정보 갱신
-            if (smartLocation != null) {
-                _locationsState.update { state ->
-                    state.copy(
-                        locations = state.locations.map { loc ->
-                            if (loc.locationInfo.isCurrentLocation) {
-                                loc.copy(
-                                    locationInfo = loc.locationInfo.copy(
-                                        name = shortenBjdName(smartLocation.bjdName),
-                                        lat = smartLocation.lat,
-                                        lng = smartLocation.lng,
-                                        needsPermission = false,
-                                    )
-                                )
-                            } else loc
-                        }
-                    )
-                }
-            }
-
-            // 전체 날씨 다시 fetch
+            locationProvider.getCurrentSmartLocation()?.let { updateCurrentLocation(it) }
             fetchWeatherForAll()
         }
     }
 
-    private fun shortenBjdName(fullName: String): String {
-        val parts = fullName.split(" ")
-        return when {
-            parts.size <= 2 -> fullName
-            else -> "${parts[1]} ${parts.last()}"
+    private fun updateCurrentLocation(smartLocation: SmartLocation) {
+        val updatedInfo = UiLocationInfo(
+            name = shortenBjdName(smartLocation.bjdName),
+            isCurrentLocation = true,
+            lat = smartLocation.lat,
+            lng = smartLocation.lng,
+        )
+        _locationsState.update { state ->
+            state.copy(
+                locations = state.locations.map { loc ->
+                    if (loc.locationInfo.isCurrentLocation) loc.copy(locationInfo = updatedInfo) else loc
+                }
+            )
         }
     }
 
@@ -151,7 +140,7 @@ internal class WeatherViewModel @Inject constructor(
         }
     }
 
-    private fun updateLocationWeather(index: Int, output: seriouschoi.aircheck.core.domain.usecase.FetchWeatherOutput) {
+    private fun updateLocationWeather(index: Int, output: FetchWeatherOutput) {
         _locationsState.update { state ->
             state.copy(
                 locations = state.locations.mapIndexed { i, loc ->

@@ -2,12 +2,12 @@ package seriouschoi.aircheck.core.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onStart
 import seriouschoi.aircheck.core.domain.model.LocationItem
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
 import seriouschoi.aircheck.core.domain.repository.SmartLocation
+import seriouschoi.aircheck.core.domain.util.shortenBjdName
 import javax.inject.Inject
 
 /**
@@ -64,17 +64,4 @@ class GetLocationListUseCase @Inject constructor(
         }
     }
 
-    /**
-     * 법정동 주소를 축약: 2단계 + 끝단계
-     * - 3단계 "서울특별시 강남구 청담동" → "강남구 청담동"
-     * - 4단계 "경기도 성남시 분당구 정자동" → "성남시 정자동"
-     * - 2단계 이하는 그대로 반환
-     */
-    private fun shortenBjdName(fullName: String): String {
-        val parts = fullName.split(" ")
-        return when {
-            parts.size <= 2 -> fullName
-            else -> "${parts[1]} ${parts.last()}"
-        }
-    }
 }
