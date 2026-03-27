@@ -1,11 +1,11 @@
 package seriouschoi.aircheck.core.domain.repository
 
-import android.location.Location
 import kotlinx.coroutines.flow.Flow
+import seriouschoi.aircheck.core.domain.model.Coordinate
 
 /** 위치 정보 제공자 (Port) */
 interface LocationProvider {
-    suspend fun getCurrentLocation(): Location?
+    suspend fun getCurrentLocation(): Coordinate?
     
     /**
      * 스마트 위치 (법정동 centroid 기반)

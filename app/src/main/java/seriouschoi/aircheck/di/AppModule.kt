@@ -4,7 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
-import android.location.Location
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -18,6 +17,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import seriouschoi.aircheck.core.data.location.SmartLocationRepository
+import seriouschoi.aircheck.core.domain.model.Coordinate
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.SmartLocation
 import javax.inject.Singleton
@@ -36,12 +36,14 @@ object AppModule {
         private val fusedClient = LocationServices.getFusedLocationProviderClient(context)
         
         @SuppressLint("MissingPermission")
-        override suspend fun getCurrentLocation(): Location? {
+        override suspend fun getCurrentLocation(): Coordinate? {
             return try {
                 fusedClient.getCurrentLocation(
                     Priority.PRIORITY_HIGH_ACCURACY,
                     CancellationTokenSource().token
-                ).await()
+                ).await()?.let { location ->
+                    Coordinate(location.latitude, location.longitude)
+                }
             } catch (e: Exception) {
                 null
             }

@@ -1,6 +1,5 @@
 package seriouschoi.aircheck.feature.weather.ui.locationpicker
 
-import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,6 +17,7 @@ import seriouschoi.aircheck.core.domain.model.SavedLocation
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.RegionRepository
 import seriouschoi.aircheck.core.domain.usecase.AddSavedLocationUseCase
+import seriouschoi.aircheck.core.domain.model.Coordinate
 import seriouschoi.aircheck.core.domain.model.DataError
 import seriouschoi.aircheck.core.resource.R as CoreR
 import seriouschoi.aircheck.core.resource.UiText
@@ -50,7 +50,7 @@ internal class LocationPickerViewModel @Inject constructor(
     val effect = _effect.receiveAsFlow()
 
     /** 현재 위치 (init 시 한 번 조회) */
-    private var currentLocation: Location? = null
+    private var currentLocation: Coordinate? = null
 
     init {
         _intent.receiveAsFlow()
