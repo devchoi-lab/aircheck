@@ -8,7 +8,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -79,29 +81,33 @@ fun NativeAdCard(
         }
     }
     
-    if (nativeAd != null) {
-        Column(
-            modifier = modifier
+    // 광고 로딩 실패 시 표시 안 함
+    if (!isLoading && nativeAd == null) return
+    
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(AD_HEIGHT)  // 고정 높이로 레이아웃 시프트 방지
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+    ) {
+        // 상단 "광고" 라벨 (어르신용 명확한 구분)
+        Box(
+            modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                .background(Color.Gray.copy(alpha = 0.2f))
+                .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
-            // 상단 "광고" 라벨 (어르신용 명확한 구분)
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.Gray.copy(alpha = 0.2f))
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = stringResource(CoreR.string.label_ad),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
+            Text(
+                text = stringResource(CoreR.string.label_ad),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        if (nativeAd != null) {
             // 네이티브 광고 콘텐츠
             AndroidView(
                 factory = { ctx ->
@@ -116,9 +122,14 @@ fun NativeAdCard(
                 },
                 modifier = Modifier.padding(12.dp)
             )
+        } else {
+            // 로딩 중 placeholder
+            Spacer(Modifier.weight(1f))
         }
     }
 }
+
+private val AD_HEIGHT = 100.dp
 
 private fun populateNativeAdView(nativeAd: NativeAd, adView: NativeAdView) {
     // 헤드라인
