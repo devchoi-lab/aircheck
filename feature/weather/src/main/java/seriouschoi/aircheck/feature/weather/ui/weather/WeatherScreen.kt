@@ -55,6 +55,8 @@ import seriouschoi.aircheck.core.domain.model.LocationItem
 import seriouschoi.aircheck.core.ui.ads.AdUnitIds
 import seriouschoi.aircheck.core.ui.ads.BannerAd
 import seriouschoi.aircheck.core.resource.R as CoreR
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 internal fun WeatherScreen(
@@ -79,10 +81,28 @@ internal fun WeatherScreen(
         }
     } ?: currentLocationLabel
 
+    // 새로고침 시각 포맷
+    val lastRefreshedText = currentLocation?.lastRefreshedAt?.let { instant ->
+        val localTime = instant.atZone(ZoneId.systemDefault()).toLocalTime()
+        val formatter = DateTimeFormatter.ofPattern("HH:mm")
+        stringResource(CoreR.string.last_updated_at, localTime.format(formatter))
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(titleText, fontWeight = FontWeight.Bold) },
+                title = {
+                    Column {
+                        Text(titleText, fontWeight = FontWeight.Bold)
+                        lastRefreshedText?.let {
+                            Text(
+                                text = it,
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                },
                 actions = {
                     IconButton(onClick = onAddLocation) {
                         Icon(Icons.Default.Add, contentDescription = stringResource(CoreR.string.content_description_add_location))

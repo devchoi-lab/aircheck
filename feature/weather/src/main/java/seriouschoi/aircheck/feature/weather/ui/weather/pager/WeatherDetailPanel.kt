@@ -108,14 +108,5 @@ internal fun WeatherDetailPanel(
             )
         }
 
-        // 업데이트 시간
-        air.data?.updatedAt?.takeIf { it.isNotEmpty() }?.let {
-            Text(
-                text = stringResource(CoreR.string.air_quality_update, it),
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
-        }
     }
 }

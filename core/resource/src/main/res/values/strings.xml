@@ -6,6 +6,7 @@
     <string name="content_description_refresh">새로고침</string>
     <string name="label_ad">광고</string>
     <string name="label_current_location_name">현재 위치</string>
+    <string name="last_updated_at">업데이트 %s</string>
     
     <!-- 날짜 -->
     <string name="date_today">오늘</string>

@@ -20,6 +20,7 @@ import seriouschoi.aircheck.core.domain.usecase.FetchWeatherOutput
 import seriouschoi.aircheck.core.domain.usecase.GetLocationListUseCase
 import seriouschoi.aircheck.core.domain.util.shortenBjdName
 import seriouschoi.aircheck.core.resource.UiText
+import java.time.Instant
 import javax.inject.Inject
 
 @HiltViewModel
@@ -157,6 +158,7 @@ internal class WeatherViewModel @Inject constructor(
                                     ?.let { UiText.DynamicString(it) }
                             ),
                             isRefreshing = false,
+                            lastRefreshedAt = Instant.now(),
                         )
                     } else {
                         loc
