@@ -2,7 +2,7 @@
 
 현재 위치 기반 **대기질 + 날씨** 정보를 한눈에 보여주는 Android 앱
 
-> **5,800+ Lines** | **65 Files** | **10 Modules**
+> **6,800+ Lines** | **76 Files** | **10 Modules**
 
 ---
 
@@ -12,7 +12,7 @@
 
 1. **사용성 우선** — 수익성 고민 전에 쓰기 좋은 앱부터 만든다
 2. **기능 제한 없음** — 위젯, 알림 등 필요한 기능은 전부 만든다
-3. **광고는 마지막** — 사용성을 해치지 않는 범위에서만 수익화
+3. **광고는 최소화** — 어르신도 헷갈리지 않는 명확한 광고 배치
 
 ---
 
@@ -22,11 +22,23 @@
 |------|------|
 | 🌡️ **현재 날씨** | 기온, 체감온도, 날씨 상태 |
 | 💨 **대기질** | PM2.5, PM10 (WHO 기준 등급) |
-| 📊 **48시간 예보** | 시간별 기온, 강수확률 |
+| 📊 **48시간 예보** | 시간별 기온, 강수확률, 요약 정보 |
 | 👕 **추천 아이템** | 체감온도 기반 옷차림, 우산 추천 |
 | 📍 **다중 위치** | 현재 위치 + 저장된 위치 관리 |
+| 🔄 **위치 순서 관리** | 드래그로 위치 순서 변경 |
 | 🔄 **Pull-to-Refresh** | 개별/전체 새로고침 |
 | 🏠 **홈 위젯** | 대기질 + 추천 의상 |
+| 📢 **광고** | 배너 + 네이티브 (어르신 친화적) |
+
+---
+
+## 타겟 사용자
+
+> **"자녀가 부모님께 깔아드리는 앱"**
+
+- 👴👵 어르신도 쉽게 사용 가능한 UI
+- 📱 큰 글씨, 명확한 구분
+- 🚫 전면 광고 없음 (광고 ≠ 콘텐츠 명확 구분)
 
 ---
 
@@ -71,15 +83,16 @@
 
 | 모듈 | 역할 |
 |------|------|
-| `:app` | 앱 진입점, Hilt DI 설정 |
+| `:app` | 앱 진입점, Hilt DI, AdMob 초기화 |
 | `:feature:weather` | 메인 날씨 화면, ViewModel (MVI) |
 | `:feature:widget` | 홈 화면 위젯 |
 | `:core:domain` | UseCase, Repository 인터페이스, 도메인 모델 |
 | `:core:data` | Repository 구현체 |
 | `:core:network` | Retrofit API 클라이언트 |
-| `:core:ui` | 공통 Compose 컴포넌트, 테마 |
+| `:core:ui` | 공통 Compose 컴포넌트, 테마, 광고 |
 | `:core:resource` | strings.xml, UiText |
 | `:core:config` | 서버 URL 설정 |
+| `:core:firebase` | Firebase App Check |
 
 ---
 
@@ -93,7 +106,10 @@
 | **DI** | Hilt |
 | **Async** | Coroutines, Flow |
 | **Network** | Retrofit, Kotlinx Serialization |
-| **CI/CD** | GitHub Actions → Firebase App Distribution |
+| **Storage** | DataStore Preferences |
+| **Ads** | Google AdMob (배너 + 네이티브) |
+| **Security** | Firebase App Check |
+| **CI/CD** | GitHub Actions |
 | **Backend** | [aircheck-server](https://github.com/choidev2026/aircheck-server) |
 
 ---
@@ -109,6 +125,7 @@
 
 - **캐싱**: 서버에서 1시간 캐시 → API 할당량 절약
 - **병렬 호출**: 다중 위치 배치 조회
+- **App Check**: 앱 위변조 방지
 
 ---
 
@@ -137,8 +154,16 @@
 ```
 
 ### CI/CD
-- **Push to main** → 자동 빌드 + Firebase 배포
-- **Pull Request** → 빌드 + 테스트 검증
+- **Push to develop** → 빌드 + 테스트
+- **Push to main** → 빌드 + 테스트 + Artifacts
+
+---
+
+## 개발 기간
+
+- **시작**: 2026-03-16
+- **11일 만에** 출시 준비 완료
+- AI 협업 개발 (Claude)
 
 ---
 
