@@ -7,7 +7,6 @@ import io.mockk.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -17,7 +16,7 @@ import org.junit.Before
 import org.junit.Test
 import seriouschoi.aircheck.core.domain.model.*
 import seriouschoi.aircheck.core.domain.repository.CombinedWeatherResult
-import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
+import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherOutput
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.domain.usecase.GetLocationListUseCase
@@ -28,7 +27,7 @@ class WeatherViewModelTest {
 
     private lateinit var getLocationListUseCase: GetLocationListUseCase
     private lateinit var fetchWeatherUseCase: FetchWeatherUseCase
-    private lateinit var savedLocationRepository: SavedLocationRepository
+    private lateinit var locationProvider: LocationProvider
 
     @Before
     fun setup() {
@@ -36,10 +35,10 @@ class WeatherViewModelTest {
 
         getLocationListUseCase = mockk()
         fetchWeatherUseCase = mockk()
-        savedLocationRepository = mockk()
+        locationProvider = mockk()
 
         // 기본 mock 설정
-        coEvery { savedLocationRepository.getAll() } returns flowOf(emptyList())
+        every { locationProvider.hasLocationPermission() } returns true
     }
 
     @After
@@ -50,7 +49,7 @@ class WeatherViewModelTest {
     private fun createViewModel() = WeatherViewModel(
         getLocationListUseCase = getLocationListUseCase,
         fetchWeatherUseCase = fetchWeatherUseCase,
-        savedLocationRepository = savedLocationRepository
+        locationProvider = locationProvider
     )
 
     private fun createMockLocationList(
@@ -278,29 +277,6 @@ class WeatherViewModelTest {
 
             val state = awaitItem()
             assertTrue("다이얼로그 표시", state.uiControl.showInfoDialog)
-            cancelAndIgnoreRemainingEvents()
-        }
-    }
-
-    @Test
-    fun `RequestDeleteLocation_시_deleteConfirm_표시`() = runTest {
-        // Given
-        every { getLocationListUseCase() } returns flowOf(createMockLocationList())
-        coEvery { fetchWeatherUseCase(any(), any()) } returns createMockFetchOutput()
-
-        val viewModel = createViewModel()
-
-        // Then
-        viewModel.screenState.test {
-            awaitLoadedState() // 초기 로드 대기
-
-            // When
-            viewModel.processIntent(WeatherContract.Intent.RequestDeleteLocation(1, "집"))
-
-            val state = awaitItem()
-            assertNotNull("삭제 확인 다이얼로그", state.uiControl.deleteConfirm)
-            assertEquals("위치 ID", 1L, state.uiControl.deleteConfirm?.locationId)
-            assertEquals("위치 이름", "집", state.uiControl.deleteConfirm?.locationName)
             cancelAndIgnoreRemainingEvents()
         }
     }
