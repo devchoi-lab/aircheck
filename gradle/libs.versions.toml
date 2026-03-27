@@ -49,6 +49,7 @@ firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics", ve
 firebase-analytics = { module = "com.google.firebase:firebase-analytics", version = "22.1.0" }
 firebase-appcheck-playintegrity = { module = "com.google.firebase:firebase-appcheck-playintegrity" }
 firebase-appcheck-debug = { module = "com.google.firebase:firebase-appcheck-debug" }
+play-services-ads = { module = "com.google.android.gms:play-services-ads", version = "23.6.0" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version = "3.0.0" }
 work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hilt-work" }
