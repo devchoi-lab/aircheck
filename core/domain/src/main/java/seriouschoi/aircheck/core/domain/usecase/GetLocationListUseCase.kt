@@ -2,6 +2,7 @@ package seriouschoi.aircheck.core.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.onStart
 import seriouschoi.aircheck.core.domain.model.LocationItem
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
@@ -22,7 +23,8 @@ class GetLocationListUseCase @Inject constructor(
 ) {
     operator fun invoke(): Flow<List<LocationItem>> {
         val smartLocationFlow = locationProvider.smartLocationFlow()
-            .onStart<SmartLocation?> { emit(null) }
+            .onStart<SmartLocation?> { emit(locationProvider.getCurrentSmartLocation()) }
+            .distinctUntilChanged()
 
         return combine(smartLocationFlow, savedLocationRepository.getAll()) { smartLocation, savedLocations ->
             buildList {
