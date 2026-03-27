@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import seriouschoi.aircheck.core.domain.model.LocationItem
-import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.domain.usecase.GetLocationListUseCase
 import seriouschoi.aircheck.core.resource.UiText
@@ -27,7 +26,6 @@ import javax.inject.Inject
 internal class WeatherViewModel @Inject constructor(
     private val getLocationListUseCase: GetLocationListUseCase,
     private val fetchWeatherUseCase: FetchWeatherUseCase,
-    private val savedLocationRepository: SavedLocationRepository,
 ) : ViewModel() {
 
     // ── Refresh 트리거 ──────────────────────────────────────────────────────
@@ -84,17 +82,6 @@ internal class WeatherViewModel @Inject constructor(
             is WeatherContract.Intent.RefreshLocation -> refreshSingleLocation(intent.index)
             is WeatherContract.Intent.ShowInfoDialog -> updateUiControl { copy(showInfoDialog = true) }
             is WeatherContract.Intent.DismissInfoDialog -> updateUiControl { copy(showInfoDialog = false) }
-            is WeatherContract.Intent.RequestDeleteLocation -> updateUiControl {
-                copy(
-                    deleteConfirm = WeatherContract.DeleteConfirmState(
-                        intent.locationId,
-                        intent.locationName
-                    )
-                )
-            }
-
-            is WeatherContract.Intent.ConfirmDeleteLocation -> confirmDelete()
-            is WeatherContract.Intent.DismissDeleteDialog -> updateUiControl { copy(deleteConfirm = null) }
         }
     }
 
@@ -164,14 +151,6 @@ internal class WeatherViewModel @Inject constructor(
 
     private inline fun updateUiControl(transform: UiControlState.() -> UiControlState) {
         _uiControlState.value = _uiControlState.value.transform()
-    }
-
-    private fun confirmDelete() {
-        val deleteState = _uiControlState.value.deleteConfirm ?: return
-        viewModelScope.launch {
-            savedLocationRepository.delete(deleteState.locationId)
-            updateUiControl { copy(deleteConfirm = null) }
-        }
     }
 
     // ── Mapper ──────────────────────────────────────────────────────────────

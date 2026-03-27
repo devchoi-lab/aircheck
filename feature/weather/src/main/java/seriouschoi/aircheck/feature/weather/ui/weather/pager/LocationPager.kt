@@ -17,10 +17,8 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -208,29 +206,5 @@ private fun LocationHeader(
             textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
 
-        // 삭제 버튼 (오른쪽, 저장된 위치만)
-        if (!currentLocation.locationInfo.isCurrentLocation && currentLocation.locationInfo.savedLocationId != null) {
-            IconButton(
-                onClick = {
-                    onIntent(
-                        WeatherContract.Intent.RequestDeleteLocation(
-                            locationId = currentLocation.locationInfo.savedLocationId!!,
-                            locationName = currentLocation.locationInfo.name
-                        )
-                    )
-                },
-                modifier = Modifier.size(32.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = stringResource(CoreR.string.content_description_delete_location),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-        } else if (locations.size > 1) {
-            // 균형을 위한 빈 공간
-            Box(modifier = Modifier.size(32.dp))
-        }
     }
 }
