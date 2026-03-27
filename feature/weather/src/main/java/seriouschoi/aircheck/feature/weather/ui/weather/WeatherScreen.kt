@@ -60,10 +60,23 @@ internal fun WeatherScreen(
     onAddLocation: () -> Unit = {},
     onManageLocations: () -> Unit = {},
 ) {
+    val locations = state.locations.locations
+    val pagerState = rememberPagerState(pageCount = { locations.size.coerceAtLeast(1) })
+    val currentLocation = locations.getOrNull(pagerState.currentPage)
+
+    val titleText = currentLocation?.let { loc ->
+        if (loc.locationInfo.isCurrentLocation) {
+            loc.locationInfo.name.takeIf { it.isNotEmpty() && it != "현재 위치" }
+                ?: stringResource(CoreR.string.label_current_location)
+        } else {
+            loc.locationInfo.name
+        }
+    } ?: stringResource(CoreR.string.label_current_location)
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(CoreR.string.app_name), fontWeight = FontWeight.Bold) },
+                title = { Text(titleText, fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = onAddLocation) {
                         Icon(Icons.Default.Add, contentDescription = stringResource(CoreR.string.content_description_add_location))
@@ -89,8 +102,6 @@ internal fun WeatherScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            val locations = state.locations.locations
-
             when {
                 state.isLoading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -118,7 +129,6 @@ internal fun WeatherScreen(
                 }
                 else -> {
                     var previousLocationCount by rememberSaveable { mutableIntStateOf(locations.size) }
-                    val pagerState = rememberPagerState(pageCount = { locations.size })
 
                     LaunchedEffect(locations.size) {
                         if (locations.size > previousLocationCount) {
