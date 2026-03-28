@@ -41,30 +41,26 @@ internal fun RecommendationSection(
     weather?.feelsLike?.let { temp ->
         val clothing = RecommendedClothing.fromFeelsLike(temp)
         recommendations.add(clothing.toIconRes() to stringResource(clothing.toDetailedLabelRes()))
-        if (clothing == RecommendedClothing.TANK_TOP) {
-            recommendations.add(CoreR.drawable.ic_recommend_parasol to stringResource(CoreR.string.item_parasol))
-        }
     }
     
     // 2. 강수확률 기반 우산 (6시간 내 최대값)
     weather?.hourlyForecast?.take(6)?.maxOfOrNull { it.precipitationProbability }?.let { maxPrecip ->
         when {
-            maxPrecip >= 40 -> recommendations.add(CoreR.drawable.ic_recommend_umbrella to stringResource(CoreR.string.item_umbrella_with_prob, maxPrecip))
-            maxPrecip >= 20 -> recommendations.add(CoreR.drawable.ic_recommend_umbrella_light to "${stringResource(CoreR.string.item_umbrella_take)} (${maxPrecip}%)")
+            maxPrecip >= 20 -> recommendations.add(CoreR.drawable.ic_umbrella to "${stringResource(CoreR.string.item_umbrella_with_prob)} (${maxPrecip}%)")
         }
     }
     
     // 3. 적설량 기반 (시간별 예보 중 합계)
     weather?.hourlyForecast?.sumOf { it.snowfall }?.let { totalSnow ->
         if (totalSnow > 0) {
-            recommendations.add(CoreR.drawable.ic_recommend_snow to stringResource(CoreR.string.item_snow_cm, totalSnow))
+            recommendations.add(CoreR.drawable.ic_snow_man to stringResource(CoreR.string.item_snow_cm, totalSnow))
         }
     }
     
     // 4. 대기질 민감군 주의 이상이면 마스크
     airQuality?.worstLevel?.let { level ->
         if (level.ordinal >= AqiLevel.UNHEALTHY_SENSITIVE.ordinal && level != AqiLevel.UNKNOWN) {
-            recommendations.add(CoreR.drawable.ic_recommend_mask to stringResource(CoreR.string.item_mask, stringResource(level.toLabelRes())))
+            recommendations.add(CoreR.drawable.ic_mask to stringResource(CoreR.string.item_mask, stringResource(level.toLabelRes())))
         }
     }
     

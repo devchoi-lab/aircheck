@@ -86,7 +86,7 @@ class AircheckWidgetProvider : AppWidgetProvider() {
         val pmColor = prefs.getInt("pm_color", 0xFF888888.toInt())
         val rainProb = prefs.getString("rain_prob", "--%") ?: "--%"
         val clothing = prefs.getString("clothing", "---") ?: "---"
-        val clothingIcon = prefs.getInt("clothing_icon", CoreR.drawable.ic_recommend_tshirt)
+        val clothingIcon = prefs.getInt("clothing_icon", CoreR.drawable.ic_cloth_tshirt)
         val updateTime = prefs.getString("update_time", "") ?: ""
 
         Log.d(TAG, "Widget data - location: $location, pm: $pmLevel, rain: $rainProb, clothing: $clothing, time: $updateTime")
