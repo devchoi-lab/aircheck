@@ -19,6 +19,7 @@ import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherOutput
 import seriouschoi.aircheck.core.domain.usecase.GetLocationListUseCase
 import seriouschoi.aircheck.core.domain.util.shortenBjdName
+import seriouschoi.aircheck.core.resource.ErrorMapper
 import seriouschoi.aircheck.core.resource.UiText
 import java.time.Instant
 import javax.inject.Inject
@@ -149,13 +150,11 @@ internal class WeatherViewModel @Inject constructor(
                         loc.copy(
                             weather = WeatherContract.DataResult(
                                 data = output.result.weather.getOrNull(),
-                                error = output.result.weather.exceptionOrNull()?.message
-                                    ?.let { UiText.DynamicString(it) }
+                                error = ErrorMapper.toUiText(output.result.weather.exceptionOrNull())
                             ),
                             airQuality = WeatherContract.DataResult(
                                 data = output.result.airQuality.getOrNull(),
-                                error = output.result.airQuality.exceptionOrNull()?.message
-                                    ?.let { UiText.DynamicString(it) }
+                                error = ErrorMapper.toUiText(output.result.airQuality.exceptionOrNull())
                             ),
                             isRefreshing = false,
                             lastRefreshedAt = Instant.now(),
