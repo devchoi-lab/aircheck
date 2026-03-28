@@ -24,26 +24,79 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import android.content.pm.PackageManager
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import seriouschoi.aircheck.core.domain.usecase.CheckVersionUseCase
 import seriouschoi.aircheck.feature.weather.navigation.WeatherRoute
 import seriouschoi.aircheck.feature.weather.navigation.weatherScreen
 import seriouschoi.aircheck.core.ui.theme.AirCheckTheme
 import seriouschoi.aircheck.feature.widget.AircheckWidgetProvider
 import seriouschoi.aircheck.core.resource.R as CoreR
+import javax.inject.Inject
 
 /** 권한 승인 콜백을 전달하기 위한 CompositionLocal */
 val LocalPermissionGranted = staticCompositionLocalOf<() -> Unit> { {} }
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    
+    @Inject
+    lateinit var checkVersionUseCase: CheckVersionUseCase
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // 버전 체크
+        var showUpdateDialog by mutableStateOf(false)
+        var updateUrl by mutableStateOf<String?>(null)
+        
+        lifecycleScope.launch {
+            val versionCode = try {
+                packageManager.getPackageInfo(packageName, 0).let { info ->
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        info.longVersionCode.toInt()
+                    } else {
+                        @Suppress("DEPRECATION")
+                        info.versionCode
+                    }
+                }
+            } catch (e: Exception) {
+                1
+            }
+            
+            checkVersionUseCase(versionCode).onSuccess { result ->
+                if (result.needUpdate) {
+                    updateUrl = result.updateUrl
+                    showUpdateDialog = true
+                }
+            }
+        }
+        
         setContent {
             AirCheckTheme {
                 val navController = rememberNavController()
+                
+                // 강제 업데이트 다이얼로그
+                if (showUpdateDialog) {
+                    AlertDialog(
+                        onDismissRequest = { /* 닫기 불가 */ },
+                        title = { Text(stringResource(CoreR.string.update_required_title)) },
+                        text = { Text(stringResource(CoreR.string.update_required_message)) },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(
+                                    updateUrl ?: "https://play.google.com/store/apps/details?id=$packageName"
+                                ))
+                                startActivity(intent)
+                            }) {
+                                Text(stringResource(CoreR.string.update_button))
+                            }
+                        }
+                    )
+                }
 
                 // 백그라운드 위치 권한 다이얼로그
                 var showBgLocationDialog by remember {
