@@ -110,7 +110,7 @@ internal fun HourlyForecastItem(forecast: HourlyForecast) {
         // 우산/눈 추천
         if (forecast.precipitationProbability >= 40) {
             Icon(
-                painter = painterResource(CoreR.drawable.ic_recommend_umbrella),
+                painter = painterResource(CoreR.drawable.ic_umbrella),
                 contentDescription = stringResource(CoreR.string.item_umbrella),
                 modifier = Modifier.size(16.dp),
                 tint = Color.Unspecified
@@ -122,7 +122,7 @@ internal fun HourlyForecastItem(forecast: HourlyForecast) {
             )
         } else if (forecast.snowfall > 0) {
             Icon(
-                painter = painterResource(CoreR.drawable.ic_recommend_snow),
+                painter = painterResource(CoreR.drawable.ic_snow_man),
                 contentDescription = stringResource(CoreR.string.item_snow),
                 modifier = Modifier.size(16.dp),
                 tint = Color.Unspecified
