@@ -158,4 +158,9 @@
     <string name="widget_error_location">위치를 가져올 수 없습니다</string>
     <string name="widget_error_data">데이터를 가져올 수 없습니다</string>
     <string name="widget_default_location">현재 위치</string>
+    
+    <!-- 업데이트 -->
+    <string name="update_required_title">업데이트 필요</string>
+    <string name="update_required_message">새로운 버전이 있습니다.\n앱을 업데이트해 주세요.</string>
+    <string name="update_button">업데이트</string>
 </resources>
