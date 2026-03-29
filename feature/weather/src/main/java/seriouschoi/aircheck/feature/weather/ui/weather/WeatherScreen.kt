@@ -178,7 +178,7 @@ internal fun WeatherScreen(
             
             // 하단 배너 광고
             BannerAd(
-                adUnitId = AdUnitIds.BANNER_TEST,
+                adUnitId = AdUnitIds.banner,
                 modifier = Modifier.fillMaxWidth()
             )
         }

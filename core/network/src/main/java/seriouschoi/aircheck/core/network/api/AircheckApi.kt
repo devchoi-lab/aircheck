@@ -85,6 +85,13 @@ data class BatchWeatherItem(
     val airQuality: AirQualityResponse? = null
 )
 
+// ── 버전 체크 API 모델 ──────────────────────────────────────────────────────
+@Serializable
+data class VersionCheckResponse(
+    val needUpdate: Boolean = false,
+    val updateUrl: String? = null
+)
+
 // ── Retrofit API 인터페이스 ─────────────────────────────────────────────────
 
 interface AircheckApi {
@@ -101,4 +108,10 @@ interface AircheckApi {
     suspend fun getBatchWeather(
         @Body request: BatchWeatherRequest
     ): List<BatchWeatherItem>
+
+    @GET("api/v1/app/version")
+    suspend fun checkVersion(
+        @Query("osType") osType: String = "android",
+        @Query("versionCode") versionCode: Int
+    ): VersionCheckResponse
 }

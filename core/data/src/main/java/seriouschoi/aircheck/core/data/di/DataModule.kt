@@ -8,11 +8,13 @@ import seriouschoi.aircheck.core.data.repository.AirQualityRepositoryImpl
 import seriouschoi.aircheck.core.data.repository.CombinedWeatherRepositoryImpl
 import seriouschoi.aircheck.core.data.repository.RegionRepositoryImpl
 import seriouschoi.aircheck.core.data.repository.SavedLocationRepositoryImpl
+import seriouschoi.aircheck.core.data.repository.VersionRepositoryImpl
 import seriouschoi.aircheck.core.data.repository.WeatherRepositoryImpl
 import seriouschoi.aircheck.core.domain.repository.AirQualityRepository
 import seriouschoi.aircheck.core.domain.repository.CombinedWeatherRepository
 import seriouschoi.aircheck.core.domain.repository.RegionRepository
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
+import seriouschoi.aircheck.core.domain.repository.VersionRepository
 import seriouschoi.aircheck.core.domain.repository.WeatherRepository
 import javax.inject.Singleton
 
@@ -49,4 +51,10 @@ abstract class DataModule {
     abstract fun bindCombinedWeatherRepository(
         impl: CombinedWeatherRepositoryImpl
     ): CombinedWeatherRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindVersionRepository(
+        impl: VersionRepositoryImpl
+    ): VersionRepository
 }

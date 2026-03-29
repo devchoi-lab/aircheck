@@ -42,8 +42,8 @@ android {
         }
         release {
             isMinifyEnabled = false
-            // TODO: 실제 AdMob App ID로 교체 필요
-            manifestPlaceholders["ADMOB_APP_ID"] = "ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX"
+            // 실제 AdMob App ID
+            manifestPlaceholders["ADMOB_APP_ID"] = "ca-app-pub-8381903489844516~7225419989"
         }
     }
 
@@ -66,8 +66,6 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:firebase"))
     implementation(project(":feature:weather"))
-    implementation(project(":feature:widget"))
-    
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)

@@ -62,7 +62,7 @@ internal fun WeatherDetailPanel(
 
         // ── 네이티브 광고 ────────────────────────────────────
         NativeAdCard(
-            adUnitId = AdUnitIds.NATIVE_TEST,
+            adUnitId = AdUnitIds.native,
             modifier = Modifier.fillMaxWidth()
         )
 

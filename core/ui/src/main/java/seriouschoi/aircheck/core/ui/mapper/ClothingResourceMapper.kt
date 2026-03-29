@@ -6,13 +6,13 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 
 /** 도메인 의상 enum -> Android drawable 리소스 */
 fun RecommendedClothing.toIconRes(): Int = when (this) {
-    RecommendedClothing.TANK_TOP -> CoreR.drawable.ic_recommend_tank_top
-    RecommendedClothing.T_SHIRT -> CoreR.drawable.ic_recommend_tshirt
-    RecommendedClothing.LONG_SLEEVE -> CoreR.drawable.ic_recommend_long_sleeve
-    RecommendedClothing.JACKET -> CoreR.drawable.ic_recommend_jacket
-    RecommendedClothing.COAT -> CoreR.drawable.ic_recommend_coat
-    RecommendedClothing.PADDING -> CoreR.drawable.ic_recommend_padding
-    RecommendedClothing.HEAVY_PADDING -> CoreR.drawable.ic_recommend_heavy_padding
+    RecommendedClothing.TANK_TOP -> CoreR.drawable.ic_cloth_sleeveless
+    RecommendedClothing.T_SHIRT -> CoreR.drawable.ic_cloth_tshirt
+    RecommendedClothing.LONG_SLEEVE -> CoreR.drawable.ic_cloth_long_sleeve
+    RecommendedClothing.JACKET -> CoreR.drawable.ic_cloth_jacket
+    RecommendedClothing.COAT -> CoreR.drawable.ic_cloth_coat
+    RecommendedClothing.PADDING -> CoreR.drawable.ic_cloth_padding
+    RecommendedClothing.HEAVY_PADDING -> CoreR.drawable.ic_cloth_padding_and_gloves
 }
 
 /** 간단 라벨 string resource ID (시간별 예보, 위젯 등) */

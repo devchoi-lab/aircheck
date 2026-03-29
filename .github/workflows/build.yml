@@ -70,9 +70,10 @@ jobs:
           export PATH=$PATH:$ANDROID_HOME/platform-tools
           adb emu kill || true
 
-      # main 브랜치만 아티팩트 업로드
+      # main 브랜치만 아티팩트 업로드 (quota 초과 시 무시)
       - name: Upload Test Results
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: instrumented-test-results
@@ -113,9 +114,10 @@ jobs:
         env:
           ANDROID_HOME: /Users/agent/android-sdk
 
-      # main 브랜치만 아티팩트 업로드
+      # main 브랜치만 아티팩트 업로드 (quota 초과 시 무시)
       - name: Upload APK (Artifact)
         if: github.ref == 'refs/heads/main'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: aircheck-debug

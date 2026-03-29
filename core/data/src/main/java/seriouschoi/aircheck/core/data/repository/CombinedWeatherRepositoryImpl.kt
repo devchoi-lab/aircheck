@@ -7,8 +7,11 @@ import seriouschoi.aircheck.core.domain.repository.CombinedWeatherResult
 import seriouschoi.aircheck.core.network.api.AircheckApi
 import seriouschoi.aircheck.core.network.api.BatchWeatherRequest
 import seriouschoi.aircheck.core.network.api.LocationRequest
+import android.util.Log
 import javax.inject.Inject
 import javax.inject.Singleton
+
+private const val TAG = "WeatherDebug"
 
 @Singleton
 class CombinedWeatherRepositoryImpl @Inject constructor(
@@ -24,6 +27,7 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
                 airQuality = WeatherParsingUtil.parseAirQualityData(response.airQuality)
             )
         } catch (e: Exception) {
+            Log.e(TAG, "fetch failed (lat=$lat, lng=$lng)", e)
             CombinedWeatherResult(
                 weather = Result.failure(e),
                 airQuality = Result.failure(e)
@@ -47,6 +51,7 @@ class CombinedWeatherRepositoryImpl @Inject constructor(
                 )
             }
         } catch (e: Exception) {
+            Log.e(TAG, "fetchBatch failed", e)
             // 배치 실패 시 개별 호출로 fallback
             locations.map { (lat, lng) -> fetch(lat, lng) }
         }
