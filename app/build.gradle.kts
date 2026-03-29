@@ -42,6 +42,7 @@ android {
         }
         release {
             isMinifyEnabled = false
+            buildConfigField("String", "APP_CHECK_DEBUG_TOKEN", "\"\"")
             // 실제 AdMob App ID
             manifestPlaceholders["ADMOB_APP_ID"] = "ca-app-pub-8381903489844516~7225419989"
         }

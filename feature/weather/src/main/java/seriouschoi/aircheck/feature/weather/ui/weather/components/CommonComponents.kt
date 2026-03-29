@@ -161,7 +161,7 @@ internal fun WeatherStatWithIcon(iconRes: Int, label: String, value: String) {
             painter = painterResource(iconRes),
             contentDescription = label,
             modifier = Modifier.size(28.dp),
-            tint = MaterialTheme.colorScheme.primary
+            tint = Color.Unspecified
         )
         Spacer(Modifier.height(4.dp))
         Text(

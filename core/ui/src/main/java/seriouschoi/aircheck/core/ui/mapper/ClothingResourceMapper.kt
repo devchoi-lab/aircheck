@@ -29,20 +29,6 @@ fun RecommendedClothing.toLabelRes(): Int = when (this) {
 /** 간단 라벨 문자열 (Context 기반) */
 fun RecommendedClothing.toLabel(context: Context): String = context.getString(toLabelRes())
 
-/** 추천 섹션용 상세 라벨 string resource ID */
-fun RecommendedClothing.toDetailedLabelRes(): Int = when (this) {
-    RecommendedClothing.TANK_TOP -> CoreR.string.outfit_sleeveless
-    RecommendedClothing.T_SHIRT -> CoreR.string.outfit_short_sleeve
-    RecommendedClothing.LONG_SLEEVE -> CoreR.string.outfit_thin_long
-    RecommendedClothing.JACKET -> CoreR.string.outfit_jacket_cardigan
-    RecommendedClothing.COAT -> CoreR.string.outfit_coat_knit
-    RecommendedClothing.PADDING -> CoreR.string.outfit_padding_scarf
-    RecommendedClothing.HEAVY_PADDING -> CoreR.string.outfit_heavy_padding_full
-}
-
-/** 추천 섹션용 상세 라벨 문자열 (Context 기반) */
-fun RecommendedClothing.toDetailedLabel(context: Context): String = context.getString(toDetailedLabelRes())
-
 /** 체감온도 범위 문자열 (Context 기반) */
 fun RecommendedClothing.toTemperatureRange(context: Context): String = when (this) {
     RecommendedClothing.TANK_TOP -> context.getString(CoreR.string.temp_range_above, 28)
