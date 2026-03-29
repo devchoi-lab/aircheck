@@ -25,6 +25,8 @@ object WeatherContract {
         /** 공기질 기준 안내 다이얼로그 닫기 */
         data object DismissInfoDialog : Intent
 
+        /** 페이지 변경 시 해당 위치 로드 (lazy loading) */
+        data class OnPageVisible(val index: Int) : Intent
     }
 
     // ── 공통 데이터 타입 ─────────────────────────────────────────────────────

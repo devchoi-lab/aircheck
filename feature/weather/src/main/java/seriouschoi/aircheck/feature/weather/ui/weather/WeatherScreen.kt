@@ -165,6 +165,11 @@ internal fun WeatherScreen(
                             previousLocationCount = locations.size
                         }
 
+                        // 페이지 변경 시 해당 위치 날씨 로드 (lazy loading)
+                        LaunchedEffect(pagerState.currentPage) {
+                            onIntent(WeatherContract.Intent.OnPageVisible(pagerState.currentPage))
+                        }
+
                         LocationPager(
                             pagerState = pagerState,
                             state = state,
