@@ -48,8 +48,8 @@ internal class WeatherViewModel @Inject constructor(
                 locations = locations.map { it.toUiLocationWeatherData() },
                 isLoading = false,
             )
-            // 2. 각 위치별 날씨를 병렬로 fetch
-            fetchWeatherForAll()
+            // 2. 첫 번째 위치만 즉시 로드 (나머지는 페이지 보일 때 lazy load)
+            loadLocationIfNeeded(0)
         }.launchIn(viewModelScope)
     }
 
@@ -75,6 +75,7 @@ internal class WeatherViewModel @Inject constructor(
                 -> refresh()
 
             is WeatherContract.Intent.RefreshLocation -> refreshSingleLocation(intent.index)
+            is WeatherContract.Intent.OnPageVisible -> loadLocationIfNeeded(intent.index)
             is WeatherContract.Intent.ShowInfoDialog -> updateUiControl { copy(showInfoDialog = true) }
             is WeatherContract.Intent.DismissInfoDialog -> updateUiControl { copy(showInfoDialog = false) }
         }
@@ -86,8 +87,39 @@ internal class WeatherViewModel @Inject constructor(
         viewModelScope.launch {
             locationProvider.forceRefresh()
             locationProvider.getCurrentSmartLocation()?.let { updateCurrentLocation(it) }
-            fetchWeatherForAll()
+            // 현재 보이는 모든 위치 다시 로드
+            _locationsState.value.locations.indices.forEach { index ->
+                refreshSingleLocation(index)
+            }
         }
+    }
+
+    private fun loadLocationIfNeeded(index: Int) {
+        val locations = _locationsState.value.locations
+        if (index !in locations.indices) return
+
+        val location = locations[index]
+
+        // 로딩 중이면 스킵
+        if (location.isRefreshing) return
+        if (location.locationInfo.needsPermission) return
+
+        // 데이터가 없거나 30분 이상 지났으면 로드
+        val needsRefresh = location.weather.data == null || location.isStale()
+
+        if (!needsRefresh) return
+
+        viewModelScope.launch {
+            updateLocationRefreshing(index, true)
+            val output = fetchWeatherUseCase(location.locationInfo.lat, location.locationInfo.lng)
+            updateLocationWeather(index, output)
+        }
+    }
+
+    private fun UiLocationWeatherData.isStale(): Boolean {
+        val lastRefresh = lastRefreshedAt ?: return true
+        val staleThreshold = java.time.Duration.ofMinutes(30)
+        return java.time.Duration.between(lastRefresh, Instant.now()) > staleThreshold
     }
 
     private fun updateCurrentLocation(smartLocation: SmartLocation) {
@@ -103,18 +135,6 @@ internal class WeatherViewModel @Inject constructor(
                     if (loc.locationInfo.isCurrentLocation) loc.copy(locationInfo = updatedInfo) else loc
                 }
             )
-        }
-    }
-
-    private fun fetchWeatherForAll() {
-        val currentLocations = _locationsState.value.locations
-        currentLocations.forEachIndexed { index, location ->
-            if (location.locationInfo.needsPermission) return@forEachIndexed
-            viewModelScope.launch {
-                updateLocationRefreshing(index, true)
-                val output = fetchWeatherUseCase(location.locationInfo.lat, location.locationInfo.lng)
-                updateLocationWeather(index, output)
-            }
         }
     }
 

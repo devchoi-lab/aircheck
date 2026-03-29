@@ -35,7 +35,7 @@ fun NavGraphBuilder.weatherScreen(
         WeatherScreen(
             state = state,
             onIntent = viewModel::processIntent,
-            onAddLocation = { navController.navigate(WeatherRoute.LocationPicker) },
+            onAddLocation = { navController.navigate(WeatherRoute.LocationManage) },
             onManageLocations = { navController.navigate(WeatherRoute.LocationManage) }
         )
     }

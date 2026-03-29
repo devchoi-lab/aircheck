@@ -18,9 +18,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -105,13 +104,10 @@ internal fun WeatherScreen(
                 },
                 actions = {
                     IconButton(onClick = onAddLocation) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(CoreR.string.content_description_add_location))
+                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(CoreR.string.content_description_manage_locations))
                     }
                     IconButton(onClick = { onIntent(WeatherContract.Intent.ShowInfoDialog) }) {
                         Icon(Icons.Default.Info, contentDescription = stringResource(CoreR.string.content_description_info))
-                    }
-                    IconButton(onClick = { onIntent(WeatherContract.Intent.Refresh) }) {
-                        Icon(Icons.Default.Refresh, contentDescription = stringResource(CoreR.string.content_description_refresh))
                     }
                 }
             )
@@ -163,6 +159,11 @@ internal fun WeatherScreen(
                                 pagerState.animateScrollToPage(locations.size - 1)
                             }
                             previousLocationCount = locations.size
+                        }
+
+                        // 페이지 변경 시 해당 위치 날씨 로드 (lazy loading)
+                        LaunchedEffect(pagerState.currentPage) {
+                            onIntent(WeatherContract.Intent.OnPageVisible(pagerState.currentPage))
                         }
 
                         LocationPager(
