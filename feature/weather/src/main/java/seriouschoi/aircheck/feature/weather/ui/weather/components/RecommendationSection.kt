@@ -24,7 +24,6 @@ import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.model.WeatherData
-import seriouschoi.aircheck.core.ui.mapper.toDetailedLabelRes
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
 import seriouschoi.aircheck.core.ui.mapper.toLabelRes
 import seriouschoi.aircheck.core.resource.R as CoreR
@@ -40,7 +39,7 @@ internal fun RecommendationSection(
     // 1. 체감온도 기반 옷 추천
     weather?.feelsLike?.let { temp ->
         val clothing = RecommendedClothing.fromFeelsLike(temp)
-        recommendations.add(clothing.toIconRes() to stringResource(clothing.toDetailedLabelRes()))
+        recommendations.add(clothing.toIconRes() to stringResource(clothing.toLabelRes()))
     }
     
     // 2. 강수확률 기반 우산 (6시간 내 최대값)

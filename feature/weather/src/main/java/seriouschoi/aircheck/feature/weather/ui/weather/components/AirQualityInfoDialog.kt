@@ -159,12 +159,12 @@ private fun ClothingRecommendationTable() {
                 ) {
                     Icon(
                         painter = painterResource(clothing.toIconRes()),
-                        contentDescription = stringResource(clothing.toDetailedLabelRes()),
+                        contentDescription = stringResource(clothing.toLabelRes()),
                         modifier = Modifier.size(24.dp),
                         tint = Color.Unspecified
                     )
                     Text(
-                        text = stringResource(clothing.toDetailedLabelRes()),
+                        text = stringResource(clothing.toLabelRes()),
                         fontSize = 12.sp
                     )
                 }
