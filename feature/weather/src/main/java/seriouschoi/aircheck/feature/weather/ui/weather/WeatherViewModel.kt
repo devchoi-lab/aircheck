@@ -100,15 +100,26 @@ internal class WeatherViewModel @Inject constructor(
 
         val location = locations[index]
 
-        // 이미 데이터 있거나 로딩 중이면 스킵
-        if (location.weather.data != null || location.isRefreshing) return
+        // 로딩 중이면 스킵
+        if (location.isRefreshing) return
         if (location.locationInfo.needsPermission) return
+
+        // 데이터가 없거나 30분 이상 지났으면 로드
+        val needsRefresh = location.weather.data == null || location.isStale()
+
+        if (!needsRefresh) return
 
         viewModelScope.launch {
             updateLocationRefreshing(index, true)
             val output = fetchWeatherUseCase(location.locationInfo.lat, location.locationInfo.lng)
             updateLocationWeather(index, output)
         }
+    }
+
+    private fun UiLocationWeatherData.isStale(): Boolean {
+        val lastRefresh = lastRefreshedAt ?: return true
+        val staleThreshold = java.time.Duration.ofMinutes(30)
+        return java.time.Duration.between(lastRefresh, Instant.now()) > staleThreshold
     }
 
     private fun updateCurrentLocation(smartLocation: SmartLocation) {
