@@ -42,15 +42,60 @@ internal class WeatherViewModel @Inject constructor(
     // ── 위치 목록 관찰 → 날씨 개별 로드 ──────────────────────────────────────
 
     init {
-        getLocationListUseCase().onEach { locations ->
-            // 1. 위치 페이지 즉시 표시 (날씨는 빈 상태)
+        getLocationListUseCase().onEach { newLocations ->
+            val existingLocations = _locationsState.value.locations
+            
+            // 기존 날씨 데이터 유지하면서 위치 목록 업데이트
+            val mergedLocations = newLocations.map { newLoc ->
+                val existing = findExistingLocation(existingLocations, newLoc)
+                if (existing != null && !isLocationChanged(existing, newLoc)) {
+                    // 위치가 같으면 기존 날씨 데이터 유지
+                    existing.copy(
+                        locationInfo = newLoc.toUiLocationInfo()
+                    )
+                } else {
+                    // 새 위치거나 좌표가 바뀌면 새로 생성
+                    newLoc.toUiLocationWeatherData()
+                }
+            }
+            
             _locationsState.value = UiLocationsState(
-                locations = locations.map { it.toUiLocationWeatherData() },
+                locations = mergedLocations,
                 isLoading = false,
             )
-            // 2. 첫 번째 위치만 즉시 로드 (나머지는 페이지 보일 때 lazy load)
+            
+            // 첫 번째 위치 로드 (필요시)
             loadLocationIfNeeded(0)
         }.launchIn(viewModelScope)
+    }
+    
+    private fun findExistingLocation(
+        existingLocations: List<UiLocationWeatherData>,
+        newLoc: LocationItem
+    ): UiLocationWeatherData? {
+        return if (newLoc.isCurrentLocation) {
+            existingLocations.find { it.locationInfo.isCurrentLocation }
+        } else {
+            existingLocations.find { it.locationInfo.savedLocationId == newLoc.savedLocationId }
+        }
+    }
+    
+    private fun isLocationChanged(existing: UiLocationWeatherData, newLoc: LocationItem): Boolean {
+        // 좌표가 유의미하게 바뀌었는지 확인 (약 100m 이상)
+        val latDiff = kotlin.math.abs(existing.locationInfo.lat - newLoc.lat)
+        val lngDiff = kotlin.math.abs(existing.locationInfo.lng - newLoc.lng)
+        return latDiff > 0.001 || lngDiff > 0.001
+    }
+    
+    private fun LocationItem.toUiLocationInfo(): UiLocationInfo {
+        return UiLocationInfo(
+            name = name,
+            isCurrentLocation = isCurrentLocation,
+            savedLocationId = savedLocationId,
+            lat = lat,
+            lng = lng,
+            needsPermission = needsPermission,
+        )
     }
 
     // ── 통합 상태 (Screen에서 관찰) ──────────────────────────────────────────
