@@ -111,6 +111,7 @@
     
     <!-- 날씨 화면 -->
     <string name="content_description_add_location">위치 추가</string>
+    <string name="content_description_manage_locations">위치 관리</string>
     <string name="content_description_reorder">순서 변경</string>
     <string name="title_location_manage">위치 관리</string>
     <string name="hint_current_location_fixed">항상 첫 번째에 표시됩니다</string>

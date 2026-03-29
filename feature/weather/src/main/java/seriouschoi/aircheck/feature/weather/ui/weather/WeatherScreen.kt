@@ -18,7 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -104,7 +104,7 @@ internal fun WeatherScreen(
                 },
                 actions = {
                     IconButton(onClick = onAddLocation) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(CoreR.string.content_description_add_location))
+                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(CoreR.string.content_description_manage_locations))
                     }
                     IconButton(onClick = { onIntent(WeatherContract.Intent.ShowInfoDialog) }) {
                         Icon(Icons.Default.Info, contentDescription = stringResource(CoreR.string.content_description_info))
