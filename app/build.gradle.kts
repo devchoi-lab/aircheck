@@ -66,8 +66,6 @@ dependencies {
     implementation(project(":core:ui"))
     implementation(project(":core:firebase"))
     implementation(project(":feature:weather"))
-    implementation(project(":feature:widget"))
-    
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
