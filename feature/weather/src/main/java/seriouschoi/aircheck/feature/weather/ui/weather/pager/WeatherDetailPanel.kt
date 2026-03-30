@@ -32,6 +32,7 @@ internal fun WeatherDetailPanel(
     air: WeatherContract.DataResult<AirQuality>,
     weather: WeatherContract.DataResult<WeatherData>,
     recommendations: List<Recommendation>,
+    pageIndex: Int,
     onIntent: (WeatherContract.Intent) -> Unit
 ) {
     Column(
@@ -81,7 +82,7 @@ internal fun WeatherDetailPanel(
             weather.error != null -> ErrorSection(
                 title = stringResource(CoreR.string.weather_title),
                 message = weather.error.asString(),
-                onRetry = { onIntent(WeatherContract.Intent.Refresh) }
+                onRetry = { onIntent(WeatherContract.Intent.RefreshLocation(pageIndex)) }
             )
         }
 
@@ -102,7 +103,7 @@ internal fun WeatherDetailPanel(
             air.error != null -> ErrorSection(
                 title = stringResource(CoreR.string.air_quality_title),
                 message = air.error.asString(),
-                onRetry = { onIntent(WeatherContract.Intent.Refresh) }
+                onRetry = { onIntent(WeatherContract.Intent.RefreshLocation(pageIndex)) }
             )
         }
 

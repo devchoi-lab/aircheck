@@ -91,27 +91,10 @@ internal class WeatherViewModel @Inject constructor(
 
     fun processIntent(intent: WeatherContract.Intent) {
         when (intent) {
-            is WeatherContract.Intent.Load,
-            is WeatherContract.Intent.Refresh,
-                -> refresh()
-
             is WeatherContract.Intent.RefreshLocation -> refreshSingleLocation(intent.index)
             is WeatherContract.Intent.OnPageVisible -> loadLocationIfNeeded(intent.index)
             is WeatherContract.Intent.ShowInfoDialog -> updateUiControl { copy(showInfoDialog = true) }
             is WeatherContract.Intent.DismissInfoDialog -> updateUiControl { copy(showInfoDialog = false) }
-        }
-    }
-
-    // ── Private ─────────────────────────────────────────────────────────────
-
-    private fun refresh() {
-        viewModelScope.launch {
-            locationProvider.forceRefresh()
-            locationProvider.getCurrentSmartLocation()?.let { updateCurrentLocation(it) }
-            // 현재 보이는 모든 위치 다시 로드
-            _locations.value.indices.forEach { index ->
-                refreshSingleLocation(index)
-            }
         }
     }
 
@@ -167,6 +150,11 @@ internal class WeatherViewModel @Inject constructor(
 
         val bjdCode = location.bjdCode
         viewModelScope.launch {
+            // 현재 위치 새로고침 시 GPS 갱신 + 위치 정보 업데이트
+            if (location.isCurrentLocation) {
+                locationProvider.forceRefresh()
+                locationProvider.getCurrentSmartLocation()?.let { updateCurrentLocation(it) }
+            }
             updateWeatherRefreshing(bjdCode, true)
             val output = fetchWeatherUseCase(bjdCode)
             updateWeather(bjdCode, output)

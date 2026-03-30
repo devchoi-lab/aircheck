@@ -53,6 +53,7 @@ internal fun LocationPage(
                     weatherResult.airQuality,
                     weatherResult.weather,
                     weatherResult.recommendations,
+                    pageIndex,
                     onIntent
                 )
             }

@@ -13,6 +13,7 @@ import seriouschoi.aircheck.feature.weather.ui.locationmanage.LocationManageView
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerScreen
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerViewModel
+import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherScreen
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherViewModel
 
@@ -28,7 +29,7 @@ fun NavGraphBuilder.weatherScreen(
         // 권한 승인 시 자동 새로고침 콜백 등록
         LaunchedEffect(Unit) {
             onRegisterPermissionCallback?.invoke {
-                viewModel.processIntent(seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract.Intent.Refresh)
+                viewModel.processIntent(WeatherContract.Intent.RefreshLocation(0))
             }
         }
 
