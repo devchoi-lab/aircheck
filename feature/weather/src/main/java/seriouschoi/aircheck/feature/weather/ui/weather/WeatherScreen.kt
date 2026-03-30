@@ -82,13 +82,11 @@ internal fun WeatherScreen(
                 title = {
                     Column {
                         Text(titleText, fontWeight = FontWeight.Bold)
-                        lastRefreshedText?.let {
-                            Text(
-                                text = it,
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        Text(
+                            text = lastRefreshedText ?: "",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 },
                 actions = {
@@ -155,8 +153,8 @@ internal fun WeatherScreen(
                     }
 
                     else -> {
+                        // 새 지역 추가시, 가장 끝 페이지로 자동 이동.
                         var previousLocationCount by rememberSaveable { mutableIntStateOf(locations.size) }
-
                         LaunchedEffect(locations.size) {
                             if (locations.size > previousLocationCount) {
                                 pagerState.animateScrollToPage(locations.size - 1)
