@@ -110,7 +110,7 @@ internal fun HourlyForecastItem(forecast: HourlyForecast) {
         // 우산/눈 추천
         if (forecast.precipitationProbability >= 40) {
             Icon(
-                painter = painterResource(CoreR.drawable.ic_umbrella),
+                painter = painterResource(CoreR.drawable.ic_umbrella_blue),
                 contentDescription = stringResource(CoreR.string.item_umbrella),
                 modifier = Modifier.size(16.dp),
                 tint = Color.Unspecified

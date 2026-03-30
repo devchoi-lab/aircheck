@@ -8,7 +8,7 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 fun RecommendedClothing.toIconRes(): Int = when (this) {
     RecommendedClothing.TANK_TOP -> CoreR.drawable.ic_cloth_sleeveless
     RecommendedClothing.T_SHIRT -> CoreR.drawable.ic_cloth_tshirt
-    RecommendedClothing.LONG_SLEEVE -> CoreR.drawable.ic_cloth_long_sleeve
+    RecommendedClothing.LONG_SLEEVE -> CoreR.drawable.ic_cloth_long_sleeve_purple
     RecommendedClothing.JACKET -> CoreR.drawable.ic_cloth_jacket
     RecommendedClothing.COAT -> CoreR.drawable.ic_cloth_coat
     RecommendedClothing.PADDING -> CoreR.drawable.ic_cloth_padding
@@ -23,7 +23,7 @@ fun RecommendedClothing.toLabelRes(): Int = when (this) {
     RecommendedClothing.JACKET -> CoreR.string.outfit_jacket
     RecommendedClothing.COAT -> CoreR.string.outfit_coat
     RecommendedClothing.PADDING -> CoreR.string.outfit_padding
-    RecommendedClothing.HEAVY_PADDING -> CoreR.string.outfit_long_padding
+    RecommendedClothing.HEAVY_PADDING -> CoreR.string.outfit_padding_gloves
 }
 
 /** 간단 라벨 문자열 (Context 기반) */

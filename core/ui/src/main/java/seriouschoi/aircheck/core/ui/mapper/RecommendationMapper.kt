@@ -7,7 +7,7 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 
 fun Recommendation.toIconRes(): Int = when (this) {
     is Recommendation.Clothing -> clothing.toIconRes()
-    is Recommendation.Umbrella -> CoreR.drawable.ic_umbrella
+    is Recommendation.Umbrella -> CoreR.drawable.ic_umbrella_blue
     is Recommendation.Snow -> CoreR.drawable.ic_snow_man
     is Recommendation.Mask -> CoreR.drawable.ic_mask
 }
