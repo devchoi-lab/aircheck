@@ -48,7 +48,7 @@ internal fun LocationPage(
                     )
                 }
             } else {
-                WeatherDetailPanel(locationData.airQuality, locationData.weather, onIntent)
+                WeatherDetailPanel(locationData.airQuality, locationData.weather, locationData.recommendations, onIntent)
             }
         }
     }

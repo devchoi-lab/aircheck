@@ -1,6 +1,7 @@
 package seriouschoi.aircheck.feature.weather.ui.weather
 
 import seriouschoi.aircheck.core.domain.model.AirQuality
+import seriouschoi.aircheck.core.domain.model.Recommendation
 import seriouschoi.aircheck.core.domain.model.WeatherData
 import java.time.Instant
 
@@ -26,6 +27,8 @@ internal data class UiLocationWeatherData(
     val locationInfo: UiLocationInfo,
     val airQuality: WeatherContract.DataResult<AirQuality> = WeatherContract.DataResult(),
     val weather: WeatherContract.DataResult<WeatherData> = WeatherContract.DataResult(),
+    /** 추천 아이템 (의류, 우산, 적설, 마스크) */
+    val recommendations: List<Recommendation> = emptyList(),
     /** 개별 새로고침 중 */
     val isRefreshing: Boolean = false,
     /** 마지막 새로고침 시각 */

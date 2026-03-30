@@ -8,6 +8,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -22,102 +25,122 @@ import seriouschoi.aircheck.core.ui.mapper.*
 
 @Composable
 internal fun AirQualityInfoDialog(onDismiss: () -> Unit) {
-    AlertDialog(
+    val dialogShape = RoundedCornerShape(28.dp)
+
+    Dialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = stringResource(CoreR.string.dialog_air_quality_title),
-                fontWeight = FontWeight.Bold
-            )
-        },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // 통합 등급 설명
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            shape = dialogShape,
+            tonalElevation = 6.dp,
+            color = MaterialTheme.colorScheme.surface,
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .clip(dialogShape)
+        ) {
+            Column(modifier = Modifier.padding(24.dp)) {
                 Text(
-                    text = stringResource(CoreR.string.dialog_integrated_grade_title),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
-                )
-                Text(
-                    text = stringResource(CoreR.string.dialog_integrated_grade_desc),
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = stringResource(CoreR.string.dialog_air_quality_title),
+                    fontWeight = FontWeight.Bold
                 )
 
-                HorizontalDivider()
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // 초미세먼지 (PM2.5) - WHO 2021
-                Text(
-                    text = stringResource(CoreR.string.dialog_pm25_section),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
-                )
-                GradeTable(
-                    grades = AqiLevel.entries
-                        .filter { it != AqiLevel.UNKNOWN }
-                        .map { level ->
-                            Triple(
-                                "${level.toEmoji()} ${stringResource(level.toLabelRes())}",
-                                level.toPm25Range(),
-                                level.toColor()
-                            )
-                        }
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // 통합 등급 설명
+                    Text(
+                        text = stringResource(CoreR.string.dialog_integrated_grade_title),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = stringResource(CoreR.string.dialog_integrated_grade_desc),
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-                HorizontalDivider()
+                    HorizontalDivider()
 
-                // 미세먼지 (PM10) - WHO 2021
-                Text(
-                    text = stringResource(CoreR.string.dialog_pm10_section),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
-                )
-                GradeTable(
-                    grades = AqiLevel.entries
-                        .filter { it != AqiLevel.UNKNOWN }
-                        .map { level ->
-                            Triple(
-                                "${level.toEmoji()} ${stringResource(level.toLabelRes())}",
-                                level.toPm10Range(),
-                                level.toColor()
-                            )
-                        }
-                )
+                    // 초미세먼지 (PM2.5) - WHO 2021
+                    Text(
+                        text = stringResource(CoreR.string.dialog_pm25_section),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                    GradeTable(
+                        grades = AqiLevel.entries
+                            .filter { it != AqiLevel.UNKNOWN }
+                            .map { level ->
+                                Triple(
+                                    "${level.toEmoji()} ${stringResource(level.toLabelRes())}",
+                                    level.toPm25Range(),
+                                    level.toColor()
+                                )
+                            }
+                    )
 
-                HorizontalDivider()
+                    HorizontalDivider()
 
-                // 체감온도별 의상 추천
-                Text(
-                    text = stringResource(CoreR.string.dialog_clothing_title),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
-                )
-                ClothingRecommendationTable()
+                    // 미세먼지 (PM10) - WHO 2021
+                    Text(
+                        text = stringResource(CoreR.string.dialog_pm10_section),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                    GradeTable(
+                        grades = AqiLevel.entries
+                            .filter { it != AqiLevel.UNKNOWN }
+                            .map { level ->
+                                Triple(
+                                    "${level.toEmoji()} ${stringResource(level.toLabelRes())}",
+                                    level.toPm10Range(),
+                                    level.toColor()
+                                )
+                            }
+                    )
 
-                HorizontalDivider()
+                    HorizontalDivider()
 
-                // 출처
-                Text(
-                    text = stringResource(CoreR.string.dialog_source_title),
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
-                )
-                Text(
-                    text = stringResource(CoreR.string.dialog_source_content),
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(CoreR.string.button_confirm))
+                    // 체감온도별 의상 추천
+                    Text(
+                        text = stringResource(CoreR.string.dialog_clothing_title),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                    ClothingRecommendationTable()
+
+                    HorizontalDivider()
+
+                    // 출처
+                    Text(
+                        text = stringResource(CoreR.string.dialog_source_title),
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                    Text(
+                        text = stringResource(CoreR.string.dialog_source_content),
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                TextButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text(stringResource(CoreR.string.button_confirm))
+                }
             }
         }
-    )
+    }
 }
 
 @Composable

@@ -6,7 +6,6 @@
 package seriouschoi.aircheck.feature.weather.ui.weather
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,14 +13,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,7 +24,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,22 +34,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import seriouschoi.aircheck.core.domain.model.AirQuality
-import seriouschoi.aircheck.core.domain.model.WeatherData
-import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualityInfoDialog
-import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualitySection
-import seriouschoi.aircheck.feature.weather.ui.weather.components.ErrorSection
-import seriouschoi.aircheck.feature.weather.ui.weather.components.RecommendationSection
-import seriouschoi.aircheck.feature.weather.ui.weather.components.WeatherSection
-import seriouschoi.aircheck.feature.weather.ui.weather.pager.LocationPager
 import seriouschoi.aircheck.core.domain.model.LocationItem
 import seriouschoi.aircheck.core.ui.ads.AdUnitIds
 import seriouschoi.aircheck.core.ui.ads.BannerAd
-import seriouschoi.aircheck.core.resource.R as CoreR
+import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualityInfoDialog
+import seriouschoi.aircheck.feature.weather.ui.weather.pager.LocationPager
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
 internal fun WeatherScreen(
@@ -71,9 +60,9 @@ internal fun WeatherScreen(
     val currentLocationLabel = stringResource(CoreR.string.label_current_location_name)
     val titleText = currentLocation?.let { loc ->
         if (loc.locationInfo.isCurrentLocation) {
-            loc.locationInfo.name.takeIf { 
-                it.isNotEmpty() && 
-                it != LocationItem.CURRENT_LOCATION_PLACEHOLDER 
+            loc.locationInfo.name.takeIf {
+                it.isNotEmpty() &&
+                        it != LocationItem.CURRENT_LOCATION_PLACEHOLDER
             } ?: currentLocationLabel
         } else {
             loc.locationInfo.name
@@ -93,21 +82,25 @@ internal fun WeatherScreen(
                 title = {
                     Column {
                         Text(titleText, fontWeight = FontWeight.Bold)
-                        lastRefreshedText?.let {
-                            Text(
-                                text = it,
-                                fontSize = 11.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        Text(
+                            text = lastRefreshedText ?: "",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                 },
                 actions = {
                     IconButton(onClick = onAddLocation) {
-                        Icon(Icons.AutoMirrored.Filled.List, contentDescription = stringResource(CoreR.string.content_description_manage_locations))
+                        Icon(
+                            Icons.AutoMirrored.Filled.List,
+                            contentDescription = stringResource(CoreR.string.content_description_manage_locations)
+                        )
                     }
                     IconButton(onClick = { onIntent(WeatherContract.Intent.ShowInfoDialog) }) {
-                        Icon(Icons.Default.Info, contentDescription = stringResource(CoreR.string.content_description_info))
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = stringResource(CoreR.string.content_description_info)
+                        )
                     }
                 }
             )
@@ -128,7 +121,10 @@ internal fun WeatherScreen(
             Box(modifier = Modifier.weight(1f)) {
                 when {
                     state.isLoading -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -141,8 +137,12 @@ internal fun WeatherScreen(
                             }
                         }
                     }
+
                     locations.isEmpty() -> {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
                             Text(
                                 text = stringResource(CoreR.string.empty_location_message),
                                 style = MaterialTheme.typography.bodyLarge,
@@ -151,9 +151,10 @@ internal fun WeatherScreen(
                             )
                         }
                     }
-                    else -> {
-                        var previousLocationCount by rememberSaveable { mutableIntStateOf(locations.size) }
 
+                    else -> {
+                        // 새 지역 추가시, 가장 끝 페이지로 자동 이동.
+                        var previousLocationCount by rememberSaveable { mutableIntStateOf(locations.size) }
                         LaunchedEffect(locations.size) {
                             if (locations.size > previousLocationCount) {
                                 pagerState.animateScrollToPage(locations.size - 1)
@@ -176,7 +177,7 @@ internal fun WeatherScreen(
                     }
                 }
             }
-            
+
             // 하단 배너 광고
             BannerAd(
                 adUnitId = AdUnitIds.banner,
