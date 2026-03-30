@@ -63,20 +63,12 @@ internal class WeatherViewModel @Inject constructor(
 
     init {
         getLocationListUseCase().onEach { newLocations ->
-            val oldLocations = _locations.value
             val newLocationInfos = newLocations.map { it.toUiLocationInfo() }
-
-            // 법정동이 변경된 위치의 날씨 무효화
-            val keysToInvalidate = newLocations.mapNotNull { newLoc ->
-                val bjdCode = newLoc.bjdCode
-                val old = oldLocations.find { it.bjdCode == bjdCode }
-                if (old != null && old.bjdCode != newLoc.bjdCode) bjdCode else null
-            }.toSet()
 
             // 유효한 위치의 날씨만 유지 (삭제된 위치 제거)
             val validKeys = newLocationInfos.map { it.bjdCode }.toSet()
             _weathers.update { weathers ->
-                weathers.filterKeys { it in validKeys && it !in keysToInvalidate }
+                weathers.filterKeys { it in validKeys }
             }
 
             _locations.value = newLocationInfos
