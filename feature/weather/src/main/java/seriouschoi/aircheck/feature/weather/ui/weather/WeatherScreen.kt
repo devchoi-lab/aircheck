@@ -29,6 +29,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -198,9 +199,13 @@ internal fun WeatherScreen(
                             previousLocationCount = locations.size
                         }
 
-                        // 페이지 변경 시 해당 위치 날씨 로드 (lazy loading)
+                        // 페이지 변경 시 또는 앱 복귀 시 해당 위치 날씨 로드
                         LaunchedEffect(pagerState.currentPage) {
                             onIntent(WeatherContract.Intent.OnPageVisible(pagerState.currentPage))
+                        }
+                        LifecycleResumeEffect(Unit) {
+                            onIntent(WeatherContract.Intent.OnPageVisible(pagerState.currentPage))
+                            onPauseOrDispose { }
                         }
 
                         LocationPager(
