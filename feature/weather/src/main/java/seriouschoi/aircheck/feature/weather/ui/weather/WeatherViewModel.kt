@@ -45,7 +45,17 @@ internal class WeatherViewModel @Inject constructor(
     init {
         getLocationListUseCase().onEach { newLocations ->
             val existingLocations = _locationsState.value.locations
-            
+
+            /*
+            TODO
+                location을 추가할때, 날씨 데이터를 복사하는 로직을 남기는것보다,
+                차라리 UiLocationsState 여기에 location과 weather를 분리하는게 낫지 않나?
+                여기선 location만 갱신하고,
+                weather는 location정보를 key:value로 들고 있어서,
+                location갱신할때, weather에서 지울꺼 지우는 형태로.
+                즉 UiLocationsState이 아래 두개의 속성들 들고 있는거지.
+                locations, weathers
+             */
             // 기존 날씨 데이터 유지하면서 위치 목록 업데이트
             val mergedLocations = newLocations.map { newLoc ->
                 val existing = findExistingLocation(existingLocations, newLoc)

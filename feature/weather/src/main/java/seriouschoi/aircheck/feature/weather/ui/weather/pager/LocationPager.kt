@@ -38,11 +38,11 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
 internal fun LocationPager(
+    modifier: Modifier = Modifier,
     pagerState: PagerState,
     state: UiWeatherScreenState,
     onIntent: (WeatherContract.Intent) -> Unit,
     onManageLocations: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     val locations = state.locations.locations
     val currentLocation = locations.getOrNull(pagerState.currentPage)

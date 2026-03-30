@@ -11,23 +11,20 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.Recommendation
 import seriouschoi.aircheck.core.domain.model.WeatherData
+import seriouschoi.aircheck.core.ui.ads.AdUnitIds
+import seriouschoi.aircheck.core.ui.ads.NativeAdCard
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
 import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualitySection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.ErrorSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.RecommendationSection
 import seriouschoi.aircheck.feature.weather.ui.weather.components.WeatherSection
-import seriouschoi.aircheck.core.ui.ads.AdUnitIds
-import seriouschoi.aircheck.core.ui.ads.NativeAdCard
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
