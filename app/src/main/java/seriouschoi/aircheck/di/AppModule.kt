@@ -81,6 +81,16 @@ object AppModule {
             )
         }
 
+        override fun findByBjdCode(bjdCode: String): SmartLocation? {
+            val result = smartLocationRepository.findByCode(bjdCode) ?: return null
+            return SmartLocation(
+                bjdCode = result.bjdCode,
+                bjdName = result.bjdName,
+                lat = result.centroidLat,
+                lng = result.centroidLng
+            )
+        }
+
         override fun forceRefresh() {
             smartLocationRepository.forceRefresh()
         }

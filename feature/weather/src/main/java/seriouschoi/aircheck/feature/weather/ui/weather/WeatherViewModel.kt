@@ -16,12 +16,12 @@ import seriouschoi.aircheck.core.domain.model.LocationItem
 import seriouschoi.aircheck.core.domain.model.getRecommendations
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.SmartLocation
-import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherOutput
+import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.domain.usecase.GetLocationListUseCase
 import seriouschoi.aircheck.core.domain.util.shortenBjdName
 import seriouschoi.aircheck.core.resource.ErrorMapper
-import seriouschoi.aircheck.core.resource.UiText
+import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
 
@@ -36,100 +36,53 @@ internal class WeatherViewModel @Inject constructor(
 
     private val _uiControlState = MutableStateFlow(UiControlState())
 
-    // ── 위치 + 날씨 상태 ─────────────────────────────────────────────────────
+    // ── 위치 상태 ──────────────────────────────────────────────────────────
+    private val _locations: MutableStateFlow<List<UiLocationInfo>> = MutableStateFlow(emptyList())
+    private val _isLocationsLoading = MutableStateFlow(true)
 
-    private val _locationsState = MutableStateFlow(UiLocationsState())
+    // ── 날씨 상태 ──────────────────────────────────────────────────────────
 
-    // ── 위치 목록 관찰 → 날씨 개별 로드 ──────────────────────────────────────
-
-    init {
-        getLocationListUseCase().onEach { newLocations ->
-            val existingLocations = _locationsState.value.locations
-
-            /*
-            TODO
-                location을 추가할때, 날씨 데이터를 복사하는 로직을 남기는것보다,
-                차라리 UiLocationsState 여기에 location과 weather를 분리하는게 낫지 않나?
-                여기선 location만 갱신하고,
-                weather는 location정보를 key:value로 들고 있어서,
-                location갱신할때, weather에서 지울꺼 지우는 형태로.
-                즉 UiLocationsState이 아래 두개의 속성들 들고 있는거지.
-                locations, weathers
-             */
-            // 기존 날씨 데이터 유지하면서 위치 목록 업데이트
-            val mergedLocations = newLocations.map { newLoc ->
-                val existing = findExistingLocation(existingLocations, newLoc)
-                if (existing != null && !isLocationChanged(existing, newLoc)) {
-                    // 위치가 같으면 기존 날씨 데이터 유지
-                    existing.copy(
-                        locationInfo = newLoc.toUiLocationInfo()
-                    )
-                } else {
-                    // 새 위치거나 좌표가 바뀌면 새로 생성
-                    newLoc.toUiLocationWeatherData()
-                }
-            }
-            
-            _locationsState.value = UiLocationsState(
-                locations = mergedLocations,
-                isLoading = false,
-            )
-            
-            // 첫 번째 위치 로드 (필요시)
-            loadLocationIfNeeded(0)
-        }.launchIn(viewModelScope)
-    }
-    
-    private fun findExistingLocation(
-        existingLocations: List<UiLocationWeatherData>,
-        newLoc: LocationItem
-    ): UiLocationWeatherData? {
-        return if (newLoc.isCurrentLocation) {
-            existingLocations.find { it.locationInfo.isCurrentLocation }
-        } else {
-            existingLocations.find { it.locationInfo.savedLocationId == newLoc.savedLocationId }
-        }
-    }
-    
-    private fun isLocationChanged(existing: UiLocationWeatherData, newLoc: LocationItem): Boolean {
-        // 좌표가 유의미하게 바뀌었는지 확인 (약 100m 이상)
-        val latDiff = kotlin.math.abs(existing.locationInfo.lat - newLoc.lat)
-        val lngDiff = kotlin.math.abs(existing.locationInfo.lng - newLoc.lng)
-        return latDiff > 0.001 || lngDiff > 0.001
-    }
-    
-    private fun LocationItem.toUiLocationInfo(): UiLocationInfo {
-        return UiLocationInfo(
-            name = name,
-            isCurrentLocation = isCurrentLocation,
-            savedLocationId = savedLocationId,
-            lat = lat,
-            lng = lng,
-            needsPermission = needsPermission,
-        )
-    }
+    private val _weathers = MutableStateFlow<Map<String, UiWeatherResult>>(emptyMap())
 
     // ── 통합 상태 (Screen에서 관찰) ──────────────────────────────────────────
 
     val screenState: StateFlow<UiWeatherScreenState> = combine(
-        _locationsState,
-        _uiControlState
-    ) { locations, uiControl ->
-        UiWeatherScreenState(locations, uiControl)
+        _locations,
+        _weathers,
+        _isLocationsLoading,
+        _uiControlState,
+    ) { locations, weathers, isLoading, uiControl ->
+        UiWeatherScreenState(locations, weathers, isLoading, uiControl)
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = UiWeatherScreenState()
     )
 
+    // ── 위치 목록 관찰 ──────────────────────────────────────────────────────
+
+    init {
+        getLocationListUseCase().onEach { newLocations ->
+            val newLocationInfos = newLocations.map { it.toUiLocationInfo() }
+
+            // 유효한 위치의 날씨만 유지 (삭제된 위치 제거)
+            val validKeys = newLocationInfos.map { it.bjdCode }.toSet()
+            _weathers.update { weathers ->
+                weathers.filterKeys { it in validKeys }
+            }
+
+            _locations.value = newLocationInfos
+            _isLocationsLoading.value = false
+
+            // 첫 번째 위치 로드 (필요시)
+            loadLocationIfNeeded(0)
+        }.launchIn(viewModelScope)
+    }
+
     // ── Intent 처리 ─────────────────────────────────────────────────────────
 
     fun processIntent(intent: WeatherContract.Intent) {
         when (intent) {
-            is WeatherContract.Intent.Load,
-            is WeatherContract.Intent.Refresh,
-                -> refresh()
-
             is WeatherContract.Intent.RefreshLocation -> refreshSingleLocation(intent.index)
             is WeatherContract.Intent.OnPageVisible -> loadLocationIfNeeded(intent.index)
             is WeatherContract.Intent.ShowInfoDialog -> updateUiControl { copy(showInfoDialog = true) }
@@ -137,113 +90,93 @@ internal class WeatherViewModel @Inject constructor(
         }
     }
 
-    // ── Private ─────────────────────────────────────────────────────────────
-
-    private fun refresh() {
-        viewModelScope.launch {
-            locationProvider.forceRefresh()
-            locationProvider.getCurrentSmartLocation()?.let { updateCurrentLocation(it) }
-            // 현재 보이는 모든 위치 다시 로드
-            _locationsState.value.locations.indices.forEach { index ->
-                refreshSingleLocation(index)
-            }
-        }
-    }
-
     private fun loadLocationIfNeeded(index: Int) {
-        val locations = _locationsState.value.locations
+        val locations = _locations.value
         if (index !in locations.indices) return
 
         val location = locations[index]
+        if (location.needsPermission || location.bjdCode.isEmpty()) return
+
+        val bjdCode = location.bjdCode
+        val weatherResult = _weathers.value[bjdCode]
 
         // 로딩 중이면 스킵
-        if (location.isRefreshing) return
-        if (location.locationInfo.needsPermission) return
+        if (weatherResult?.isRefreshing == true) return
 
         // 데이터가 없거나 30분 이상 지났으면 로드
-        val needsRefresh = location.weather.data == null || location.isStale()
-
+        val needsRefresh = weatherResult?.weather?.data == null || weatherResult.isStale()
         if (!needsRefresh) return
 
         viewModelScope.launch {
-            updateLocationRefreshing(index, true)
-            val output = fetchWeatherUseCase(location.locationInfo.lat, location.locationInfo.lng)
-            updateLocationWeather(index, output)
+            updateWeatherRefreshing(bjdCode, true)
+            val output = fetchWeatherUseCase(bjdCode)
+            updateWeather(bjdCode, output)
         }
     }
 
-    private fun UiLocationWeatherData.isStale(): Boolean {
+    private fun UiWeatherResult.isStale(): Boolean {
         val lastRefresh = lastRefreshedAt ?: return true
-        val staleThreshold = java.time.Duration.ofMinutes(30)
-        return java.time.Duration.between(lastRefresh, Instant.now()) > staleThreshold
+        val staleThreshold = Duration.ofMinutes(30)
+        return Duration.between(lastRefresh, Instant.now()) > staleThreshold
     }
 
     private fun updateCurrentLocation(smartLocation: SmartLocation) {
         val updatedInfo = UiLocationInfo(
             name = shortenBjdName(smartLocation.bjdName),
             isCurrentLocation = true,
-            lat = smartLocation.lat,
-            lng = smartLocation.lng,
+            bjdCode = smartLocation.bjdCode,
         )
-        _locationsState.update { state ->
-            state.copy(
-                locations = state.locations.map { loc ->
-                    if (loc.locationInfo.isCurrentLocation) loc.copy(locationInfo = updatedInfo) else loc
-                }
-            )
+        _locations.update { locations ->
+            locations.map { loc ->
+                if (loc.isCurrentLocation) updatedInfo else loc
+            }
         }
     }
 
     private fun refreshSingleLocation(index: Int) {
-        val currentLocations = _locationsState.value.locations
-        if (index !in currentLocations.indices) return
+        val locations = _locations.value
+        if (index !in locations.indices) return
 
-        val location = currentLocations[index]
-        if (location.locationInfo.needsPermission) return
+        val location = locations[index]
+        if (location.needsPermission || location.bjdCode.isEmpty()) return
 
+        val bjdCode = location.bjdCode
         viewModelScope.launch {
-            updateLocationRefreshing(index, true)
-            val output = fetchWeatherUseCase(location.locationInfo.lat, location.locationInfo.lng)
-            updateLocationWeather(index, output)
+            // 현재 위치 새로고침 시 GPS 갱신 + 위치 정보 업데이트
+            if (location.isCurrentLocation) {
+                locationProvider.forceRefresh()
+                locationProvider.getCurrentSmartLocation()?.let { updateCurrentLocation(it) }
+            }
+            updateWeatherRefreshing(bjdCode, true)
+            val output = fetchWeatherUseCase(bjdCode)
+            updateWeather(bjdCode, output)
         }
     }
 
-    private fun updateLocationRefreshing(index: Int, isRefreshing: Boolean) {
-        _locationsState.update { state ->
-            state.copy(
-                locations = state.locations.mapIndexed { i, loc ->
-                    if (i == index) loc.copy(isRefreshing = isRefreshing) else loc
-                }
-            )
+    private fun updateWeatherRefreshing(key: String, isRefreshing: Boolean) {
+        _weathers.update { weathers ->
+            val current = weathers[key] ?: UiWeatherResult()
+            weathers + (key to current.copy(isRefreshing = isRefreshing))
         }
     }
 
-    private fun updateLocationWeather(index: Int, output: FetchWeatherOutput) {
-        _locationsState.update { state ->
-            state.copy(
-                locations = state.locations.mapIndexed { i, loc ->
-                    if (i == index) {
-                        val weatherData = output.result.weather.getOrNull()
-                        val airQualityData = output.result.airQuality.getOrNull()
-                        loc.copy(
-                            weather = WeatherContract.DataResult(
-                                data = weatherData,
-                                error = ErrorMapper.toUiText(output.result.weather.exceptionOrNull())
-                            ),
-                            airQuality = WeatherContract.DataResult(
-                                data = airQualityData,
-                                error = ErrorMapper.toUiText(output.result.airQuality.exceptionOrNull())
-                            ),
-                            recommendations = getRecommendations(weatherData, airQualityData),
-                            isRefreshing = false,
-                            lastRefreshedAt = Instant.now(),
-                        )
-                    } else {
-                        loc
-                    }
-                }
-            )
-        }
+    private fun updateWeather(key: String, output: FetchWeatherOutput) {
+        val weatherData = output.result.weather.getOrNull()
+        val airQualityData = output.result.airQuality.getOrNull()
+        val result = UiWeatherResult(
+            weather = WeatherContract.DataResult(
+                data = weatherData,
+                error = ErrorMapper.toUiText(output.result.weather.exceptionOrNull())
+            ),
+            airQuality = WeatherContract.DataResult(
+                data = airQualityData,
+                error = ErrorMapper.toUiText(output.result.airQuality.exceptionOrNull())
+            ),
+            recommendations = getRecommendations(weatherData, airQualityData),
+            isRefreshing = false,
+            lastRefreshedAt = Instant.now(),
+        )
+        _weathers.update { weathers -> weathers + (key to result) }
     }
 
     private inline fun updateUiControl(transform: UiControlState.() -> UiControlState) {
@@ -252,16 +185,12 @@ internal class WeatherViewModel @Inject constructor(
 
     // ── Mapper ──────────────────────────────────────────────────────────────
 
-    private fun LocationItem.toUiLocationWeatherData(): UiLocationWeatherData {
-        return UiLocationWeatherData(
-            locationInfo = UiLocationInfo(
-                name = name,
-                isCurrentLocation = isCurrentLocation,
-                savedLocationId = savedLocationId,
-                lat = lat,
-                lng = lng,
-                needsPermission = needsPermission,
-            ),
+    private fun LocationItem.toUiLocationInfo(): UiLocationInfo {
+        return UiLocationInfo(
+            name = name,
+            isCurrentLocation = isCurrentLocation,
+            bjdCode = bjdCode,
+            needsPermission = needsPermission,
         )
     }
 }

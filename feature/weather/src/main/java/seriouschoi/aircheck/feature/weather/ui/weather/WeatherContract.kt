@@ -10,12 +10,6 @@ object WeatherContract {
     // ── Intent (사용자 액션) ────────────────────────────────────────────────
 
     sealed interface Intent {
-        /** 초기 로드 또는 새로고침 */
-        data object Load : Intent
-
-        /** Pull-to-refresh (전체) */
-        data object Refresh : Intent
-
         /** 특정 위치 개별 새로고침 */
         data class RefreshLocation(val index: Int) : Intent
 

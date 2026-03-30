@@ -20,13 +20,19 @@ class BjdMatcher @Inject constructor(
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     
-    // 격자 인덱스 (0.1도 단위 ≈ 약 10km)
-    private val gridIndex: Map<String, List<BjdDistrict>> by lazy {
+    private val loadResult: Pair<Map<String, List<BjdDistrict>>, Map<String, BjdDistrict>> by lazy {
         loadAndIndex()
     }
-    
-    private fun loadAndIndex(): Map<String, MutableList<BjdDistrict>> {
-        val index = mutableMapOf<String, MutableList<BjdDistrict>>()
+
+    // 격자 인덱스 (0.1도 단위 ≈ 약 10km)
+    private val gridIndex: Map<String, List<BjdDistrict>> get() = loadResult.first
+
+    // 코드 → 법정동 역방향 인덱스
+    private val codeIndex: Map<String, BjdDistrict> get() = loadResult.second
+
+    private fun loadAndIndex(): Pair<Map<String, List<BjdDistrict>>, Map<String, BjdDistrict>> {
+        val gridMap = mutableMapOf<String, MutableList<BjdDistrict>>()
+        val codeMap = mutableMapOf<String, BjdDistrict>()
         
         try {
             val jsonString = context.assets.open("korean_regions_2.json")
@@ -49,16 +55,17 @@ class BjdMatcher @Inject constructor(
                         lng = region.lng
                     )
                     val key = gridKey(district.lat, district.lng)
-                    index.getOrPut(key) { mutableListOf() }.add(district)
+                    gridMap.getOrPut(key) { mutableListOf() }.add(district)
+                    codeMap[district.code] = district
                 }
         } catch (e: Exception) {
             // 파일 로드 실패 시 빈 인덱스
             e.printStackTrace()
         }
-        
-        return index
+
+        return gridMap to codeMap
     }
-    
+
     /**
      * GPS 좌표 → 가장 가까운 법정동 찾기
      */
@@ -80,7 +87,15 @@ class BjdMatcher @Inject constructor(
             .minByOrNull { haversineDistance(lat, lng, it.lat, it.lng) }
             ?.let { BjdResult(it.code, it.name, it.lat, it.lng) }
     }
-    
+
+    /**
+     * 법정동 코드 → 법정동 정보 찾기
+     */
+    fun findByCode(code: String): BjdResult? {
+        val district = codeIndex[code] ?: return null
+        return BjdResult(district.code, district.name, district.lat, district.lng)
+    }
+
     private fun gridKey(lat: Double, lng: Double): String {
         val latKey = (lat * 10).toInt()
         val lngKey = (lng * 10).toInt()

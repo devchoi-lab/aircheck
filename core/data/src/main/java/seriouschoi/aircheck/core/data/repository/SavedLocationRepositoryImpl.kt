@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import seriouschoi.aircheck.core.data.location.BjdMatcher
 import seriouschoi.aircheck.core.domain.model.SavedLocation
 import seriouschoi.aircheck.core.domain.repository.SavedLocationRepository
 import javax.inject.Inject
@@ -26,6 +27,7 @@ private data class SavedLocationJson(
     val id: Long,
     val name: String,
     val displayName: String,
+    val bjdCode: String = "",
     val lat: Double,
     val lng: Double,
     val order: Int
@@ -33,7 +35,8 @@ private data class SavedLocationJson(
 
 @Singleton
 class SavedLocationRepositoryImpl @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val bjdMatcher: BjdMatcher
 ) : SavedLocationRepository {
     
     private val json = Json { 
@@ -98,15 +101,17 @@ class SavedLocationRepositoryImpl @Inject constructor(
         id = id,
         name = name,
         displayName = displayName,
+        bjdCode = bjdCode.ifEmpty { bjdMatcher.findNearest(lat, lng)?.code ?: "" },
         lat = lat,
         lng = lng,
         order = order
     )
-    
+
     private fun SavedLocation.toJson() = SavedLocationJson(
         id = id,
         name = name,
         displayName = displayName,
+        bjdCode = bjdCode,
         lat = lat,
         lng = lng,
         order = order

@@ -120,6 +120,19 @@ class SmartLocationRepository @Inject constructor(
     }
 
     /**
+     * 법정동 코드 → SmartLocationResult 조회
+     */
+    fun findByCode(bjdCode: String): SmartLocationResult? {
+        val bjdResult = bjdMatcher.findByCode(bjdCode) ?: return null
+        return SmartLocationResult(
+            bjdCode = bjdResult.code,
+            bjdName = bjdResult.name,
+            centroidLat = bjdResult.centroidLat,
+            centroidLng = bjdResult.centroidLng
+        )
+    }
+
+    /**
      * 강제 갱신 (pull-to-refresh 등)
      * shouldFetch 필터를 초기화하고, 즉시 현재 위치를 가져와 emit
      */

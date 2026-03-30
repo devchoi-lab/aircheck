@@ -34,8 +34,7 @@ class GetLocationListUseCase @Inject constructor(
                         LocationItem(
                             name = shortenBjdName(smartLocation.bjdName),
                             isCurrentLocation = true,
-                            lat = smartLocation.lat,
-                            lng = smartLocation.lng,
+                            bjdCode = smartLocation.bjdCode,
                         )
                     )
                 } else {
@@ -43,22 +42,19 @@ class GetLocationListUseCase @Inject constructor(
                         LocationItem(
                             name = LocationItem.CURRENT_LOCATION_PLACEHOLDER,
                             isCurrentLocation = true,
-                            lat = 0.0,
-                            lng = 0.0,
                             needsPermission = !locationProvider.hasLocationPermission(),
                         )
                     )
                 }
 
-                // 2. 저장된 위치들 (raw 좌표 — centroid 변환은 FetchWeatherUseCase가 담당)
+                // 2. 저장된 위치들
                 for (saved in savedLocations) {
                     add(
                         LocationItem(
                             name = shortenBjdName(saved.displayName),
                             isCurrentLocation = false,
+                            bjdCode = saved.bjdCode,
                             savedLocationId = saved.id,
-                            lat = saved.lat,
-                            lng = saved.lng,
                         )
                     )
                 }

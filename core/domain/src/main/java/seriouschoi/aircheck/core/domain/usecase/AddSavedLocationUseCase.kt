@@ -17,8 +17,8 @@ class AddSavedLocationUseCase @Inject constructor(
     suspend operator fun invoke(location: SavedLocation): Result<Long> {
         val current = repository.getAll().first()
 
-        // 중복 체크 (같은 좌표의 위치가 이미 저장돼 있으면 거부)
-        val isDuplicate = current.any { it.lat == location.lat && it.lng == location.lng }
+        // 중복 체크 (같은 법정동이 이미 저장돼 있으면 거부)
+        val isDuplicate = current.any { it.bjdCode == location.bjdCode }
         if (isDuplicate) {
             return Result.failure(DataError.DuplicateLocation)
         }

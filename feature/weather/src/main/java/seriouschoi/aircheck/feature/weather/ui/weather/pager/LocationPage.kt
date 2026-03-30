@@ -14,24 +14,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import seriouschoi.aircheck.feature.weather.ui.weather.UiLocationWeatherData
+import seriouschoi.aircheck.feature.weather.ui.weather.UiLocationInfo
+import seriouschoi.aircheck.feature.weather.ui.weather.UiWeatherResult
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
 import seriouschoi.aircheck.feature.weather.ui.weather.components.PermissionRequiredContent
-import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
 internal fun LocationPage(
-    locationData: UiLocationWeatherData,
+    locationInfo: UiLocationInfo,
+    weatherResult: UiWeatherResult,
     pageIndex: Int,
     onIntent: (WeatherContract.Intent) -> Unit,
 ) {
     PullToRefreshBox(
-        isRefreshing = locationData.isRefreshing,
+        isRefreshing = weatherResult.isRefreshing,
         onRefresh = { onIntent(WeatherContract.Intent.RefreshLocation(pageIndex)) },
         modifier = Modifier.fillMaxSize()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            if (locationData.locationInfo.needsPermission) {
+            if (locationInfo.needsPermission) {
                 val context = LocalContext.current
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -48,10 +49,14 @@ internal fun LocationPage(
                     )
                 }
             } else {
-                WeatherDetailPanel(locationData.airQuality, locationData.weather, locationData.recommendations, onIntent)
+                WeatherDetailPanel(
+                    weatherResult.airQuality,
+                    weatherResult.weather,
+                    weatherResult.recommendations,
+                    pageIndex,
+                    onIntent
+                )
             }
         }
     }
 }
-
-

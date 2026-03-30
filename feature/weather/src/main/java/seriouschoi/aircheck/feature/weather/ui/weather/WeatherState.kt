@@ -13,18 +13,16 @@ import java.time.Instant
 internal data class UiLocationInfo(
     val name: String,
     val isCurrentLocation: Boolean,
-    /** 저장된 위치의 ID (현재 위치는 null) — 삭제 시 사용 */
-    val savedLocationId: Long? = null,
-    /** 날씨 조회용 좌표 */
-    val lat: Double = 0.0,
-    val lng: Double = 0.0,
+
+    /** 법정동 코드 — 날씨 Map 키 및 조회에 사용 */
+    val bjdCode: String = "",
+
     /** 위치 권한 필요 (현재 위치 전용) */
     val needsPermission: Boolean = false,
 )
 
-/** 위치별 날씨 데이터 */
-internal data class UiLocationWeatherData(
-    val locationInfo: UiLocationInfo,
+/** 위치별 날씨 결과 */
+internal data class UiWeatherResult(
     val airQuality: WeatherContract.DataResult<AirQuality> = WeatherContract.DataResult(),
     val weather: WeatherContract.DataResult<WeatherData> = WeatherContract.DataResult(),
     /** 추천 아이템 (의류, 우산, 적설, 마스크) */
@@ -35,12 +33,6 @@ internal data class UiLocationWeatherData(
     val lastRefreshedAt: Instant? = null,
 )
 
-/** 위치 목록 상태 */
-internal data class UiLocationsState(
-    val locations: List<UiLocationWeatherData> = emptyList(),
-    val isLoading: Boolean = true
-)
-
 /** UI 컨트롤 상태 (다이얼로그, 로딩 인디케이터 등) */
 internal data class UiControlState(
     val showInfoDialog: Boolean = false,
@@ -48,9 +40,8 @@ internal data class UiControlState(
 
 /** 화면 전체 통합 상태 (Screen에서 관찰) */
 internal data class UiWeatherScreenState(
-    val locations: UiLocationsState = UiLocationsState(),
-    val uiControl: UiControlState = UiControlState()
-) {
-    /** 로딩 중 여부 (위치 로딩 또는 리프레시) */
-    val isLoading: Boolean get() = locations.isLoading
-}
+    val locations: List<UiLocationInfo> = emptyList(),
+    val weathers: Map<String, UiWeatherResult> = emptyMap(),
+    val isLoading: Boolean = true,
+    val uiControl: UiControlState = UiControlState(),
+)

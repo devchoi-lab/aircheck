@@ -49,9 +49,9 @@ class WidgetDataManager @Inject constructor(
                 Log.e(TAG, "Failed to get location")
                 return@withContext Result.failure(Exception(context.getString(CoreR.string.widget_error_location)))
             }
-            Log.d(TAG, "Location: ${smartLocation.bjdName} (${smartLocation.lat}, ${smartLocation.lng})")
+            Log.d(TAG, "Location: ${smartLocation.bjdName} (${smartLocation.bjdCode})")
 
-            val output = fetchWeatherUseCase(smartLocation.lat, smartLocation.lng)
+            val output = fetchWeatherUseCase(smartLocation.bjdCode)
             val weather = output.result.weather.getOrNull()
             val airQuality = output.result.airQuality.getOrNull()
 
