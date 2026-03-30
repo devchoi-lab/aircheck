@@ -22,9 +22,8 @@ internal data class UiLocationInfo(
     val needsPermission: Boolean = false,
 )
 
-/** 위치별 날씨 데이터 */
-internal data class UiLocationWeatherData(
-    val locationInfo: UiLocationInfo,
+/** 위치별 날씨 결과 */
+internal data class UiWeatherResult(
     val airQuality: WeatherContract.DataResult<AirQuality> = WeatherContract.DataResult(),
     val weather: WeatherContract.DataResult<WeatherData> = WeatherContract.DataResult(),
     /** 추천 아이템 (의류, 우산, 적설, 마스크) */
@@ -35,10 +34,11 @@ internal data class UiLocationWeatherData(
     val lastRefreshedAt: Instant? = null,
 )
 
-/** 위치 목록 상태 */
+/** 위치 목록 + 날씨 상태 (분리 관리) */
 internal data class UiLocationsState(
-    val locations: List<UiLocationWeatherData> = emptyList(),
-    val isLoading: Boolean = true
+    val locations: List<UiLocationInfo> = emptyList(),
+    val weathers: Map<String, UiWeatherResult> = emptyMap(),
+    val isLoading: Boolean = true,
 )
 
 /** UI 컨트롤 상태 (다이얼로그, 로딩 인디케이터 등) */
@@ -54,3 +54,7 @@ internal data class UiWeatherScreenState(
     /** 로딩 중 여부 (위치 로딩 또는 리프레시) */
     val isLoading: Boolean get() = locations.isLoading
 }
+
+/** 위치를 날씨 Map의 키로 변환 */
+internal fun UiLocationInfo.weatherKey(): String =
+    if (isCurrentLocation) "current" else savedLocationId.toString()

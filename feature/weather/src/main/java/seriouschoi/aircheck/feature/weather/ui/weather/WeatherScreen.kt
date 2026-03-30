@@ -59,18 +59,20 @@ internal fun WeatherScreen(
 
     val currentLocationLabel = stringResource(CoreR.string.label_current_location_name)
     val titleText = currentLocation?.let { loc ->
-        if (loc.locationInfo.isCurrentLocation) {
-            loc.locationInfo.name.takeIf {
+        if (loc.isCurrentLocation) {
+            loc.name.takeIf {
                 it.isNotEmpty() &&
                         it != LocationItem.CURRENT_LOCATION_PLACEHOLDER
             } ?: currentLocationLabel
         } else {
-            loc.locationInfo.name
+            loc.name
         }
     } ?: currentLocationLabel
 
     // 새로고침 시각 포맷
-    val lastRefreshedText = currentLocation?.lastRefreshedAt?.let { instant ->
+    val lastRefreshedText = currentLocation?.let { loc ->
+        state.locations.weathers[loc.weatherKey()]?.lastRefreshedAt
+    }?.let { instant ->
         val localTime = instant.atZone(ZoneId.systemDefault()).toLocalTime()
         val formatter = DateTimeFormatter.ofPattern("HH:mm")
         stringResource(CoreR.string.last_updated_at, localTime.format(formatter))

@@ -30,10 +30,11 @@ import androidx.compose.ui.unit.dp
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreview
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreviewWrapper
 import seriouschoi.aircheck.feature.weather.ui.weather.UiLocationInfo
-import seriouschoi.aircheck.feature.weather.ui.weather.UiLocationWeatherData
 import seriouschoi.aircheck.feature.weather.ui.weather.UiLocationsState
-import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
+import seriouschoi.aircheck.feature.weather.ui.weather.UiWeatherResult
 import seriouschoi.aircheck.feature.weather.ui.weather.UiWeatherScreenState
+import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
+import seriouschoi.aircheck.feature.weather.ui.weather.weatherKey
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
@@ -61,8 +62,11 @@ internal fun LocationPager(
             state = pagerState,
             modifier = Modifier.weight(1f)
         ) { page ->
+            val locationInfo = locations[page]
+            val weatherResult = state.locations.weathers[locationInfo.weatherKey()] ?: UiWeatherResult()
             LocationPage(
-                locationData = locations[page],
+                locationInfo = locationInfo,
+                weatherResult = weatherResult,
                 pageIndex = page,
                 onIntent = onIntent
             )
@@ -75,9 +79,7 @@ internal fun LocationPager(
 private fun LocationPagerPreviewSingle() {
     AirCheckPreviewWrapper {
         val locations = listOf(
-            UiLocationWeatherData(
-                locationInfo = UiLocationInfo(name = "서울", isCurrentLocation = true),
-            )
+            UiLocationInfo(name = "서울", isCurrentLocation = true),
         )
         val pagerState = rememberPagerState(pageCount = { locations.size })
         LocationPager(
@@ -95,15 +97,9 @@ private fun LocationPagerPreviewSingle() {
 private fun LocationPagerPreviewMultiple() {
     AirCheckPreviewWrapper {
         val locations = listOf(
-            UiLocationWeatherData(
-                locationInfo = UiLocationInfo(name = "서울", isCurrentLocation = true),
-            ),
-            UiLocationWeatherData(
-                locationInfo = UiLocationInfo(name = "부산", isCurrentLocation = false, savedLocationId = 1L),
-            ),
-            UiLocationWeatherData(
-                locationInfo = UiLocationInfo(name = "제주", isCurrentLocation = false, savedLocationId = 2L),
-            ),
+            UiLocationInfo(name = "서울", isCurrentLocation = true),
+            UiLocationInfo(name = "부산", isCurrentLocation = false, savedLocationId = 1L),
+            UiLocationInfo(name = "제주", isCurrentLocation = false, savedLocationId = 2L),
         )
         val pagerState = rememberPagerState(pageCount = { locations.size })
         LocationPager(
@@ -121,9 +117,7 @@ private fun LocationPagerPreviewMultiple() {
 private fun LocationPagerPreviewPermission() {
     AirCheckPreviewWrapper {
         val locations = listOf(
-            UiLocationWeatherData(
-                locationInfo = UiLocationInfo(name = "현재 위치", isCurrentLocation = true, needsPermission = true),
-            )
+            UiLocationInfo(name = "현재 위치", isCurrentLocation = true, needsPermission = true),
         )
         val pagerState = rememberPagerState(pageCount = { locations.size })
         LocationPager(
@@ -138,7 +132,7 @@ private fun LocationPagerPreviewPermission() {
 
 @Composable
 private fun LocationHeader(
-    locations: List<UiLocationWeatherData>,
+    locations: List<UiLocationInfo>,
     currentPage: Int,
     onManageLocations: () -> Unit = {},
 ) {
@@ -151,12 +145,12 @@ private fun LocationHeader(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            locations.forEachIndexed { index, locationData ->
+            locations.forEachIndexed { index, locationInfo ->
                 val isSelected = currentPage == index
                 val color = if (isSelected) MaterialTheme.colorScheme.primary
                 else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
 
-                if (locationData.locationInfo.isCurrentLocation) {
+                if (locationInfo.isCurrentLocation) {
                     Icon(
                         imageVector = Icons.Default.LocationOn,
                         contentDescription = stringResource(CoreR.string.content_description_current_location),
