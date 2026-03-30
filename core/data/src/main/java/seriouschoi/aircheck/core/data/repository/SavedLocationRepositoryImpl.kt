@@ -97,7 +97,7 @@ class SavedLocationRepositoryImpl @Inject constructor(
         }
     }
     
-    private fun SavedLocationJson.toDomain() = SavedLocation(
+    private suspend fun SavedLocationJson.toDomain() = SavedLocation(
         id = id,
         name = name,
         displayName = displayName,

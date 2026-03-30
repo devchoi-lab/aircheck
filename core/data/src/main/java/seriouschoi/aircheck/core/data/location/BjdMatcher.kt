@@ -4,6 +4,8 @@ import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.*
@@ -68,8 +70,10 @@ class BjdMatcher @Inject constructor(
 
     /**
      * GPS 좌표 → 가장 가까운 법정동 찾기
+     * 
+     * Dispatchers.Default에서 실행 (JSON 로딩 + haversine 계산이 무거움)
      */
-    fun findNearest(lat: Double, lng: Double): BjdResult? {
+    suspend fun findNearest(lat: Double, lng: Double): BjdResult? = withContext(Dispatchers.Default) {
         // 현재 격자 + 인접 8개 격자 탐색
         val candidates = mutableListOf<BjdDistrict>()
         
@@ -80,10 +84,10 @@ class BjdMatcher @Inject constructor(
             }
         }
         
-        if (candidates.isEmpty()) return null
+        if (candidates.isEmpty()) return@withContext null
         
         // 가장 가까운 법정동 찾기
-        return candidates
+        candidates
             .minByOrNull { haversineDistance(lat, lng, it.lat, it.lng) }
             ?.let { BjdResult(it.code, it.name, it.lat, it.lng) }
     }

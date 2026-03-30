@@ -109,7 +109,7 @@ class SmartLocationRepository @Inject constructor(
     /**
      * 좌표 → 법정동 centroid 변환
      */
-    fun toCentroid(lat: Double, lng: Double): SmartLocationResult? {
+    suspend fun toCentroid(lat: Double, lng: Double): SmartLocationResult? {
         val bjdResult = bjdMatcher.findNearest(lat, lng) ?: return null
         return SmartLocationResult(
             bjdCode = bjdResult.code,
