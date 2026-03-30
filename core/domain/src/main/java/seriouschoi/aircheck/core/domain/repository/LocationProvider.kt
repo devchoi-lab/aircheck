@@ -25,6 +25,11 @@ interface LocationProvider {
     suspend fun toCentroid(lat: Double, lng: Double): SmartLocation?
 
     /**
+     * 법정동 코드 → SmartLocation 조회
+     */
+    fun findByBjdCode(bjdCode: String): SmartLocation?
+
+    /**
      * 강제 갱신 (pull-to-refresh)
      */
     fun forceRefresh()

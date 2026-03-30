@@ -53,7 +53,7 @@ internal fun WeatherScreen(
     onAddLocation: () -> Unit = {},
     onManageLocations: () -> Unit = {},
 ) {
-    val locations = state.locations.locations
+    val locations = state.locations
     val pagerState = rememberPagerState(pageCount = { locations.size.coerceAtLeast(1) })
     val currentLocation = locations.getOrNull(pagerState.currentPage)
 
@@ -71,7 +71,7 @@ internal fun WeatherScreen(
 
     // 새로고침 시각 포맷
     val lastRefreshedText = currentLocation?.let { loc ->
-        state.locations.weathers[loc.weatherKey()]?.lastRefreshedAt
+        state.weathers[loc.bjdCode]?.lastRefreshedAt
     }?.let { instant ->
         val localTime = instant.atZone(ZoneId.systemDefault()).toLocalTime()
         val formatter = DateTimeFormatter.ofPattern("HH:mm")

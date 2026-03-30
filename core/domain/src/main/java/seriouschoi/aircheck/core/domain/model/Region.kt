@@ -40,6 +40,7 @@ data class SavedLocation(
     val id: Long = 0,
     val name: String,           // "청담동"
     val displayName: String,    // "서울특별시 강남구 청담동"
+    val bjdCode: String,        // 법정동 코드
     val lat: Double,
     val lng: Double,
     val order: Int = 0

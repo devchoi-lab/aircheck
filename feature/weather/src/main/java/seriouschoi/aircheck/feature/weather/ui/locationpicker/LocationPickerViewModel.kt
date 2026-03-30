@@ -200,6 +200,7 @@ internal class LocationPickerViewModel @Inject constructor(
             val location = SavedLocation(
                 name = region.name,
                 displayName = displayName,
+                bjdCode = region.id.toString(),
                 lat = region.lat,
                 lng = region.lng
             )

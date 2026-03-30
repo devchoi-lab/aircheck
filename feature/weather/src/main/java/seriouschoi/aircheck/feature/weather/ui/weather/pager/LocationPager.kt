@@ -30,11 +30,9 @@ import androidx.compose.ui.unit.dp
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreview
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreviewWrapper
 import seriouschoi.aircheck.feature.weather.ui.weather.UiLocationInfo
-import seriouschoi.aircheck.feature.weather.ui.weather.UiLocationsState
 import seriouschoi.aircheck.feature.weather.ui.weather.UiWeatherResult
 import seriouschoi.aircheck.feature.weather.ui.weather.UiWeatherScreenState
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
-import seriouschoi.aircheck.feature.weather.ui.weather.weatherKey
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
@@ -45,7 +43,7 @@ internal fun LocationPager(
     onIntent: (WeatherContract.Intent) -> Unit,
     onManageLocations: () -> Unit = {},
 ) {
-    val locations = state.locations.locations
+    val locations = state.locations
     val currentLocation = locations.getOrNull(pagerState.currentPage)
 
     Column(modifier = modifier) {
@@ -63,7 +61,7 @@ internal fun LocationPager(
             modifier = Modifier.weight(1f)
         ) { page ->
             val locationInfo = locations[page]
-            val weatherResult = state.locations.weathers[locationInfo.weatherKey()] ?: UiWeatherResult()
+            val weatherResult = state.weathers[locationInfo.bjdCode] ?: UiWeatherResult()
             LocationPage(
                 locationInfo = locationInfo,
                 weatherResult = weatherResult,
@@ -85,7 +83,7 @@ private fun LocationPagerPreviewSingle() {
         LocationPager(
             pagerState = pagerState,
             state = UiWeatherScreenState(
-                locations = UiLocationsState(locations = locations, isLoading = false)
+                locations = locations, isLoading = false
             ),
             onIntent = {}
         )
@@ -105,7 +103,7 @@ private fun LocationPagerPreviewMultiple() {
         LocationPager(
             pagerState = pagerState,
             state = UiWeatherScreenState(
-                locations = UiLocationsState(locations = locations, isLoading = false)
+                locations = locations, isLoading = false
             ),
             onIntent = {}
         )
@@ -123,7 +121,7 @@ private fun LocationPagerPreviewPermission() {
         LocationPager(
             pagerState = pagerState,
             state = UiWeatherScreenState(
-                locations = UiLocationsState(locations = locations, isLoading = false)
+                locations = locations, isLoading = false
             ),
             onIntent = {}
         )

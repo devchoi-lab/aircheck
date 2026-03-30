@@ -13,11 +13,13 @@ import java.time.Instant
 internal data class UiLocationInfo(
     val name: String,
     val isCurrentLocation: Boolean,
+
+    /** 법정동 코드 — 날씨 Map 키 및 조회에 사용 */
+    val bjdCode: String = "",
+
     /** 저장된 위치의 ID (현재 위치는 null) — 삭제 시 사용 */
     val savedLocationId: Long? = null,
-    /** 날씨 조회용 좌표 */
-    val lat: Double = 0.0,
-    val lng: Double = 0.0,
+
     /** 위치 권한 필요 (현재 위치 전용) */
     val needsPermission: Boolean = false,
 )
@@ -34,13 +36,6 @@ internal data class UiWeatherResult(
     val lastRefreshedAt: Instant? = null,
 )
 
-/** 위치 목록 + 날씨 상태 (분리 관리) */
-internal data class UiLocationsState(
-    val locations: List<UiLocationInfo> = emptyList(),
-    val weathers: Map<String, UiWeatherResult> = emptyMap(),
-    val isLoading: Boolean = true,
-)
-
 /** UI 컨트롤 상태 (다이얼로그, 로딩 인디케이터 등) */
 internal data class UiControlState(
     val showInfoDialog: Boolean = false,
@@ -48,13 +43,8 @@ internal data class UiControlState(
 
 /** 화면 전체 통합 상태 (Screen에서 관찰) */
 internal data class UiWeatherScreenState(
-    val locations: UiLocationsState = UiLocationsState(),
-    val uiControl: UiControlState = UiControlState()
-) {
-    /** 로딩 중 여부 (위치 로딩 또는 리프레시) */
-    val isLoading: Boolean get() = locations.isLoading
-}
-
-/** 위치를 날씨 Map의 키로 변환 */
-internal fun UiLocationInfo.weatherKey(): String =
-    if (isCurrentLocation) "current" else savedLocationId.toString()
+    val locations: List<UiLocationInfo> = emptyList(),
+    val weathers: Map<String, UiWeatherResult> = emptyMap(),
+    val isLoading: Boolean = true,
+    val uiControl: UiControlState = UiControlState(),
+)
