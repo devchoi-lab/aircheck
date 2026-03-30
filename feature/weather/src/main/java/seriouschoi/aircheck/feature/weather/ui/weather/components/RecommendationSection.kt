@@ -20,20 +20,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import seriouschoi.aircheck.core.domain.model.AirQuality
-import seriouschoi.aircheck.core.domain.model.WeatherData
-import seriouschoi.aircheck.core.domain.model.getRecommendations
+import seriouschoi.aircheck.core.domain.model.Recommendation
 import seriouschoi.aircheck.core.ui.mapper.toDisplayLabel
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
 import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
 internal fun RecommendationSection(
-    weather: WeatherData?,
-    airQuality: AirQuality?,
+    recommendations: List<Recommendation>,
     modifier: Modifier = Modifier
 ) {
-    val recommendations = getRecommendations(weather, airQuality)
     if (recommendations.isEmpty()) return
 
     Column(modifier = modifier.fillMaxWidth()) {

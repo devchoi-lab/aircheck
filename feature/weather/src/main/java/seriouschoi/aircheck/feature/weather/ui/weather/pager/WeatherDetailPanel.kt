@@ -19,6 +19,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import seriouschoi.aircheck.core.domain.model.AirQuality
+import seriouschoi.aircheck.core.domain.model.Recommendation
 import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
 import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualitySection
@@ -33,6 +34,7 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 internal fun WeatherDetailPanel(
     air: WeatherContract.DataResult<AirQuality>,
     weather: WeatherContract.DataResult<WeatherData>,
+    recommendations: List<Recommendation>,
     onIntent: (WeatherContract.Intent) -> Unit
 ) {
     Column(
@@ -43,7 +45,7 @@ internal fun WeatherDetailPanel(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // ── 추천 아이템 (가장 위에) ─────────────────────────────
-        if (weather.data != null || air.data != null) {
+        if (recommendations.isNotEmpty()) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -53,8 +55,7 @@ internal fun WeatherDetailPanel(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 RecommendationSection(
-                    weather = weather.data,
-                    airQuality = air.data,
+                    recommendations = recommendations,
                     modifier = Modifier.padding(16.dp)
                 )
             }

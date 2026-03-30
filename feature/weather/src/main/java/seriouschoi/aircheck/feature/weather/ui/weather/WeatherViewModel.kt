@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import seriouschoi.aircheck.core.domain.model.LocationItem
+import seriouschoi.aircheck.core.domain.model.getRecommendations
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.SmartLocation
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
@@ -212,15 +213,18 @@ internal class WeatherViewModel @Inject constructor(
             state.copy(
                 locations = state.locations.mapIndexed { i, loc ->
                     if (i == index) {
+                        val weatherData = output.result.weather.getOrNull()
+                        val airQualityData = output.result.airQuality.getOrNull()
                         loc.copy(
                             weather = WeatherContract.DataResult(
-                                data = output.result.weather.getOrNull(),
+                                data = weatherData,
                                 error = ErrorMapper.toUiText(output.result.weather.exceptionOrNull())
                             ),
                             airQuality = WeatherContract.DataResult(
-                                data = output.result.airQuality.getOrNull(),
+                                data = airQualityData,
                                 error = ErrorMapper.toUiText(output.result.airQuality.exceptionOrNull())
                             ),
+                            recommendations = getRecommendations(weatherData, airQualityData),
                             isRefreshing = false,
                             lastRefreshedAt = Instant.now(),
                         )
