@@ -274,7 +274,7 @@ class WeatherViewModelTest {
 
         // Then
         viewModel.screenState.test {
-            awaitLoadedState() // 초기 로드 대기
+            awaitWeatherLoadedState() // 날씨 로드까지 완료 대기
 
             // When
             viewModel.processIntent(WeatherContract.Intent.ShowInfoDialog)
