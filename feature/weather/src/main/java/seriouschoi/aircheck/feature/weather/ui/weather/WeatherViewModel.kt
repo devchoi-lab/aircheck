@@ -198,7 +198,6 @@ internal class WeatherViewModel @Inject constructor(
             name = name,
             isCurrentLocation = isCurrentLocation,
             bjdCode = bjdCode,
-            savedLocationId = savedLocationId,
             needsPermission = needsPermission,
         )
     }

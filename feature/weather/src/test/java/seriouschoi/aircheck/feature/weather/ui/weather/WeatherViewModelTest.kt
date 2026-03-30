@@ -239,8 +239,8 @@ class WeatherViewModelTest {
         every { getLocationListUseCase() } returns flowOf(
             listOf(
                 LocationItem(name = "역삼동", isCurrentLocation = true, bjdCode = "1168010100"),
-                LocationItem(name = "서울 강남구 집", isCurrentLocation = false, bjdCode = "1168010200", savedLocationId = 1),
-                LocationItem(name = "서울 중구 회사", isCurrentLocation = false, bjdCode = "1114010100", savedLocationId = 2),
+                LocationItem(name = "서울 강남구 집", isCurrentLocation = false, bjdCode = "1168010200"),
+                LocationItem(name = "서울 중구 회사", isCurrentLocation = false, bjdCode = "1114010100"),
             )
         )
         coEvery { fetchWeatherUseCase(any<String>()) } returns createMockFetchOutput()

@@ -96,8 +96,8 @@ private fun LocationPagerPreviewMultiple() {
     AirCheckPreviewWrapper {
         val locations = listOf(
             UiLocationInfo(name = "서울", isCurrentLocation = true),
-            UiLocationInfo(name = "부산", isCurrentLocation = false, savedLocationId = 1L),
-            UiLocationInfo(name = "제주", isCurrentLocation = false, savedLocationId = 2L),
+            UiLocationInfo(name = "부산", isCurrentLocation = false),
+            UiLocationInfo(name = "제주", isCurrentLocation = false),
         )
         val pagerState = rememberPagerState(pageCount = { locations.size })
         LocationPager(

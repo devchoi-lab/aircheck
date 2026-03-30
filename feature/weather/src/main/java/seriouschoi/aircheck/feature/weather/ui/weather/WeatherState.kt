@@ -17,9 +17,6 @@ internal data class UiLocationInfo(
     /** 법정동 코드 — 날씨 Map 키 및 조회에 사용 */
     val bjdCode: String = "",
 
-    /** 저장된 위치의 ID (현재 위치는 null) — 삭제 시 사용 */
-    val savedLocationId: Long? = null,
-
     /** 위치 권한 필요 (현재 위치 전용) */
     val needsPermission: Boolean = false,
 )
