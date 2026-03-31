@@ -2,6 +2,8 @@ package seriouschoi.aircheck.core.data.location
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
@@ -38,6 +40,7 @@ class SmartLocationRepository @Inject constructor(
      */
     fun smartLocationFlow(): Flow<SmartLocationResult> {
         val periodicFlow = locationDataSource.locationFlow()
+            .catch { /* 권한 없음 등 예외 발생 시 무시 */ }
             .mapNotNull { location ->
                 bjdMatcher.findNearest(location.lat, location.lng)
             }

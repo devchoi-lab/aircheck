@@ -38,9 +38,9 @@ class LocationDataSource @Inject constructor(
      */
     @SuppressLint("MissingPermission")
     fun locationFlow(): Flow<LocationData> = callbackFlow {
-        // 권한 체크
+        // 권한 체크 - 권한 없으면 빈 flow로 종료 (예외 발생 안 함)
         if (!hasLocationPermission()) {
-            close(SecurityException("위치 권한이 없습니다"))
+            close()
             return@callbackFlow
         }
 
