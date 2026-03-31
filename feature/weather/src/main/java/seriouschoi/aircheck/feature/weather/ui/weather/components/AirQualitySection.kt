@@ -122,15 +122,13 @@ internal fun PollutantRow(label: String, pmData: PmData?, mainStationName: Strin
     val color = level.toColor()
     
     Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // 왼쪽: 라벨 + 값 (중앙 기준 왼쪽)
-            Column(
-                modifier = Modifier.weight(1f),
-                horizontalAlignment = Alignment.End
-            ) {
+            // 왼쪽: 라벨 + 값
+            Column {
                 Text(label, fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     text = pmData?.let { "%.1f μg/m³".format(it.value) } ?: "- μg/m³",
@@ -139,26 +137,18 @@ internal fun PollutantRow(label: String, pmData: PmData?, mainStationName: Strin
                 )
             }
             
-            Spacer(Modifier.size(16.dp))
-            
-            // 오른쪽: WHO 등급 칩 (중앙 기준 오른쪽)
+            // 오른쪽: WHO 등급 칩
             Box(
                 modifier = Modifier
-                    .weight(1f),
-                contentAlignment = Alignment.CenterStart
+                    .background(color.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .background(color.copy(alpha = 0.15f), RoundedCornerShape(20.dp))
-                        .padding(horizontal = 14.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = "${level.toEmoji()} ${stringResource(level.toLabelRes())}",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = color
-                    )
-                }
+                Text(
+                    text = "${level.toEmoji()} ${stringResource(level.toLabelRes())}",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = color
+                )
             }
         }
         
