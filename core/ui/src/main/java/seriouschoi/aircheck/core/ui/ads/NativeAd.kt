@@ -7,10 +7,11 @@ import android.widget.TextView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -79,10 +80,11 @@ fun NativeAdCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(AD_HEIGHT)  // 고정 높이로 레이아웃 시프트 방지
+            .wrapContentHeight()
+            .defaultMinSize(minHeight = AD_MIN_HEIGHT)  // 로딩 중 최소 높이
             .clip(RoundedCornerShape(12.dp))
             .border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+            .background(Color.White)
     ) {
         if (nativeAd != null) {
             // 네이티브 광고 (XML에 "광고" 라벨 포함)
@@ -96,14 +98,16 @@ fun NativeAdCard(
                         populateNativeAdView(ad, adView)
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
             )
         }
         // 로딩 중에는 빈 Box 유지 (높이 예약)
     }
 }
 
-private val AD_HEIGHT = 100.dp
+private val AD_MIN_HEIGHT = 100.dp
 
 private fun populateNativeAdView(nativeAd: NativeAd, adView: NativeAdView) {
     // 헤드라인
