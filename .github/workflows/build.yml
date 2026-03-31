@@ -124,7 +124,7 @@ jobs:
         with:
           name: debug-apk-${{ github.run_number }}
           path: app/build/outputs/apk/debug/*.apk
-          retention-days: 7
+          retention-days: 1
 
       # AAB Artifact 업로드 (release/*, main)
       - name: Upload Release AAB
@@ -134,7 +134,7 @@ jobs:
         with:
           name: release-aab-${{ github.run_number }}
           path: app/build/outputs/bundle/release/*.aab
-          retention-days: 7
+          retention-days: 1
 
       # 임시 파일 정리
       - name: Cleanup
