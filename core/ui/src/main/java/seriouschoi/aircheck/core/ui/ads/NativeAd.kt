@@ -128,6 +128,9 @@ private fun populateNativeAdView(nativeAd: NativeAd, adView: NativeAdView) {
     adView.callToActionView = adView.findViewById(UiR.id.ad_call_to_action)
     (adView.callToActionView as? Button)?.text = nativeAd.callToAction
     
+    // AdChoices (우측 상단 정보 아이콘)
+    adView.adChoicesView = adView.findViewById(UiR.id.ad_choices)
+    
     // 광고 등록
     adView.setNativeAd(nativeAd)
 }
