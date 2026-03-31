@@ -3,9 +3,7 @@ package seriouschoi.aircheck
 import android.Manifest
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.provider.Settings
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -15,14 +13,9 @@ import androidx.activity.viewModels
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
@@ -31,9 +24,6 @@ import seriouschoi.aircheck.feature.weather.navigation.WeatherRoute
 import seriouschoi.aircheck.feature.weather.navigation.weatherScreen
 import seriouschoi.aircheck.core.ui.theme.AirCheckTheme
 import seriouschoi.aircheck.core.resource.R as CoreR
-
-/** 권한 승인 콜백을 전달하기 위한 CompositionLocal */
-val LocalPermissionGranted = staticCompositionLocalOf<() -> Unit> { {} }
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -69,19 +59,10 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                // 권한 승인 시 호출될 콜백
-                var onPermissionGranted by remember { mutableStateOf<(() -> Unit)?>(null) }
-
+                // 앱 시작 시 권한 요청
                 val permissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions()
-                ) { permissions ->
-                    // 위치 권한 중 하나라도 승인되면 콜백 호출
-                    val granted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
-                                  permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
-                    if (granted) {
-                        onPermissionGranted?.invoke()
-                    }
-                }
+                ) { /* WeatherScreen에서 onResume 시 권한 체크함 */ }
 
                 LaunchedEffect(Unit) {
                     permissionLauncher.launch(
@@ -92,20 +73,11 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                CompositionLocalProvider(
-                    LocalPermissionGranted provides { onPermissionGranted?.invoke() }
+                NavHost(
+                    navController = navController,
+                    startDestination = WeatherRoute.Main
                 ) {
-                    NavHost(
-                        navController = navController,
-                        startDestination = WeatherRoute.Main
-                    ) {
-                        weatherScreen(
-                            navController = navController,
-                            onRegisterPermissionCallback = { callback ->
-                                onPermissionGranted = callback
-                            }
-                        )
-                    }
+                    weatherScreen(navController = navController)
                 }
             }
         }

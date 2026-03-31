@@ -21,6 +21,9 @@ object WeatherContract {
 
         /** 페이지 변경 시 해당 위치 로드 (lazy loading) */
         data class OnPageVisible(val index: Int) : Intent
+        
+        /** 위치 권한 승인됨 - 현재 위치 새로고침 */
+        data object OnPermissionGranted : Intent
     }
 
     // ── 공통 데이터 타입 ─────────────────────────────────────────────────────
