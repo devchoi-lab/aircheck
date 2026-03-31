@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -24,13 +26,24 @@ android {
                 keyPassword = "android"
             }
         }
+        create("release") {
+            val localProperties = rootProject.file("local.properties")
+            if (localProperties.exists()) {
+                val props = Properties()
+                localProperties.inputStream().use { props.load(it) }
+                storeFile = file(props.getProperty("RELEASE_STORE_FILE"))
+                storePassword = props.getProperty("RELEASE_STORE_PASSWORD")
+                keyAlias = props.getProperty("RELEASE_KEY_ALIAS")
+                keyPassword = props.getProperty("RELEASE_KEY_PASSWORD")
+            }
+        }
     }
 
     defaultConfig {
         applicationId = "seriouschoi.aircheck"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
+        versionCode = 2
         versionName = "1.0.0"
     }
     
@@ -42,6 +55,7 @@ android {
         }
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             buildConfigField("String", "APP_CHECK_DEBUG_TOKEN", "\"\"")
             // 실제 AdMob App ID
             manifestPlaceholders["ADMOB_APP_ID"] = "ca-app-pub-8381903489844516~7225419989"
