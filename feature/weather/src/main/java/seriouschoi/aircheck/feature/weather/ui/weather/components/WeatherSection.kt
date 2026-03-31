@@ -3,6 +3,8 @@ package seriouschoi.aircheck.feature.weather.ui.weather.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -30,6 +32,7 @@ import seriouschoi.aircheck.core.ui.mapper.toIconRes
 import seriouschoi.aircheck.core.ui.mapper.toLabelRes
 import seriouschoi.aircheck.core.resource.R as CoreR
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun WeatherSection(weather: WeatherData, modifier: Modifier = Modifier) {
     val horizontalPadding = 16.dp
@@ -73,10 +76,11 @@ internal fun WeatherSection(weather: WeatherData, modifier: Modifier = Modifier)
 
         Spacer(Modifier.height(12.dp))
 
-        // 기온 / 체감온도 / 강수확률 / 강설확률
-        Row(
+        // 기온 / 체감온도 / 강수확률 / 강설확률 (글자 크기 커지면 자동 줄바꿈)
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding),
-            horizontalArrangement = Arrangement.SpaceEvenly
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             WeatherStat(
                 emoji = "🌡️",
