@@ -1,3 +1,5 @@
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Properties
 
 plugins {
@@ -43,7 +45,8 @@ android {
         applicationId = "seriouschoi.aircheck"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
+        // CI: VERSION_CODE 환경변수, 로컬: 수동 관리
+        versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 3
         versionName = "1.0.0"
     }
     
@@ -61,6 +64,23 @@ android {
             manifestPlaceholders["ADMOB_APP_ID"] = "ca-app-pub-8381903489844516~7225419989"
         }
     }
+
+    // 빌드 파일명에 버전정보 + 날짜시간 추가
+    val buildTime = SimpleDateFormat("yyyyMMdd-HHmm").format(Date())
+    val vCode = defaultConfig.versionCode
+    val vName = defaultConfig.versionName
+    
+    // APK 파일명
+    applicationVariants.all {
+        val variant = this
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            output.outputFileName = "aircheck-${variant.buildType.name}-${vCode}-${vName}-${buildTime}.apk"
+        }
+    }
+    
+    // AAB 파일명 (base.archivesName)
+    base.archivesName.set("aircheck-${vCode}-${vName}-${buildTime}")
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
