@@ -7,31 +7,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.composable
-import seriouschoi.aircheck.feature.weather.ui.locationmanage.LocationManageContract
 import seriouschoi.aircheck.feature.weather.ui.locationmanage.LocationManageScreen
 import seriouschoi.aircheck.feature.weather.ui.locationmanage.LocationManageViewModel
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerContract
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerScreen
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerViewModel
-import seriouschoi.aircheck.feature.weather.ui.weather.WeatherContract
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherScreen
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherViewModel
 
 /** 날씨 피처 네비게이션 그래프 */
 fun NavGraphBuilder.weatherScreen(
-    navController: NavController,
-    onRegisterPermissionCallback: ((callback: () -> Unit) -> Unit)? = null
+    navController: NavController
 ) {
     composable<WeatherRoute.Main> {
         val viewModel: WeatherViewModel = hiltViewModel()
         val state by viewModel.screenState.collectAsStateWithLifecycle()
-        
-        // 권한 승인 시 자동 새로고침 콜백 등록
-        LaunchedEffect(Unit) {
-            onRegisterPermissionCallback?.invoke {
-                viewModel.processIntent(WeatherContract.Intent.RefreshLocation(0))
-            }
-        }
 
         WeatherScreen(
             state = state,

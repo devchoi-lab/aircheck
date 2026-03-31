@@ -87,6 +87,31 @@ internal class WeatherViewModel @Inject constructor(
             is WeatherContract.Intent.OnPageVisible -> loadLocationIfNeeded(intent.index)
             is WeatherContract.Intent.ShowInfoDialog -> updateUiControl { copy(showInfoDialog = true) }
             is WeatherContract.Intent.DismissInfoDialog -> updateUiControl { copy(showInfoDialog = false) }
+            is WeatherContract.Intent.OnPermissionGranted -> onPermissionGranted()
+        }
+    }
+    
+    private fun onPermissionGranted() {
+        viewModelScope.launch {
+            // 권한 승인 시 위치 새로고침 트리거
+            locationProvider.forceRefresh()
+            // 현재 위치 정보 갱신
+            locationProvider.getCurrentSmartLocation()?.let { smartLocation ->
+                val updatedInfo = UiLocationInfo(
+                    name = shortenBjdName(smartLocation.bjdName),
+                    isCurrentLocation = true,
+                    bjdCode = smartLocation.bjdCode,
+                )
+                _locations.update { locations ->
+                    locations.map { loc ->
+                        if (loc.isCurrentLocation) updatedInfo else loc
+                    }
+                }
+                // 날씨 데이터 로드
+                updateWeatherRefreshing(smartLocation.bjdCode, true)
+                val output = fetchWeatherUseCase(smartLocation.bjdCode)
+                updateWeather(smartLocation.bjdCode, output)
+            }
         }
     }
 
