@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -147,6 +148,8 @@ private fun FeelsLikeSummaryRow(
 ) {
     val minDayLabel = min.dayLabel.toDisplayString()
     val maxDayLabel = max.dayLabel.toDisplayString()
+    val fontScale = LocalDensity.current.fontScale
+    val clothingIconSize = (18 * fontScale).dp
     
     Column(modifier = Modifier.fillMaxWidth()) {
         // 헤더
@@ -182,7 +185,7 @@ private fun FeelsLikeSummaryRow(
             Icon(
                 painter = painterResource(min.clothing.toIconRes()),
                 contentDescription = null,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(clothingIconSize),
                 tint = Color.Unspecified
             )
             Spacer(Modifier.width(2.dp))
@@ -215,7 +218,7 @@ private fun FeelsLikeSummaryRow(
             Icon(
                 painter = painterResource(max.clothing.toIconRes()),
                 contentDescription = null,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(clothingIconSize),
                 tint = Color.Unspecified
             )
             Spacer(Modifier.width(2.dp))

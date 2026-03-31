@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +32,10 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 
 @Composable
 internal fun HourlyForecastItem(forecast: HourlyForecast) {
+    val fontScale = LocalDensity.current.fontScale
+    val clothingIconSize = (20 * fontScale).dp
+    val smallIconSize = (16 * fontScale).dp
+    
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
@@ -98,7 +103,7 @@ internal fun HourlyForecastItem(forecast: HourlyForecast) {
         Icon(
             painter = painterResource(clothing.toIconRes()),
             contentDescription = stringResource(clothing.toLabelRes()),
-            modifier = Modifier.size(20.dp),
+            modifier = Modifier.size(clothingIconSize),
             tint = Color.Unspecified
         )
         Text(
@@ -112,7 +117,7 @@ internal fun HourlyForecastItem(forecast: HourlyForecast) {
             Icon(
                 painter = painterResource(CoreR.drawable.ic_umbrella_blue),
                 contentDescription = stringResource(CoreR.string.item_umbrella),
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(smallIconSize),
                 tint = Color.Unspecified
             )
             Text(
@@ -124,7 +129,7 @@ internal fun HourlyForecastItem(forecast: HourlyForecast) {
             Icon(
                 painter = painterResource(CoreR.drawable.ic_snow_man),
                 contentDescription = stringResource(CoreR.string.item_snow),
-                modifier = Modifier.size(16.dp),
+                modifier = Modifier.size(smallIconSize),
                 tint = Color.Unspecified
             )
             Text(
@@ -156,11 +161,14 @@ internal fun WeatherStat(emoji: String, label: String, value: String) {
 
 @Composable
 internal fun WeatherStatWithIcon(iconRes: Int, label: String, value: String) {
+    val fontScale = LocalDensity.current.fontScale
+    val iconSize = (28 * fontScale).dp
+    
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(
             painter = painterResource(iconRes),
             contentDescription = label,
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier.size(iconSize),
             tint = Color.Unspecified
         )
         Spacer(Modifier.height(4.dp))
