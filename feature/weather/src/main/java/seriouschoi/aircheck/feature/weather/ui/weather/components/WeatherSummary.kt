@@ -98,10 +98,11 @@ private fun TemperatureSummaryRow(
             )
         }
         Spacer(Modifier.height(4.dp))
-        // 최저/최고 온도
+        // 최저 온도
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = stringResource(CoreR.string.label_min),
@@ -115,7 +116,14 @@ private fun TemperatureSummaryRow(
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.primary,
             )
-            Spacer(Modifier.width(12.dp))
+        }
+        Spacer(Modifier.height(2.dp))
+        // 최고 온도
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 text = stringResource(CoreR.string.label_max),
                 fontSize = 12.sp,
