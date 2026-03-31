@@ -42,6 +42,8 @@
     <string name="air_quality_title">공기질</string>
     <string name="label_temperature">기온</string>
     <string name="label_feels_like">체감온도</string>
+    <string name="label_min">최저</string>
+    <string name="label_max">최고</string>
     <string name="label_precipitation_prob">강수확률</string>
     <string name="label_snowfall_prob">강설확률</string>
     <string name="label_rain">비</string>

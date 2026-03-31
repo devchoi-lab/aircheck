@@ -86,33 +86,49 @@ private fun TemperatureSummaryRow(
     val minDayLabel = min.dayLabel.toDisplayString()
     val maxDayLabel = max.dayLabel.toDisplayString()
     
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Text(emoji, fontSize = 16.sp)
-        Spacer(Modifier.width(6.dp))
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.weight(1f))
-        Text(
-            text = "${formatTemp(min.temperature)} ($minDayLabel ${min.hour})",
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.primary,
-        )
-        Text(
-            text = " ~ ",
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Text(
-            text = "${formatTemp(max.temperature)} ($maxDayLabel ${max.hour})",
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.error,
-        )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // 헤더
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(emoji, fontSize = 16.sp)
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = label,
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        // 최저/최고 온도
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+        ) {
+            Text(
+                text = stringResource(CoreR.string.label_min),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text = "${formatTemp(min.temperature)} ($minDayLabel ${min.hour})",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                text = stringResource(CoreR.string.label_max),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text = "${formatTemp(max.temperature)} ($maxDayLabel ${max.hour})",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
     }
 }
 
@@ -124,11 +140,9 @@ private fun FeelsLikeSummaryRow(
     val minDayLabel = min.dayLabel.toDisplayString()
     val maxDayLabel = max.dayLabel.toDisplayString()
     
-    Column {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // 헤더
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text("🧥", fontSize = 16.sp)
             Spacer(Modifier.width(6.dp))
             Text(
@@ -136,56 +150,70 @@ private fun FeelsLikeSummaryRow(
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(4.dp))
+        // 최저 체감온도 + 옷차림
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(CoreR.string.label_min),
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.width(4.dp))
             Text(
                 text = "${formatTemp(min.temperature)} ($minDayLabel ${min.hour})",
                 fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.primary,
             )
-            Text(
-                text = " ~ ",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Text(
-                text = "${formatTemp(max.temperature)} ($maxDayLabel ${max.hour})",
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+            Spacer(Modifier.width(6.dp))
             Icon(
                 painter = painterResource(min.clothing.toIconRes()),
                 contentDescription = null,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(18.dp),
                 tint = Color.Unspecified
             )
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(2.dp))
             Text(
                 text = stringResource(min.clothing.toLabelRes()),
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.primary,
             )
+        }
+        Spacer(Modifier.height(2.dp))
+        // 최고 체감온도 + 옷차림
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
-                text = " → ",
+                text = stringResource(CoreR.string.label_max),
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                text = "${formatTemp(max.temperature)} ($maxDayLabel ${max.hour})",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.error,
+            )
+            Spacer(Modifier.width(6.dp))
             Icon(
                 painter = painterResource(max.clothing.toIconRes()),
                 contentDescription = null,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(18.dp),
                 tint = Color.Unspecified
             )
-            Spacer(Modifier.width(4.dp))
+            Spacer(Modifier.width(2.dp))
             Text(
                 text = stringResource(max.clothing.toLabelRes()),
-                fontSize = 12.sp,
+                fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.error,
             )
         }
