@@ -16,14 +16,16 @@ fun getRecommendations(
         add(Recommendation.Clothing(RecommendedClothing.fromFeelsLike(temp)))
     }
 
-    // 2. 강수확률 기반 우산 (6시간 내 최대값 >= 20%)
+    // 2. 날씨 상태 기반 우산 (6시간 내 비 상태 존재 시)
     weather?.hourlyForecast?.take(6)
+        ?.filter { it.condition.isRainy() }
         ?.maxOfOrNull { it.precipitationProbability }
-        ?.takeIf { it >= 20 }
         ?.let { add(Recommendation.Umbrella(it)) }
 
-    // 3. 적설량 기반 (시간별 예보 합계 > 0)
-    weather?.hourlyForecast?.sumOf { it.snowfall }
+    // 3. 날씨 상태 기반 눈 (6시간 내 눈 상태 존재 시)
+    weather?.hourlyForecast?.take(6)
+        ?.filter { it.condition.isSnowy() }
+        ?.sumOf { it.snowfall }
         ?.takeIf { it > 0 }
         ?.let { add(Recommendation.Snow(it)) }
 

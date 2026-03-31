@@ -107,8 +107,8 @@ internal fun HourlyForecastItem(forecast: HourlyForecast) {
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         
-        // 우산/눈 추천
-        if (forecast.precipitationProbability >= 40) {
+        // 우산/눈 추천 (날씨 상태 기반)
+        if (forecast.condition.isRainy()) {
             Icon(
                 painter = painterResource(CoreR.drawable.ic_umbrella_blue),
                 contentDescription = stringResource(CoreR.string.item_umbrella),
@@ -120,7 +120,7 @@ internal fun HourlyForecastItem(forecast: HourlyForecast) {
                 fontSize = 9.sp,
                 color = WeatherColors.Precipitation
             )
-        } else if (forecast.snowfall > 0) {
+        } else if (forecast.condition.isSnowy()) {
             Icon(
                 painter = painterResource(CoreR.drawable.ic_snow_man),
                 contentDescription = stringResource(CoreR.string.item_snow),

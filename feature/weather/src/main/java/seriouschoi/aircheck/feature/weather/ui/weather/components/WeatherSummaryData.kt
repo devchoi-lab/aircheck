@@ -3,7 +3,6 @@ package seriouschoi.aircheck.feature.weather.ui.weather.components
 import seriouschoi.aircheck.core.domain.model.DayLabel
 import seriouschoi.aircheck.core.domain.model.HourlyForecast
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
-import seriouschoi.aircheck.core.domain.model.WeatherCondition
 
 /**
  * 48시간 예보 요약 정보
@@ -49,13 +48,13 @@ fun List<HourlyForecast>.toSummaryData(): WeatherSummaryData? {
     val minFeelsLikeForecast = minByOrNull { it.feelsLike } ?: return null
     val maxFeelsLikeForecast = maxByOrNull { it.feelsLike } ?: return null
 
-    // 비 상태인 연속 구간 (RAIN, HEAVY_RAIN, DRIZZLE, THUNDERSTORM)
+    // 비 상태인 연속 구간
     val precipitationPeriod = findFirstPeriodWithProbability(
         predicate = { it.condition.isRainy() },
         probability = { it.precipitationProbability }
     )
 
-    // 눈 상태인 연속 구간 (SNOW, SNOW_SHOWER)
+    // 눈 상태인 연속 구간
     val snowfallPeriod = findFirstPeriodWithProbability(
         predicate = { it.condition.isSnowy() },
         probability = { it.precipitationProbability }
@@ -123,15 +122,3 @@ private fun List<HourlyForecast>.findFirstPeriodWithProbability(
         maxProbability = maxProb,
     )
 }
-
-private fun WeatherCondition.isRainy(): Boolean = this in listOf(
-    WeatherCondition.RAIN,
-    WeatherCondition.HEAVY_RAIN,
-    WeatherCondition.DRIZZLE,
-    WeatherCondition.THUNDERSTORM,
-)
-
-private fun WeatherCondition.isSnowy(): Boolean = this in listOf(
-    WeatherCondition.SNOW,
-    WeatherCondition.SNOW_SHOWER,
-)

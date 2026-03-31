@@ -37,6 +37,12 @@ enum class WeatherCondition {
     THUNDERSTORM,
     UNKNOWN;
 
+    /** 비 관련 상태인지 (우산 필요) */
+    fun isRainy(): Boolean = this in listOf(DRIZZLE, RAIN, HEAVY_RAIN, THUNDERSTORM)
+
+    /** 눈 관련 상태인지 */
+    fun isSnowy(): Boolean = this in listOf(SNOW, SNOW_SHOWER)
+
     companion object {
         /**
          * 서버에서 보내는 WeatherCondition 문자열로 변환
