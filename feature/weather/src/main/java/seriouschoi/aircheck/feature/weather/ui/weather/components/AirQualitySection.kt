@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +30,7 @@ import seriouschoi.aircheck.core.ui.mapper.toEmoji
 import seriouschoi.aircheck.core.ui.mapper.toLabelRes
 import seriouschoi.aircheck.core.resource.R as CoreR
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun AirQualitySection(air: AirQuality, modifier: Modifier = Modifier) {
     val worstColor = air.worstLevel.toColor()
@@ -91,11 +94,11 @@ internal fun AirQualitySection(air: AirQuality, modifier: Modifier = Modifier) {
         
         Spacer(Modifier.height(8.dp))
         
-        // 측정소 정보
-        Row(
+        // 측정소 정보 (글자 크기 커지면 자동 줄바꿈)
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
                 text = stringResource(CoreR.string.label_station, air.mainStationName),
