@@ -2,7 +2,8 @@ package seriouschoi.aircheck.feature.weather.ui.weather.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -25,12 +27,17 @@ import seriouschoi.aircheck.core.ui.mapper.toDisplayLabel
 import seriouschoi.aircheck.core.ui.mapper.toIconRes
 import seriouschoi.aircheck.core.resource.R as CoreR
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun RecommendationSection(
     recommendations: List<Recommendation>,
     modifier: Modifier = Modifier
 ) {
     if (recommendations.isEmpty()) return
+    
+    // 글자 크기에 따라 아이콘 크기 조절
+    val fontScale = LocalDensity.current.fontScale
+    val iconSize = (32 * fontScale).dp
 
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
@@ -45,20 +52,20 @@ internal fun RecommendationSection(
         )
         Spacer(Modifier.height(12.dp))
 
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             recommendations.forEach { recommendation ->
                 val label = recommendation.toDisplayLabel()
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.weight(1f, fill = false)
                 ) {
                     Icon(
                         painter = painterResource(recommendation.toIconRes()),
                         contentDescription = label,
-                        modifier = Modifier.size(32.dp),
+                        modifier = Modifier.size(iconSize),
                         tint = Color.Unspecified
                     )
                     Spacer(Modifier.height(4.dp))
