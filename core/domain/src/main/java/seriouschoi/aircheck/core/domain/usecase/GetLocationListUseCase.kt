@@ -1,6 +1,7 @@
 package seriouschoi.aircheck.core.domain.usecase
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.onStart
@@ -24,6 +25,7 @@ class GetLocationListUseCase @Inject constructor(
     operator fun invoke(): Flow<List<LocationItem>> {
         val smartLocationFlow = locationProvider.smartLocationFlow()
             .onStart<SmartLocation?> { emit(locationProvider.getCurrentSmartLocation()) }
+            .catch<SmartLocation?> { /* 권한 없음 등 예외 시 무시 - onStart에서 이미 값 emit됨 */ }
             .distinctUntilChanged()
 
         return combine(smartLocationFlow, savedLocationRepository.getAll()) { smartLocation, savedLocations ->
