@@ -14,6 +14,7 @@ import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerScre
 import seriouschoi.aircheck.feature.weather.ui.locationpicker.LocationPickerViewModel
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherScreen
 import seriouschoi.aircheck.feature.weather.ui.weather.WeatherViewModel
+import seriouschoi.aircheck.feature.weather.ui.calendar.CalendarScreen
 
 /** 날씨 피처 네비게이션 그래프 */
 fun NavGraphBuilder.weatherScreen(
@@ -27,7 +28,8 @@ fun NavGraphBuilder.weatherScreen(
             state = state,
             onIntent = viewModel::processIntent,
             onAddLocation = { navController.navigate(WeatherRoute.LocationManage) },
-            onManageLocations = { navController.navigate(WeatherRoute.LocationManage) }
+            onManageLocations = { navController.navigate(WeatherRoute.LocationManage) },
+            onCalendarClick = { navController.navigate(WeatherRoute.Calendar) }
         )
     }
 
@@ -59,6 +61,12 @@ fun NavGraphBuilder.weatherScreen(
             onIntent = viewModel::processIntent,
             onNavigateBack = { navController.popBackStack() },
             onAddLocation = { navController.navigate(WeatherRoute.LocationPicker) }
+        )
+    }
+    
+    composable<WeatherRoute.Calendar> {
+        CalendarScreen(
+            onBack = { navController.popBackStack() }
         )
     }
 }

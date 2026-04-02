@@ -12,4 +12,7 @@ sealed interface WeatherRoute {
     
     @Serializable
     data object LocationManage : WeatherRoute
+    
+    @Serializable
+    data object Calendar : WeatherRoute
 }
