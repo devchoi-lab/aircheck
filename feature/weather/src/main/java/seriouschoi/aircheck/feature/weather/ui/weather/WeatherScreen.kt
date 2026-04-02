@@ -51,6 +51,8 @@ import seriouschoi.aircheck.core.ui.ads.AdUnitIds
 import seriouschoi.aircheck.core.ui.ads.BannerAd
 import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualityInfoDialog
 import seriouschoi.aircheck.feature.weather.ui.weather.pager.LocationPager
+import seriouschoi.aircheck.feature.weather.ui.calendar.CalendarUiState
+import seriouschoi.aircheck.feature.weather.ui.calendar.CalendarIntent
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import seriouschoi.aircheck.core.resource.R as CoreR
@@ -58,13 +60,22 @@ import seriouschoi.aircheck.core.resource.R as CoreR
 @Composable
 internal fun WeatherScreen(
     state: UiWeatherScreenState,
+    calendarState: CalendarUiState = CalendarUiState(),
     onIntent: (WeatherContract.Intent) -> Unit,
+    onCalendarIntent: (CalendarIntent) -> Unit = {},
     onAddLocation: () -> Unit = {},
     onManageLocations: () -> Unit = {},
 ) {
     val locations = state.locations
-    val pagerState = rememberPagerState(pageCount = { locations.size.coerceAtLeast(1) })
-    val currentLocation = locations.getOrNull(pagerState.currentPage)
+    val includeCalendar = true
+    val pageOffset = if (includeCalendar) 1 else 0
+    val totalPages = locations.size.coerceAtLeast(1) + pageOffset
+    val pagerState = rememberPagerState(
+        initialPage = pageOffset, // 현재위치 페이지 (캘린더 다음)
+        pageCount = { totalPages }
+    )
+    val currentLocationIndex = if (includeCalendar) pagerState.currentPage - 1 else pagerState.currentPage
+    val currentLocation = locations.getOrNull(currentLocationIndex)
     
     // 설정에서 권한 활성화 후 복귀 시 감지
     val context = LocalContext.current
@@ -194,25 +205,36 @@ internal fun WeatherScreen(
                         var previousLocationCount by rememberSaveable { mutableIntStateOf(locations.size) }
                         LaunchedEffect(locations.size) {
                             if (locations.size > previousLocationCount) {
-                                pagerState.animateScrollToPage(locations.size - 1)
+                                // 캘린더 오프셋 고려
+                                pagerState.animateScrollToPage(locations.size - 1 + pageOffset)
                             }
                             previousLocationCount = locations.size
                         }
 
                         // 페이지 변경 시 또는 앱 복귀 시 해당 위치 날씨 로드
+                        // 캘린더 페이지(0)가 아닐 때만 위치 날씨 로드
                         LaunchedEffect(pagerState.currentPage) {
-                            onIntent(WeatherContract.Intent.OnPageVisible(pagerState.currentPage))
+                            val locationIndex = pagerState.currentPage - pageOffset
+                            if (locationIndex >= 0) {
+                                onIntent(WeatherContract.Intent.OnPageVisible(locationIndex))
+                            }
                         }
                         LifecycleResumeEffect(Unit) {
-                            onIntent(WeatherContract.Intent.OnPageVisible(pagerState.currentPage))
+                            val locationIndex = pagerState.currentPage - pageOffset
+                            if (locationIndex >= 0) {
+                                onIntent(WeatherContract.Intent.OnPageVisible(locationIndex))
+                            }
                             onPauseOrDispose { }
                         }
 
                         LocationPager(
                             pagerState = pagerState,
                             state = state,
+                            calendarState = calendarState,
                             onIntent = onIntent,
+                            onCalendarIntent = onCalendarIntent,
                             onManageLocations = onManageLocations,
+                            includeCalendar = includeCalendar,
                             modifier = Modifier.fillMaxSize()
                         )
                     }
