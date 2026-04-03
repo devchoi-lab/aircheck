@@ -1,6 +1,8 @@
 package seriouschoi.aircheck.feature.weather.ui.calendar
 
-import seriouschoi.aircheck.core.domain.model.HourlyForecast
+import seriouschoi.aircheck.core.domain.model.AqiLevel
+import seriouschoi.aircheck.core.domain.model.Recommendation
+import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -16,10 +18,6 @@ object CalendarContract {
         data object AddEvent : Intent
         data class EditEvent(val event: CalendarEvent) : Intent
         data class OnPermissionResult(val granted: Boolean) : Intent
-        data class UpdateWeatherData(
-            val hourlyForecast: List<HourlyForecast>,
-            val locationName: String,
-        ) : Intent
     }
 
     // ── State ──────────────────────────────────────────────────────────────
@@ -31,6 +29,7 @@ object CalendarContract {
         val isRefreshing: Boolean = false,
         val hasCalendarPermission: Boolean = false,
         val currentLocationName: String = "",
+        val worstLevel: AqiLevel? = null,
     )
 
     // ── Side Effect (일회성 이벤트) ──────────────────────────────────────────
@@ -55,7 +54,6 @@ data class CalendarEvent(
 data class CalendarEventWithWeather(
     val event: CalendarEvent,
     val temperature: Int?,
-    val weatherIcon: String?,
-    val airQualityLevel: Int?,
-    val airQualityLabel: String?,
+    val weather: WeatherCondition?,
+    val recommendations: List<Recommendation> = emptyList(),
 )

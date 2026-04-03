@@ -2,6 +2,8 @@ package seriouschoi.aircheck.feature.weather.ui.calendar
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
@@ -30,11 +32,24 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import seriouschoi.aircheck.core.domain.model.AqiLevel
+import seriouschoi.aircheck.core.domain.model.Recommendation
+import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.resource.R as CoreR
+import seriouschoi.aircheck.core.ui.mapper.toColor
+import seriouschoi.aircheck.core.ui.mapper.toDisplayLabel
+import seriouschoi.aircheck.core.ui.mapper.toEmoji
+import seriouschoi.aircheck.core.ui.mapper.toIconRes
+import seriouschoi.aircheck.core.ui.mapper.toLabelRes
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreview
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreviewWrapper
 import java.time.LocalDate
@@ -75,6 +90,7 @@ fun CalendarPage(
                     date = state.date,
                     events = state.events,
                     currentLocationName = state.currentLocationName,
+                    worstLevel = state.worstLevel,
                     onIntent = onIntent,
                 )
             }
@@ -116,6 +132,7 @@ private fun CalendarContent(
     date: LocalDate,
     events: List<CalendarEventWithWeather>,
     currentLocationName: String,
+    worstLevel: AqiLevel?,
     onIntent: (CalendarContract.Intent) -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
@@ -146,6 +163,12 @@ private fun CalendarContent(
             )
         }
 
+        // 공기질
+        if (worstLevel != null && worstLevel != AqiLevel.UNKNOWN) {
+            AirQualityBadge(worstLevel = worstLevel)
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         // 일정 목록
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -155,6 +178,69 @@ private fun CalendarContent(
                 CalendarEventCard(
                     eventWithWeather = eventWithWeather,
                     onClick = { onIntent(CalendarContract.Intent.EditEvent(eventWithWeather.event)) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AirQualityBadge(worstLevel: AqiLevel) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(bottom = 4.dp),
+    ) {
+        Text(
+            text = worstLevel.toEmoji(),
+            fontSize = 14.sp,
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = stringResource(CoreR.string.air_quality_title),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.outline,
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = stringResource(worstLevel.toLabelRes()),
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = worstLevel.toColor(),
+        )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun RecommendationRow(
+    recommendations: List<Recommendation>,
+    modifier: Modifier = Modifier,
+) {
+    val fontScale = LocalDensity.current.fontScale
+    val iconSize = (28 * fontScale).dp
+
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        recommendations.forEach { recommendation ->
+            val label = recommendation.toDisplayLabel()
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(
+                    painter = painterResource(recommendation.toIconRes()),
+                    contentDescription = label,
+                    modifier = Modifier.size(iconSize),
+                    tint = Color.Unspecified,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = label,
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
@@ -211,17 +297,24 @@ private fun CalendarEventCard(
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.width(12.dp))
-            
+
             // 오른쪽: 날씨 정보
             if (eventWithWeather.temperature != null) {
                 WeatherInfo(
                     temperature = eventWithWeather.temperature,
-                    weatherIcon = eventWithWeather.weatherIcon,
-                    airQualityLabel = eventWithWeather.airQualityLabel,
+                    weather = eventWithWeather.weather,
                 )
             }
+        }
+
+        // 추천 아이템 (일정 시간대 기준)
+        if (eventWithWeather.recommendations.isNotEmpty()) {
+            RecommendationRow(
+                recommendations = eventWithWeather.recommendations,
+                modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
+            )
         }
     }
 }
@@ -229,29 +322,25 @@ private fun CalendarEventCard(
 @Composable
 private fun WeatherInfo(
     temperature: Int,
-    weatherIcon: String?,
-    airQualityLabel: String?,
+    weather: WeatherCondition?,
 ) {
     Column(
-        horizontalAlignment = Alignment.End,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        // 날씨 이모지
+        if (weather != null) {
+            Text(
+                text = weather.toEmoji(),
+                fontSize = 24.sp,
+            )
+        }
         // 온도
         Text(
             text = "${temperature}°",
-            style = MaterialTheme.typography.headlineSmall,
+            style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
         )
-        
-        // 미세먼지 (있으면)
-        if (airQualityLabel != null) {
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = airQualityLabel,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.outline,
-            )
-        }
     }
 }
 
@@ -306,6 +395,7 @@ private fun CalendarPagePreviewWithEvents() {
                 isLoading = false,
                 hasCalendarPermission = true,
                 currentLocationName = "서울 강남구",
+                worstLevel = AqiLevel.MODERATE,
                 events = listOf(
                     CalendarEventWithWeather(
                         event = CalendarEvent(
@@ -317,9 +407,7 @@ private fun CalendarPagePreviewWithEvents() {
                             isAllDay = false,
                         ),
                         temperature = 12,
-                        weatherIcon = "CLEAR_DAY",
-                        airQualityLevel = 1,
-                        airQualityLabel = "좋음",
+                        weather = WeatherCondition.CLEAR_DAY,
                     ),
                     CalendarEventWithWeather(
                         event = CalendarEvent(
@@ -331,9 +419,7 @@ private fun CalendarPagePreviewWithEvents() {
                             isAllDay = false,
                         ),
                         temperature = 18,
-                        weatherIcon = "PARTLY_CLOUDY_DAY",
-                        airQualityLevel = 2,
-                        airQualityLabel = "보통",
+                        weather = WeatherCondition.PARTLY_CLOUDY_DAY,
                     ),
                     CalendarEventWithWeather(
                         event = CalendarEvent(
@@ -345,9 +431,7 @@ private fun CalendarPagePreviewWithEvents() {
                             isAllDay = true,
                         ),
                         temperature = 15,
-                        weatherIcon = "CLOUDY",
-                        airQualityLevel = 2,
-                        airQualityLabel = "보통",
+                        weather = WeatherCondition.CLOUDY,
                     ),
                 ),
             ),

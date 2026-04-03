@@ -20,7 +20,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import seriouschoi.aircheck.core.domain.model.AirQuality
+import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.HourlyForecast
+import seriouschoi.aircheck.core.domain.model.Recommendation
+import seriouschoi.aircheck.core.domain.model.RecommendedClothing
+import seriouschoi.aircheck.core.domain.model.WeatherData
+import seriouschoi.aircheck.core.domain.repository.LocationProvider
+import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.feature.weather.ui.calendar.CalendarContract as Contract
 import javax.inject.Inject
 
@@ -28,6 +35,8 @@ import javax.inject.Inject
 class CalendarViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val calendarRepository: CalendarRepository,
+    private val locationProvider: LocationProvider,
+    private val fetchWeatherUseCase: FetchWeatherUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(Contract.State())
@@ -36,10 +45,12 @@ class CalendarViewModel @Inject constructor(
     private val _effect = MutableSharedFlow<Contract.Effect>()
     val effect = _effect.asSharedFlow()
 
-    private var hourlyForecast: List<HourlyForecast> = emptyList()
+    private var weatherData: WeatherData? = null
+    private var airQuality: AirQuality? = null
 
     init {
         checkPermissionAndLoad()
+        loadWeatherData()
     }
 
     // ── Intent 처리 ─────────────────────────────────────────────────────────
@@ -50,10 +61,6 @@ class CalendarViewModel @Inject constructor(
             is Contract.Intent.AddEvent -> addEvent()
             is Contract.Intent.EditEvent -> editEvent(intent.event)
             is Contract.Intent.OnPermissionResult -> onPermissionResult(intent.granted)
-            is Contract.Intent.UpdateWeatherData -> updateWeatherData(
-                intent.hourlyForecast,
-                intent.locationName,
-            )
         }
     }
 
@@ -80,19 +87,38 @@ class CalendarViewModel @Inject constructor(
         viewModelScope.launch { _effect.emit(effect) }
     }
 
+    // ── 날씨 데이터 ────────────────────────────────────────────────────────
+
+    private fun loadWeatherData() {
+        viewModelScope.launch {
+            val smartLocation = withContext(Dispatchers.IO) {
+                locationProvider.getCurrentSmartLocation()
+            } ?: return@launch
+
+            _state.update { it.copy(currentLocationName = smartLocation.bjdName) }
+
+            val output = withContext(Dispatchers.IO) {
+                fetchWeatherUseCase(smartLocation.bjdCode)
+            }
+
+            weatherData = output.result.weather.getOrNull()
+            airQuality = output.result.airQuality.getOrNull()
+
+            _state.update {
+                it.copy(worstLevel = airQuality?.worstLevel)
+            }
+
+            if (_state.value.hasCalendarPermission) {
+                loadCalendarEvents()
+            }
+        }
+    }
+
     // ── 권한 & 데이터 ───────────────────────────────────────────────────────
 
     private fun onPermissionResult(granted: Boolean) {
         _state.update { it.copy(hasCalendarPermission = granted) }
         if (granted) {
-            loadCalendarEvents()
-        }
-    }
-
-    private fun updateWeatherData(hourlyForecast: List<HourlyForecast>, locationName: String) {
-        this.hourlyForecast = hourlyForecast
-        _state.update { it.copy(currentLocationName = locationName) }
-        if (_state.value.hasCalendarPermission) {
             loadCalendarEvents()
         }
     }
@@ -106,6 +132,7 @@ class CalendarViewModel @Inject constructor(
         _state.update { it.copy(hasCalendarPermission = hasPermission) }
 
         if (hasPermission) {
+            loadWeatherData()
             loadCalendarEvents(isRefresh = true)
         } else {
             _state.update { it.copy(isRefreshing = false) }
@@ -139,13 +166,12 @@ class CalendarViewModel @Inject constructor(
                 calendarRepository.getTodayEvents()
             }
             val eventsWithWeather = events.map { event ->
-                val weather = findWeatherForTime(event)
+                val forecast = findWeatherForTime(event)
                 CalendarEventWithWeather(
                     event = event,
-                    temperature = weather?.temperature?.toInt(),
-                    weatherIcon = weather?.condition?.name,
-                    airQualityLevel = null,
-                    airQualityLabel = null,
+                    temperature = forecast?.temperature?.toInt(),
+                    weather = forecast?.condition,
+                    recommendations = getRecommendationsForEvent(event),
                 )
             }
 
@@ -160,6 +186,7 @@ class CalendarViewModel @Inject constructor(
     }
 
     private fun findWeatherForTime(event: CalendarEvent): HourlyForecast? {
+        val hourlyForecast = weatherData?.hourlyForecast ?: return null
         if (hourlyForecast.isEmpty()) return null
 
         val eventHour = if (event.isAllDay) {
@@ -171,6 +198,54 @@ class CalendarViewModel @Inject constructor(
         return hourlyForecast.minByOrNull { forecast ->
             val forecastHour = forecast.hour.replace("시", "").toIntOrNull() ?: 0
             kotlin.math.abs(forecastHour - eventHour)
+        }
+    }
+
+    /**
+     * 일정 시간대 기준 추천 아이템 계산
+     * - 의상: 해당 시간 체감온도 기준
+     * - 우산/눈: 해당 시간부터 일정 종료까지의 예보 기준
+     * - 마스크: 당일 공기질 기준 (전역)
+     */
+    private fun getRecommendationsForEvent(event: CalendarEvent): List<Recommendation> {
+        val hourlyForecast = weatherData?.hourlyForecast ?: return emptyList()
+        if (hourlyForecast.isEmpty()) return emptyList()
+
+        val startHour = if (event.isAllDay) 0 else event.startTime.hour
+        val endHour = if (event.isAllDay) 24 else event.endTime.hour.coerceAtLeast(startHour + 1)
+
+        // 일정 시간 범위의 예보 추출
+        val eventForecasts = hourlyForecast.filter { forecast ->
+            val forecastHour = forecast.hour.replace("시", "").toIntOrNull() ?: 0
+            forecastHour in startHour until endHour
+        }.ifEmpty {
+            // 범위에 정확히 맞는 예보가 없으면 가장 가까운 1개
+            listOfNotNull(findWeatherForTime(event))
+        }
+
+        return buildList {
+            // 1. 체감온도 기반 의상
+            eventForecasts.firstOrNull()?.feelsLike?.let { temp ->
+                add(Recommendation.Clothing(RecommendedClothing.fromFeelsLike(temp)))
+            }
+
+            // 2. 우산 (일정 시간대 비 예보)
+            eventForecasts
+                .filter { it.condition.isRainy() }
+                .maxOfOrNull { it.precipitationProbability }
+                ?.let { add(Recommendation.Umbrella(it)) }
+
+            // 3. 눈 (일정 시간대 눈 예보)
+            eventForecasts
+                .filter { it.condition.isSnowy() }
+                .sumOf { it.snowfall }
+                .takeIf { it > 0 }
+                ?.let { add(Recommendation.Snow(it)) }
+
+            // 4. 마스크 (공기질은 당일 전역)
+            airQuality?.worstLevel
+                ?.takeIf { it.ordinal >= AqiLevel.UNHEALTHY_SENSITIVE.ordinal && it != AqiLevel.UNKNOWN }
+                ?.let { add(Recommendation.Mask(it)) }
         }
     }
 }
