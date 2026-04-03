@@ -31,8 +31,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import seriouschoi.aircheck.core.resource.R as CoreR
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreview
 import seriouschoi.aircheck.core.ui.theme.AirCheckPreviewWrapper
 import java.time.LocalDate
@@ -102,7 +104,7 @@ private fun EmptyCalendar(date: LocalDate) {
         )
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = "오늘 일정이 없습니다",
+            text = stringResource(CoreR.string.calendar_empty_message),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.outline,
         )
@@ -138,7 +140,7 @@ private fun CalendarContent(
             )
             Spacer(modifier = Modifier.width(4.dp))
             Text(
-                text = "현재 위치 기준: $currentLocationName",
+                text = stringResource(CoreR.string.calendar_current_location, currentLocationName),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.outline,
             )
@@ -186,7 +188,7 @@ private fun CalendarEventCard(
                 modifier = Modifier.weight(1f),
             ) {
                 Text(
-                    text = formatEventTime(event),
+                    text = formatEventTime(event, stringResource(CoreR.string.calendar_all_day)),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -258,9 +260,9 @@ private fun formatDate(date: LocalDate): String {
     return date.format(formatter)
 }
 
-private fun formatEventTime(event: CalendarEvent): String {
+private fun formatEventTime(event: CalendarEvent, allDayLabel: String): String {
     return if (event.isAllDay) {
-        "하루 종일"
+        allDayLabel
     } else {
         val formatter = DateTimeFormatter.ofPattern("HH:mm", Locale.KOREAN)
         event.startTime.format(formatter)

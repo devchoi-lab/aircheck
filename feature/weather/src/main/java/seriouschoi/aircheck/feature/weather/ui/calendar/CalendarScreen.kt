@@ -17,10 +17,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.collectLatest
 import seriouschoi.aircheck.core.ui.permission.PermissionEffect
+import seriouschoi.aircheck.core.resource.R as CoreR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,7 +59,7 @@ fun CalendarScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "캘린더 날씨",
+                        text = stringResource(CoreR.string.calendar_title),
                         fontWeight = FontWeight.Bold
                     )
                 },
@@ -65,7 +67,7 @@ fun CalendarScreen(
                     IconButton(onClick = onBack) {
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "뒤로가기"
+                            contentDescription = stringResource(CoreR.string.content_description_back_calendar)
                         )
                     }
                 },
@@ -75,7 +77,7 @@ fun CalendarScreen(
                     ) {
                         Icon(
                             Icons.Default.Add,
-                            contentDescription = "일정 추가"
+                            contentDescription = stringResource(CoreR.string.content_description_add_event)
                         )
                     }
                 }
