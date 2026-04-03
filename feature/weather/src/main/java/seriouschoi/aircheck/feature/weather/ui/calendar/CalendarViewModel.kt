@@ -22,38 +22,39 @@ class CalendarViewModel @Inject constructor(
     private val calendarRepository: CalendarRepository,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(CalendarUiState())
-    val state: StateFlow<CalendarUiState> = _state.asStateFlow()
+    private val _state = MutableStateFlow(CalendarContract.State())
+    val state: StateFlow<CalendarContract.State> = _state.asStateFlow()
 
-    // 외부에서 주입받을 hourly forecast (WeatherViewModel에서 전달)
     private var hourlyForecast: List<HourlyForecast> = emptyList()
-    private var currentLocationName: String = ""
 
     init {
         checkPermissionAndLoad()
     }
 
-    fun onIntent(intent: CalendarIntent) {
+    // ── Intent 처리 ─────────────────────────────────────────────────────────
+
+    fun processIntent(intent: CalendarContract.Intent) {
         when (intent) {
-            is CalendarIntent.Refresh -> {
-                checkPermissionAndLoad()
-            }
+            is CalendarContract.Intent.Refresh -> checkPermissionAndLoad()
+            is CalendarContract.Intent.OnPermissionResult -> onPermissionResult(intent.granted)
+            is CalendarContract.Intent.UpdateWeatherData -> updateWeatherData(
+                intent.hourlyForecast,
+                intent.locationName,
+            )
         }
     }
 
-    fun updateWeatherData(hourlyForecast: List<HourlyForecast>, locationName: String) {
-        this.hourlyForecast = hourlyForecast
-        this.currentLocationName = locationName
-        _state.update { it.copy(currentLocationName = locationName) }
-        // 날씨 데이터 업데이트 후 이벤트 새로고침
-        if (_state.value.hasCalendarPermission) {
+    private fun onPermissionResult(granted: Boolean) {
+        _state.update { it.copy(hasCalendarPermission = granted) }
+        if (granted) {
             loadCalendarEvents()
         }
     }
 
-    fun onPermissionResult(granted: Boolean) {
-        _state.update { it.copy(hasCalendarPermission = granted) }
-        if (granted) {
+    private fun updateWeatherData(hourlyForecast: List<HourlyForecast>, locationName: String) {
+        this.hourlyForecast = hourlyForecast
+        _state.update { it.copy(currentLocationName = locationName) }
+        if (_state.value.hasCalendarPermission) {
             loadCalendarEvents()
         }
     }
@@ -76,7 +77,7 @@ class CalendarViewModel @Inject constructor(
     private fun loadCalendarEvents() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            
+
             val events = calendarRepository.getTodayEvents()
             val eventsWithWeather = events.map { event ->
                 val weather = findWeatherForTime(event)
@@ -84,11 +85,11 @@ class CalendarViewModel @Inject constructor(
                     event = event,
                     temperature = weather?.temperature?.toInt(),
                     weatherIcon = weather?.condition?.name,
-                    airQualityLevel = null, // TODO: AQI 연동
+                    airQualityLevel = null,
                     airQualityLabel = null,
                 )
             }
-            
+
             _state.update {
                 it.copy(
                     events = eventsWithWeather,
@@ -100,14 +101,13 @@ class CalendarViewModel @Inject constructor(
 
     private fun findWeatherForTime(event: CalendarEvent): HourlyForecast? {
         if (hourlyForecast.isEmpty()) return null
-        
+
         val eventHour = if (event.isAllDay) {
-            12 // 하루종일 이벤트는 정오 기준
+            12
         } else {
             event.startTime.hour
         }
-        
-        // 가장 가까운 시간대 찾기
+
         return hourlyForecast.minByOrNull { forecast ->
             val forecastHour = forecast.hour.replace("시", "").toIntOrNull() ?: 0
             kotlin.math.abs(forecastHour - eventHour)

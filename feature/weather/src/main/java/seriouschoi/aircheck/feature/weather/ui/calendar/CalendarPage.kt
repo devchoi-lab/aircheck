@@ -39,8 +39,8 @@ import java.util.Locale
 
 @Composable
 fun CalendarPage(
-    state: CalendarUiState,
-    onIntent: (CalendarIntent) -> Unit,
+    state: CalendarContract.State,
+    onIntent: (CalendarContract.Intent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -252,7 +252,7 @@ private fun formatEventTime(event: CalendarEvent): String {
 private fun CalendarPagePreviewLoading() {
     AirCheckPreviewWrapper {
         CalendarPage(
-            state = CalendarUiState(isLoading = true),
+            state = CalendarContract.State(isLoading = true),
             onIntent = {},
         )
     }
@@ -263,7 +263,7 @@ private fun CalendarPagePreviewLoading() {
 private fun CalendarPagePreviewEmpty() {
     AirCheckPreviewWrapper {
         CalendarPage(
-            state = CalendarUiState(
+            state = CalendarContract.State(
                 isLoading = false,
                 hasCalendarPermission = true,
                 events = emptyList(),
@@ -278,7 +278,7 @@ private fun CalendarPagePreviewEmpty() {
 private fun CalendarPagePreviewWithEvents() {
     AirCheckPreviewWrapper {
         CalendarPage(
-            state = CalendarUiState(
+            state = CalendarContract.State(
                 isLoading = false,
                 hasCalendarPermission = true,
                 currentLocationName = "서울 강남구",

@@ -28,10 +28,10 @@ fun CalendarScreen(
 
     PermissionEffect(
         permissions = listOf(Manifest.permission.READ_CALENDAR),
-        onGranted = { viewModel.onPermissionResult(true) },
-        onDenied = { viewModel.onPermissionResult(false) },
+        onGranted = { viewModel.processIntent(CalendarContract.Intent.OnPermissionResult(true)) },
+        onDenied = { viewModel.processIntent(CalendarContract.Intent.OnPermissionResult(false)) },
     )
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -54,7 +54,7 @@ fun CalendarScreen(
     ) { innerPadding ->
         CalendarPage(
             state = state,
-            onIntent = viewModel::onIntent,
+            onIntent = viewModel::processIntent,
             modifier = Modifier.padding(innerPadding)
         )
     }
