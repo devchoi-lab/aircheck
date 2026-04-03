@@ -34,6 +34,7 @@ class CalendarRepository @Inject constructor(
             CalendarContract.Events.DTSTART,
             CalendarContract.Events.DTEND,
             CalendarContract.Events.ALL_DAY,
+            CalendarContract.Events.CALENDAR_DISPLAY_NAME,
         )
         
         val selection = "${CalendarContract.Events.DTSTART} >= ? AND ${CalendarContract.Events.DTSTART} < ?"
@@ -61,7 +62,8 @@ class CalendarRepository @Inject constructor(
             val startIndex = it.getColumnIndex(CalendarContract.Events.DTSTART)
             val endIndex = it.getColumnIndex(CalendarContract.Events.DTEND)
             val allDayIndex = it.getColumnIndex(CalendarContract.Events.ALL_DAY)
-            
+            val calendarNameIndex = it.getColumnIndex(CalendarContract.Events.CALENDAR_DISPLAY_NAME)
+
             while (it.moveToNext()) {
                 val id = it.getLong(idIndex)
                 val title = it.getString(titleIndex) ?: ""
@@ -69,6 +71,7 @@ class CalendarRepository @Inject constructor(
                 val startMillis = it.getLong(startIndex)
                 val endMillis = it.getLong(endIndex)
                 val isAllDay = it.getInt(allDayIndex) == 1
+                val calendarName = it.getString(calendarNameIndex)
                 
                 val startTime = LocalDateTime.ofInstant(
                     Instant.ofEpochMilli(startMillis),
@@ -87,6 +90,7 @@ class CalendarRepository @Inject constructor(
                         startTime = startTime,
                         endTime = endTime,
                         isAllDay = isAllDay,
+                        calendarName = calendarName,
                     )
                 )
             }

@@ -13,6 +13,8 @@ object CalendarContract {
 
     sealed interface Intent {
         data object Refresh : Intent
+        data object AddEvent : Intent
+        data class EditEvent(val event: CalendarEvent) : Intent
         data class OnPermissionResult(val granted: Boolean) : Intent
         data class UpdateWeatherData(
             val hourlyForecast: List<HourlyForecast>,
@@ -26,9 +28,16 @@ object CalendarContract {
         val date: LocalDate = LocalDate.now(),
         val events: List<CalendarEventWithWeather> = emptyList(),
         val isLoading: Boolean = true,
+        val isRefreshing: Boolean = false,
         val hasCalendarPermission: Boolean = false,
         val currentLocationName: String = "",
     )
+
+    // ── Side Effect (일회성 이벤트) ──────────────────────────────────────────
+
+    sealed interface Effect {
+        data class LaunchCalendarIntent(val intent: android.content.Intent) : Effect
+    }
 }
 
 // ── 데이터 모델 ─────────────────────────────────────────────────────────
@@ -40,6 +49,7 @@ data class CalendarEvent(
     val startTime: LocalDateTime,
     val endTime: LocalDateTime,
     val isAllDay: Boolean,
+    val calendarName: String? = null,
 )
 
 data class CalendarEventWithWeather(
