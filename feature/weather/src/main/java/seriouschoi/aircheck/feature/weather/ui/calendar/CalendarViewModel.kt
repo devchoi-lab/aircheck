@@ -8,10 +8,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -27,9 +25,6 @@ class CalendarViewModel @Inject constructor(
     private val _state = MutableStateFlow(CalendarUiState())
     val state: StateFlow<CalendarUiState> = _state.asStateFlow()
 
-    private val _effect = MutableSharedFlow<CalendarEffect>()
-    val effect = _effect.asSharedFlow()
-
     // 외부에서 주입받을 hourly forecast (WeatherViewModel에서 전달)
     private var hourlyForecast: List<HourlyForecast> = emptyList()
     private var currentLocationName: String = ""
@@ -40,11 +35,6 @@ class CalendarViewModel @Inject constructor(
 
     fun onIntent(intent: CalendarIntent) {
         when (intent) {
-            is CalendarIntent.RequestPermission -> {
-                viewModelScope.launch {
-                    _effect.emit(CalendarEffect.RequestCalendarPermission)
-                }
-            }
             is CalendarIntent.Refresh -> {
                 checkPermissionAndLoad()
             }

@@ -18,8 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -56,12 +54,7 @@ fun CalendarPage(
                     modifier = Modifier.align(Alignment.Center)
                 )
             }
-            !state.hasCalendarPermission -> {
-                PermissionRequired(
-                    onRequestPermission = { onIntent(CalendarIntent.RequestPermission) }
-                )
-            }
-            state.events.isEmpty() -> {
+            !state.hasCalendarPermission || state.events.isEmpty() -> {
                 EmptyCalendar(date = state.date)
             }
             else -> {
@@ -71,39 +64,6 @@ fun CalendarPage(
                     currentLocationName = state.currentLocationName,
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun PermissionRequired(
-    onRequestPermission: () -> Unit,
-) {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            imageVector = Icons.Default.Lock,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = MaterialTheme.colorScheme.outline,
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "캘린더 권한이 필요합니다",
-            style = MaterialTheme.typography.titleMedium,
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "일정에 맞는 날씨 정보를 보여드려요",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.outline,
-        )
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(onClick = onRequestPermission) {
-            Text("권한 허용하기")
         }
     }
 }
@@ -293,20 +253,6 @@ private fun CalendarPagePreviewLoading() {
     AirCheckPreviewWrapper {
         CalendarPage(
             state = CalendarUiState(isLoading = true),
-            onIntent = {},
-        )
-    }
-}
-
-@AirCheckPreview
-@Composable
-private fun CalendarPagePreviewNoPermission() {
-    AirCheckPreviewWrapper {
-        CalendarPage(
-            state = CalendarUiState(
-                isLoading = false,
-                hasCalendarPermission = false,
-            ),
             onIntent = {},
         )
     }

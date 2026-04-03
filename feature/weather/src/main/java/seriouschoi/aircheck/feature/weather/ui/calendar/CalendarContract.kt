@@ -29,10 +29,5 @@ data class CalendarUiState(
 )
 
 sealed interface CalendarIntent {
-    data object RequestPermission : CalendarIntent
     data object Refresh : CalendarIntent
-}
-
-sealed interface CalendarEffect {
-    data object RequestCalendarPermission : CalendarEffect
 }
