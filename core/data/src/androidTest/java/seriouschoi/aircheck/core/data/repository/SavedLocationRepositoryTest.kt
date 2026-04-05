@@ -8,6 +8,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import seriouschoi.aircheck.core.data.location.BjdMatcher
 import seriouschoi.aircheck.core.domain.model.SavedLocation
 
 /**
@@ -23,7 +24,7 @@ class SavedLocationRepositoryTest {
     @Before
     fun setup() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        repository = SavedLocationRepositoryImpl(context)
+        repository = SavedLocationRepositoryImpl(context, BjdMatcher(context))
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -178,6 +179,7 @@ class SavedLocationRepositoryTest {
             id = 0,
             name = "테스트",
             displayName = "서울특별시 강남구 테스트동",
+            bjdCode = "1168000000",
             lat = 37.12345,
             lng = 127.67890,
             order = 0
@@ -206,6 +208,7 @@ class SavedLocationRepositoryTest {
         id = 0,
         name = name,
         displayName = displayName,
+        bjdCode = "1168000000",
         lat = 37.5,
         lng = 127.0,
         order = 0
