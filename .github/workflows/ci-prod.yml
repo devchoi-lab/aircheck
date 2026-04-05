@@ -80,11 +80,11 @@ jobs:
           echo "RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}" >> local.properties
           echo "RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}" >> local.properties
 
+      # version_code = run_number + 6 (워크플로우 분리 전 수동 빌드로 6까지 사용됨)
       - name: Build Debug APK
         run: ./gradlew :app:assembleDebug
         env:
           ANDROID_HOME: /Users/agent/android-sdk
-          # +6: 워크플로우 분리 전 수동 빌드로 6까지 사용됨
           VERSION_CODE: ${{ github.run_number + 6 }}
 
       - name: Build Release AAB
