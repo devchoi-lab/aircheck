@@ -46,7 +46,7 @@ android {
         minSdk = 26
         targetSdk = 35
         // CI: VERSION_CODE 환경변수, 로컬: 수동 관리
-        versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 3
+        versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 6
         versionName = "1.0.0"
     }
     

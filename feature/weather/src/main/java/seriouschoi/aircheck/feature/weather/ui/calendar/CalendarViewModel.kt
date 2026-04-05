@@ -166,11 +166,15 @@ class CalendarViewModel @Inject constructor(
                 calendarRepository.getTodayEvents()
             }
             val eventsWithWeather = events.map { event ->
-                val forecast = findWeatherForTime(event)
+                val forecasts = findForecastsForEvent(event)
+                val maxPrecip = forecasts.maxByOrNull { it.precipitationProbability }
                 CalendarEventWithWeather(
                     event = event,
-                    temperature = forecast?.temperature?.toInt(),
-                    weather = forecast?.condition,
+                    minFeelsLike = forecasts.minOfOrNull { it.feelsLike.toInt() },
+                    maxFeelsLike = forecasts.maxOfOrNull { it.feelsLike.toInt() },
+                    hasPrecipitation = forecasts.any { it.condition.isRainy() || it.condition.isSnowy() },
+                    maxPrecipitationProbability = maxPrecip?.precipitationProbability,
+                    maxPrecipitationHour = maxPrecip?.hour,
                     recommendations = getRecommendationsForEvent(event),
                 )
             }
@@ -185,20 +189,29 @@ class CalendarViewModel @Inject constructor(
         }
     }
 
-    private fun findWeatherForTime(event: CalendarEvent): HourlyForecast? {
-        val hourlyForecast = weatherData?.hourlyForecast ?: return null
-        if (hourlyForecast.isEmpty()) return null
+    private fun findForecastsForEvent(event: CalendarEvent): List<HourlyForecast> {
+        val hourlyForecast = weatherData?.hourlyForecast ?: return emptyList()
+        if (hourlyForecast.isEmpty()) return emptyList()
 
-        val eventHour = if (event.isAllDay) {
-            12
-        } else {
-            event.startTime.hour
-        }
+        val startHour = if (event.isAllDay) 0 else event.startTime.hour
+        val endHour = if (event.isAllDay) 24 else event.endTime.hour.coerceAtLeast(startHour + 1)
 
-        return hourlyForecast.minByOrNull { forecast ->
+        val forecasts = hourlyForecast.filter { forecast ->
             val forecastHour = forecast.hour.replace("시", "").toIntOrNull() ?: 0
-            kotlin.math.abs(forecastHour - eventHour)
+            forecastHour in startHour until endHour
         }
+
+        // 범위에 정확히 맞는 예보가 없으면 가장 가까운 1개
+        if (forecasts.isEmpty()) {
+            val targetHour = if (event.isAllDay) 12 else event.startTime.hour
+            return listOfNotNull(
+                hourlyForecast.minByOrNull { forecast ->
+                    val forecastHour = forecast.hour.replace("시", "").toIntOrNull() ?: 0
+                    kotlin.math.abs(forecastHour - targetHour)
+                }
+            )
+        }
+        return forecasts
     }
 
     /**
@@ -208,25 +221,18 @@ class CalendarViewModel @Inject constructor(
      * - 마스크: 당일 공기질 기준 (전역)
      */
     private fun getRecommendationsForEvent(event: CalendarEvent): List<Recommendation> {
-        val hourlyForecast = weatherData?.hourlyForecast ?: return emptyList()
-        if (hourlyForecast.isEmpty()) return emptyList()
-
-        val startHour = if (event.isAllDay) 0 else event.startTime.hour
-        val endHour = if (event.isAllDay) 24 else event.endTime.hour.coerceAtLeast(startHour + 1)
-
-        // 일정 시간 범위의 예보 추출
-        val eventForecasts = hourlyForecast.filter { forecast ->
-            val forecastHour = forecast.hour.replace("시", "").toIntOrNull() ?: 0
-            forecastHour in startHour until endHour
-        }.ifEmpty {
-            // 범위에 정확히 맞는 예보가 없으면 가장 가까운 1개
-            listOfNotNull(findWeatherForTime(event))
-        }
+        val eventForecasts = findForecastsForEvent(event)
+        if (eventForecasts.isEmpty()) return emptyList()
 
         return buildList {
-            // 1. 체감온도 기반 의상
-            eventForecasts.firstOrNull()?.feelsLike?.let { temp ->
-                add(Recommendation.Clothing(RecommendedClothing.fromFeelsLike(temp)))
+            // 1. 체감온도 기반 의상 (최저/최고 체감온도 각각)
+            val minFeelsLike = eventForecasts.minOf { it.feelsLike }
+            val maxFeelsLike = eventForecasts.maxOf { it.feelsLike }
+            val minClothing = RecommendedClothing.fromFeelsLike(minFeelsLike)
+            val maxClothing = RecommendedClothing.fromFeelsLike(maxFeelsLike)
+            add(Recommendation.Clothing(minClothing))
+            if (maxClothing != minClothing) {
+                add(Recommendation.Clothing(maxClothing))
             }
 
             // 2. 우산 (일정 시간대 비 예보)

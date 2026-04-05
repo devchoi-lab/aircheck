@@ -2,7 +2,6 @@ package seriouschoi.aircheck.feature.weather.ui.calendar
 
 import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.Recommendation
-import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -53,7 +52,10 @@ data class CalendarEvent(
 
 data class CalendarEventWithWeather(
     val event: CalendarEvent,
-    val temperature: Int?,
-    val weather: WeatherCondition?,
+    val minFeelsLike: Int?,
+    val maxFeelsLike: Int?,
+    val hasPrecipitation: Boolean = false,
+    val maxPrecipitationProbability: Int? = null,
+    val maxPrecipitationHour: String? = null,
     val recommendations: List<Recommendation> = emptyList(),
 )

@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.Recommendation
-import seriouschoi.aircheck.core.domain.model.WeatherCondition
 import seriouschoi.aircheck.core.resource.R as CoreR
 import seriouschoi.aircheck.core.ui.mapper.toColor
 import seriouschoi.aircheck.core.ui.mapper.toDisplayLabel
@@ -214,6 +213,7 @@ private fun AirQualityBadge(worstLevel: AqiLevel) {
 @Composable
 private fun RecommendationRow(
     recommendations: List<Recommendation>,
+    maxPrecipitationHour: String? = null,
     modifier: Modifier = Modifier,
 ) {
     val fontScale = LocalDensity.current.fontScale
@@ -242,6 +242,15 @@ private fun RecommendationRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
+                // 우산 아이콘 아래에 최대 강수확률 시간 표시
+                if (recommendation is Recommendation.Umbrella && maxPrecipitationHour != null) {
+                    Text(
+                        text = maxPrecipitationHour,
+                        fontSize = 9.sp,
+                        color = MaterialTheme.colorScheme.outline,
+                        textAlign = TextAlign.Center,
+                    )
+                }
             }
         }
     }
@@ -295,17 +304,19 @@ private fun CalendarEventCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    Text(
+                        text = stringResource(CoreR.string.calendar_weather_based_on_current_location),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline,
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
             // 오른쪽: 날씨 정보
-            if (eventWithWeather.temperature != null) {
-                WeatherInfo(
-                    temperature = eventWithWeather.temperature,
-                    weather = eventWithWeather.weather,
-                )
+            if (eventWithWeather.minFeelsLike != null) {
+                WeatherInfo(eventWithWeather)
             }
         }
 
@@ -313,6 +324,7 @@ private fun CalendarEventCard(
         if (eventWithWeather.recommendations.isNotEmpty()) {
             RecommendationRow(
                 recommendations = eventWithWeather.recommendations,
+                maxPrecipitationHour = eventWithWeather.maxPrecipitationHour,
                 modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
             )
         }
@@ -321,26 +333,27 @@ private fun CalendarEventCard(
 
 @Composable
 private fun WeatherInfo(
-    temperature: Int,
-    weather: WeatherCondition?,
+    eventWithWeather: CalendarEventWithWeather,
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // 날씨 이모지
-        if (weather != null) {
+        // 체감온도 범위
+        val min = eventWithWeather.minFeelsLike
+        val max = eventWithWeather.maxFeelsLike
+        if (min != null && max != null) {
             Text(
-                text = weather.toEmoji(),
-                fontSize = 24.sp,
+                text = stringResource(CoreR.string.label_feels_like),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.outline,
+            )
+            Text(
+                text = if (min == max) "${min}°" else "${min}°~${max}°",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
             )
         }
-        // 온도
-        Text(
-            text = "${temperature}°",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-        )
     }
 }
 
@@ -354,7 +367,7 @@ private fun formatEventTime(event: CalendarEvent, allDayLabel: String): String {
         allDayLabel
     } else {
         val formatter = DateTimeFormatter.ofPattern("HH:mm", Locale.KOREAN)
-        event.startTime.format(formatter)
+        "${event.startTime.format(formatter)} ~ ${event.endTime.format(formatter)}"
     }
 }
 
@@ -406,8 +419,8 @@ private fun CalendarPagePreviewWithEvents() {
                             endTime = LocalDateTime.of(2024, 4, 2, 10, 0),
                             isAllDay = false,
                         ),
-                        temperature = 12,
-                        weather = WeatherCondition.CLEAR_DAY,
+                        minFeelsLike = 10,
+                        maxFeelsLike = 12,
                     ),
                     CalendarEventWithWeather(
                         event = CalendarEvent(
@@ -418,8 +431,11 @@ private fun CalendarPagePreviewWithEvents() {
                             endTime = LocalDateTime.of(2024, 4, 2, 13, 30),
                             isAllDay = false,
                         ),
-                        temperature = 18,
-                        weather = WeatherCondition.PARTLY_CLOUDY_DAY,
+                        minFeelsLike = 16,
+                        maxFeelsLike = 18,
+                        hasPrecipitation = true,
+                        maxPrecipitationProbability = 60,
+                        maxPrecipitationHour = "13시",
                     ),
                     CalendarEventWithWeather(
                         event = CalendarEvent(
@@ -430,8 +446,11 @@ private fun CalendarPagePreviewWithEvents() {
                             endTime = LocalDateTime.of(2024, 4, 3, 0, 0),
                             isAllDay = true,
                         ),
-                        temperature = 15,
-                        weather = WeatherCondition.CLOUDY,
+                        minFeelsLike = 8,
+                        maxFeelsLike = 19,
+                        hasPrecipitation = true,
+                        maxPrecipitationProbability = 40,
+                        maxPrecipitationHour = "15시",
                     ),
                 ),
             ),
