@@ -175,6 +175,7 @@
     <string name="calendar_current_location">현재 위치 기준: %s</string>
     <string name="calendar_all_day">하루 종일</string>
     <string name="calendar_weather_based_on_current_location">날씨 정보는 현재위치 기준으로 제공됩니다</string>
+    <string name="calendar_feels_like_range">체감온도 범위</string>
 
     <!-- 업데이트 -->
     <string name="update_required_title">업데이트 필요</string>

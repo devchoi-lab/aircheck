@@ -304,12 +304,13 @@ private fun CalendarEventCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Text(
-                        text = stringResource(CoreR.string.calendar_weather_based_on_current_location),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.outline,
-                    )
                 }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = stringResource(CoreR.string.calendar_weather_based_on_current_location),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.outline,
+                )
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -343,7 +344,7 @@ private fun WeatherInfo(
         val max = eventWithWeather.maxFeelsLike
         if (min != null && max != null) {
             Text(
-                text = stringResource(CoreR.string.label_feels_like),
+                text = stringResource(CoreR.string.calendar_feels_like_range),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.outline,
             )
