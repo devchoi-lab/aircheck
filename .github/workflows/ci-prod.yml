@@ -84,13 +84,14 @@ jobs:
         run: ./gradlew :app:assembleDebug
         env:
           ANDROID_HOME: /Users/agent/android-sdk
-          VERSION_CODE: ${{ github.run_number }}
+          # +6: 워크플로우 분리 전 수동 빌드로 6까지 사용됨
+          VERSION_CODE: ${{ github.run_number + 6 }}
 
       - name: Build Release AAB
         run: ./gradlew :app:bundleRelease
         env:
           ANDROID_HOME: /Users/agent/android-sdk
-          VERSION_CODE: ${{ github.run_number }}
+          VERSION_CODE: ${{ github.run_number + 6 }}
 
       - name: Upload Debug APK
         continue-on-error: true
