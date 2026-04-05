@@ -1,15 +1,13 @@
-name: Build & Deploy
+name: CI Prod
 
 on:
   push:
-    branches: [ main, develop, 'release/**' ]
-  pull_request:
-    branches: [ main, develop ]
+    branches: [ main, 'release/**' ]
 
 jobs:
   test:
     runs-on: self-hosted
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,20 +18,23 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Run Lint
+        run: ./gradlew lintDebug
+        env:
+          ANDROID_HOME: /Users/agent/android-sdk
+
       - name: Run Unit Tests
         run: ./gradlew testDebugUnitTest
         env:
           ANDROID_HOME: /Users/agent/android-sdk
 
-      # Android Instrumented Tests - main/develop push 시에만 실행
       - name: Start Emulator
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools
-          
+
           nohup emulator -avd test_avd -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect > /tmp/emulator.log 2>&1 &
-          
+
           adb wait-for-device
           SECONDS=0
           while [[ -z $(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r') ]]; do
@@ -46,13 +47,12 @@ jobs:
           echo "Emulator booted in ${SECONDS}s"
 
       - name: Run Instrumented Tests
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
         run: ./gradlew :core:data:connectedDebugAndroidTest
         env:
           ANDROID_HOME: /Users/agent/android-sdk
 
       - name: Stop Emulator
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop') && always()
+        if: always()
         run: |
           export ANDROID_HOME=$HOME/android-sdk
           export PATH=$PATH:$ANDROID_HOME/platform-tools
@@ -72,9 +72,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Release Keystore 디코딩 (release/*, main)
       - name: Decode Release Keystore
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/release/') || github.ref == 'refs/heads/main')
         run: |
           echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
           echo "RELEASE_STORE_FILE=release.keystore" >> local.properties
@@ -82,43 +80,19 @@ jobs:
           echo "RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}" >> local.properties
           echo "RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}" >> local.properties
 
-      # Debug APK 빌드
       - name: Build Debug APK
         run: ./gradlew :app:assembleDebug
         env:
           ANDROID_HOME: /Users/agent/android-sdk
           VERSION_CODE: ${{ github.run_number }}
 
-      # Release AAB 빌드 (release/*, main)
       - name: Build Release AAB
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/release/') || github.ref == 'refs/heads/main')
         run: ./gradlew :app:bundleRelease
         env:
           ANDROID_HOME: /Users/agent/android-sdk
           VERSION_CODE: ${{ github.run_number }}
 
-      # Debug APK 업로드 (develop → Firebase)
-      - name: Deploy to Firebase App Distribution
-        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-        run: |
-          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/firebase-sa.json
-          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa.json
-          
-          APK_PATH=$(find app/build/outputs/apk/debug -name "*.apk" | head -1)
-          firebase appdistribution:distribute "$APK_PATH" \
-            --app "${{ secrets.FIREBASE_APP_ID }}" \
-            --groups "testers" \
-            --release-notes "Branch: ${{ github.ref_name }}
-          Commit: ${{ github.sha }}
-          Build: ${{ github.run_number }}"
-          
-          rm -f /tmp/firebase-sa.json
-
-      # APK Artifact 업로드 (release/*, main)
       - name: Upload Debug APK
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/release/') || github.ref == 'refs/heads/main')
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
@@ -126,9 +100,7 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 1
 
-      # AAB Artifact 업로드 (release/*, main)
       - name: Upload Release AAB
-        if: github.event_name == 'push' && (startsWith(github.ref, 'refs/heads/release/') || github.ref == 'refs/heads/main')
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
@@ -136,7 +108,6 @@ jobs:
           path: app/build/outputs/bundle/release/*.aab
           retention-days: 1
 
-      # 임시 파일 정리
       - name: Cleanup
         if: always()
         run: |
