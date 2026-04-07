@@ -10,6 +10,7 @@ import androidx.room.PrimaryKey
  * - 매일 1회, 현재 시각 기준 48시간보다 오래된 매핑은 일괄 삭제한다 (#147 참고).
  *   절대 경계(예: "오늘 자정 UTC")를 쓰지 않는 이유는 사용자의 로컬 자정 / 다른 시간대 이동 시
  *   경계 계산이 어긋날 수 있기 때문이다.
+ *   기준 시각은 일정의 *종료* 시각이다 — 며칠에 걸친 이벤트가 진행 중에 잘려나가지 않도록.
  */
 @Entity(tableName = "event_location_mapping")
 data class EventLocationMappingEntity(
@@ -29,8 +30,12 @@ data class EventLocationMappingEntity(
      */
     val locationTextSnapshot: String?,
 
-    /** 일정 시작 시각 (UTC millis) — 청소 시 기준점 */
-    val eventStartUtcMillis: Long,
+    /**
+     * 일정 종료 시각 (UTC millis) — 청소 시 기준점.
+     * 시작이 아닌 종료 기준인 이유: 며칠에 걸친 이벤트가 시작 시각 기준으로
+     * 청소되면 아직 진행 중인 일정의 매핑이 사라질 수 있다.
+     */
+    val eventEndUtcMillis: Long,
 
     /** 매핑이 만들어지거나 갱신된 시각 (UTC millis) */
     val updatedAtUtcMillis: Long,

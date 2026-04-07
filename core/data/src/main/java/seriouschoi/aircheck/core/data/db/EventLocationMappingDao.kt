@@ -28,6 +28,6 @@ interface EventLocationMappingDao {
      * 청소 쿼리. 일정 시작 시각이 [thresholdUtcMillis]보다 오래된 매핑을 모두 삭제한다.
      * 호출자는 보통 `now - 48h`를 넘긴다.
      */
-    @Query("DELETE FROM event_location_mapping WHERE eventStartUtcMillis < :thresholdUtcMillis")
+    @Query("DELETE FROM event_location_mapping WHERE eventEndUtcMillis < :thresholdUtcMillis")
     suspend fun deleteOlderThan(thresholdUtcMillis: Long): Int
 }
