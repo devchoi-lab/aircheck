@@ -25,9 +25,11 @@ import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.HourlyForecast
 import seriouschoi.aircheck.core.domain.model.Recommendation
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
+import seriouschoi.aircheck.core.domain.model.ResolvedEventLocation
 import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
+import seriouschoi.aircheck.core.domain.usecase.ResolveEventLocationUseCase
 import seriouschoi.aircheck.feature.weather.ui.calendar.CalendarContract as Contract
 import javax.inject.Inject
 
@@ -37,6 +39,7 @@ class CalendarViewModel @Inject constructor(
     private val calendarRepository: CalendarRepository,
     private val locationProvider: LocationProvider,
     private val fetchWeatherUseCase: FetchWeatherUseCase,
+    private val resolveEventLocationUseCase: ResolveEventLocationUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(Contract.State())
@@ -45,8 +48,9 @@ class CalendarViewModel @Inject constructor(
     private val _effect = MutableSharedFlow<Contract.Effect>()
     val effect = _effect.asSharedFlow()
 
-    private var weatherData: WeatherData? = null
-    private var airQuality: AirQuality? = null
+    /** 헤더(현재 위치 카드)용 날씨/공기질. 일정별 계산에는 사용하지 않는다. */
+    private var headerWeatherData: WeatherData? = null
+    private var headerAirQuality: AirQuality? = null
 
     init {
         checkPermissionAndLoad()
@@ -101,11 +105,11 @@ class CalendarViewModel @Inject constructor(
                 fetchWeatherUseCase(smartLocation.bjdCode)
             }
 
-            weatherData = output.result.weather.getOrNull()
-            airQuality = output.result.airQuality.getOrNull()
+            headerWeatherData = output.result.weather.getOrNull()
+            headerAirQuality = output.result.airQuality.getOrNull()
 
             _state.update {
-                it.copy(worstLevel = airQuality?.worstLevel)
+                it.copy(worstLevel = headerAirQuality?.worstLevel)
             }
 
             if (_state.value.hasCalendarPermission) {
@@ -165,8 +169,40 @@ class CalendarViewModel @Inject constructor(
             val events = withContext(Dispatchers.IO) {
                 calendarRepository.getTodayEvents()
             }
+
+            // 1. 각 이벤트별로 표시할 위치를 결정한다.
+            val resolvedByEventId: Map<Long, ResolvedEventLocation> = withContext(Dispatchers.IO) {
+                events.associate { event ->
+                    event.id to resolveEventLocationUseCase(event.id, event.location)
+                }
+            }
+
+            // 2. 중복 제거된 bjdCode 목록으로 날씨를 일괄 조회한다.
+            //    빈 코드(현재 위치도 못 얻은 경우)는 제외한다.
+            val distinctBjdCodes = resolvedByEventId.values
+                .map { it.bjdCode }
+                .filter { it.isNotEmpty() }
+                .distinct()
+
+            val weatherByBjdCode: Map<String, WeatherDataPair> = withContext(Dispatchers.IO) {
+                if (distinctBjdCodes.isEmpty()) {
+                    emptyMap()
+                } else {
+                    val outputs = fetchWeatherUseCase.fetchBatch(distinctBjdCodes)
+                    distinctBjdCodes.zip(outputs).associate { (code, output) ->
+                        code to WeatherDataPair(
+                            weather = output.result.weather.getOrNull(),
+                            airQuality = output.result.airQuality.getOrNull(),
+                        )
+                    }
+                }
+            }
+
+            // 3. 이벤트별로 (자기 위치의) 날씨/공기질을 사용해 카드 데이터를 만든다.
             val eventsWithWeather = events.map { event ->
-                val forecasts = findForecastsForEvent(event)
+                val resolved = resolvedByEventId.getValue(event.id)
+                val pair = weatherByBjdCode[resolved.bjdCode] ?: WeatherDataPair(null, null)
+                val forecasts = findForecastsForEvent(event, pair.weather)
                 val maxPrecip = forecasts.maxByOrNull { it.precipitationProbability }
                 CalendarEventWithWeather(
                     event = event,
@@ -175,7 +211,9 @@ class CalendarViewModel @Inject constructor(
                     hasPrecipitation = forecasts.any { it.condition.isRainy() || it.condition.isSnowy() },
                     maxPrecipitationProbability = maxPrecip?.precipitationProbability,
                     maxPrecipitationHour = maxPrecip?.hour,
-                    recommendations = getRecommendationsForEvent(event),
+                    recommendations = getRecommendationsForEvent(event, pair.weather, pair.airQuality),
+                    locationDisplayName = resolved.bjdName,
+                    locationSource = resolved.source,
                 )
             }
 
@@ -189,7 +227,16 @@ class CalendarViewModel @Inject constructor(
         }
     }
 
-    private fun findForecastsForEvent(event: CalendarEvent): List<HourlyForecast> {
+    /** 한 이벤트의 (이벤트별 위치 기준) 날씨/공기질 페어. */
+    private data class WeatherDataPair(
+        val weather: WeatherData?,
+        val airQuality: AirQuality?,
+    )
+
+    private fun findForecastsForEvent(
+        event: CalendarEvent,
+        weatherData: WeatherData?,
+    ): List<HourlyForecast> {
         val hourlyForecast = weatherData?.hourlyForecast ?: return emptyList()
         if (hourlyForecast.isEmpty()) return emptyList()
 
@@ -218,10 +265,14 @@ class CalendarViewModel @Inject constructor(
      * 일정 시간대 기준 추천 아이템 계산
      * - 의상: 해당 시간 체감온도 기준
      * - 우산/눈: 해당 시간부터 일정 종료까지의 예보 기준
-     * - 마스크: 당일 공기질 기준 (전역)
+     * - 마스크: 해당 일정 위치의 공기질 기준
      */
-    private fun getRecommendationsForEvent(event: CalendarEvent): List<Recommendation> {
-        val eventForecasts = findForecastsForEvent(event)
+    private fun getRecommendationsForEvent(
+        event: CalendarEvent,
+        weatherData: WeatherData?,
+        airQuality: AirQuality?,
+    ): List<Recommendation> {
+        val eventForecasts = findForecastsForEvent(event, weatherData)
         if (eventForecasts.isEmpty()) return emptyList()
 
         return buildList {
