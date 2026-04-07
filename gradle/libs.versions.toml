@@ -17,6 +17,7 @@ javax-inject = "1"
 google-services = "4.4.2"
 work = "2.10.0"
 hilt-work = "1.2.0"
+room = "2.7.1"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.15.0" }
@@ -54,6 +55,9 @@ reorderable = { module = "sh.calvin.reorderable:reorderable", version = "3.0.0" 
 work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "work" }
 hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hilt-work" }
 hilt-work-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "hilt-work" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
 
 # Test
 junit = { module = "junit:junit", version = "4.13.2" }
