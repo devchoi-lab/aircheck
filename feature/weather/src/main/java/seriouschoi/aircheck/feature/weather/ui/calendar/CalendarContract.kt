@@ -2,6 +2,7 @@ package seriouschoi.aircheck.feature.weather.ui.calendar
 
 import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.Recommendation
+import seriouschoi.aircheck.core.domain.model.ResolvedEventLocation
 import java.time.LocalDate
 import java.time.LocalDateTime
 
@@ -58,4 +59,8 @@ data class CalendarEventWithWeather(
     val maxPrecipitationProbability: Int? = null,
     val maxPrecipitationHour: String? = null,
     val recommendations: List<Recommendation> = emptyList(),
+    /** 이 일정의 날씨가 어느 법정동 기준으로 계산됐는지 표시용 (예: "서울특별시 강남구 역삼동") */
+    val locationDisplayName: String = "",
+    /** 위 위치가 어떻게 결정됐는지 (사용자 매핑 / 텍스트 유추 / 현재위치 fallback) */
+    val locationSource: ResolvedEventLocation.Source = ResolvedEventLocation.Source.CURRENT_LOCATION,
 )

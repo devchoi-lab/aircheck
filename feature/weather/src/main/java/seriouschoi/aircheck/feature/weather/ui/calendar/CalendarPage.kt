@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.Recommendation
+import seriouschoi.aircheck.core.domain.model.ResolvedEventLocation
 import seriouschoi.aircheck.core.resource.R as CoreR
 import seriouschoi.aircheck.core.ui.mapper.toColor
 import seriouschoi.aircheck.core.ui.mapper.toDisplayLabel
@@ -307,7 +308,10 @@ private fun CalendarEventCard(
                 }
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = stringResource(CoreR.string.calendar_weather_based_on_current_location),
+                    text = eventLocationLabel(
+                        source = eventWithWeather.locationSource,
+                        bjdName = eventWithWeather.locationDisplayName,
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.outline,
                 )
@@ -356,6 +360,22 @@ private fun WeatherInfo(
             )
         }
     }
+}
+
+@Composable
+private fun eventLocationLabel(
+    source: ResolvedEventLocation.Source,
+    bjdName: String,
+): String = when (source) {
+    ResolvedEventLocation.Source.CURRENT_LOCATION ->
+        stringResource(CoreR.string.calendar_event_location_label_current)
+    ResolvedEventLocation.Source.MAPPING,
+    ResolvedEventLocation.Source.INFERRED ->
+        if (bjdName.isBlank()) {
+            stringResource(CoreR.string.calendar_event_location_label_current)
+        } else {
+            stringResource(CoreR.string.calendar_event_location_label_resolved, bjdName)
+        }
 }
 
 private fun formatDate(date: LocalDate): String {
