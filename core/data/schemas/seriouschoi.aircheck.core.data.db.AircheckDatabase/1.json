@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "1dff80ed44e4e8ca843ab5b633e5151a",
+    "identityHash": "e38fc3c4dd5f6182113b56ca662b9efa",
     "entities": [
       {
         "tableName": "event_location_mapping",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`eventId` INTEGER NOT NULL, `bjdCode` TEXT NOT NULL, `bjdName` TEXT NOT NULL, `locationTextSnapshot` TEXT, `eventStartUtcMillis` INTEGER NOT NULL, `updatedAtUtcMillis` INTEGER NOT NULL, PRIMARY KEY(`eventId`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`eventId` INTEGER NOT NULL, `bjdCode` TEXT NOT NULL, `bjdName` TEXT NOT NULL, `locationTextSnapshot` TEXT, `eventEndUtcMillis` INTEGER NOT NULL, `updatedAtUtcMillis` INTEGER NOT NULL, PRIMARY KEY(`eventId`))",
         "fields": [
           {
             "fieldPath": "eventId",
@@ -32,8 +32,8 @@
             "affinity": "TEXT"
           },
           {
-            "fieldPath": "eventStartUtcMillis",
-            "columnName": "eventStartUtcMillis",
+            "fieldPath": "eventEndUtcMillis",
+            "columnName": "eventEndUtcMillis",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -54,7 +54,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '1dff80ed44e4e8ca843ab5b633e5151a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e38fc3c4dd5f6182113b56ca662b9efa')"
     ]
   }
 }
