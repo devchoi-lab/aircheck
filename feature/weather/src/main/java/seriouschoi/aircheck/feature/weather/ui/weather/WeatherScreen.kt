@@ -6,7 +6,6 @@
 package seriouschoi.aircheck.feature.weather.ui.weather
 
 import android.Manifest
-import android.content.pm.PackageManager
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -27,7 +27,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.runtime.getValue
@@ -36,19 +35,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
 import seriouschoi.aircheck.core.domain.model.LocationItem
 import seriouschoi.aircheck.core.ui.ads.AdUnitIds
 import seriouschoi.aircheck.core.ui.ads.BannerAd
+import seriouschoi.aircheck.core.ui.permission.PermissionEffect
 import seriouschoi.aircheck.feature.weather.ui.weather.components.AirQualityInfoDialog
 import seriouschoi.aircheck.feature.weather.ui.weather.pager.LocationPager
 import java.time.ZoneId
@@ -61,36 +56,20 @@ internal fun WeatherScreen(
     onIntent: (WeatherContract.Intent) -> Unit,
     onAddLocation: () -> Unit = {},
     onManageLocations: () -> Unit = {},
+    onCalendarClick: () -> Unit = {},
 ) {
     val locations = state.locations
     val pagerState = rememberPagerState(pageCount = { locations.size.coerceAtLeast(1) })
     val currentLocation = locations.getOrNull(pagerState.currentPage)
     
-    // 설정에서 권한 활성화 후 복귀 시 감지
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
-                val hasPermission = ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(
-                    context,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
-                
-                if (hasPermission) {
-                    onIntent(WeatherContract.Intent.OnPermissionGranted)
-                }
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-        }
-    }
+    // 위치 권한 요청 & 설정 복귀 시 자동 감지
+    PermissionEffect(
+        permissions = listOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+        ),
+        onGranted = { onIntent(WeatherContract.Intent.OnPermissionGranted) },
+    )
 
     val currentLocationLabel = stringResource(CoreR.string.label_current_location_name)
     val titleText = currentLocation?.let { loc ->
@@ -127,6 +106,12 @@ internal fun WeatherScreen(
                     }
                 },
                 actions = {
+                    IconButton(onClick = onCalendarClick) {
+                        Icon(
+                            Icons.Default.CalendarMonth,
+                            contentDescription = "캘린더 날씨"
+                        )
+                    }
                     IconButton(onClick = onAddLocation) {
                         Icon(
                             Icons.AutoMirrored.Filled.List,

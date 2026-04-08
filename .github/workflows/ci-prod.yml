@@ -1,0 +1,120 @@
+name: CI Prod
+
+on:
+  push:
+    branches: [ main, 'release/**' ]
+
+jobs:
+  test:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Run Lint
+        run: ./gradlew lintDebug
+        env:
+          ANDROID_HOME: /Users/agent/android-sdk
+
+      - name: Run Unit Tests
+        run: ./gradlew testDebugUnitTest
+        env:
+          ANDROID_HOME: /Users/agent/android-sdk
+
+      - name: Start Emulator
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools
+
+          nohup emulator -avd test_avd -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect > /tmp/emulator.log 2>&1 &
+
+          adb wait-for-device
+          SECONDS=0
+          while [[ -z $(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r') ]]; do
+            if [[ $SECONDS -gt 120 ]]; then
+              echo "Emulator boot timeout"
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Emulator booted in ${SECONDS}s"
+
+      - name: Run Instrumented Tests
+        run: ./gradlew :core:data:connectedDebugAndroidTest
+        env:
+          ANDROID_HOME: /Users/agent/android-sdk
+
+      - name: Stop Emulator
+        if: always()
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$PATH:$ANDROID_HOME/platform-tools
+          adb emu kill || true
+
+  build:
+    runs-on: self-hosted
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Decode Release Keystore
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+          echo "RELEASE_STORE_FILE=release.keystore" >> local.properties
+          echo "RELEASE_STORE_PASSWORD=${{ secrets.RELEASE_KEYSTORE_PASSWORD }}" >> local.properties
+          echo "RELEASE_KEY_ALIAS=${{ secrets.RELEASE_KEY_ALIAS }}" >> local.properties
+          echo "RELEASE_KEY_PASSWORD=${{ secrets.RELEASE_KEY_PASSWORD }}" >> local.properties
+
+      # version_code = run_number + 6 (워크플로우 분리 전 수동 빌드로 6까지 사용됨)
+      - name: Calculate Version Code
+        id: version
+        run: echo "code=$(( ${{ github.run_number }} + 6 ))" >> $GITHUB_OUTPUT
+
+      - name: Build Debug APK
+        run: ./gradlew :app:assembleDebug
+        env:
+          ANDROID_HOME: /Users/agent/android-sdk
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+
+      - name: Build Release AAB
+        run: ./gradlew :app:bundleRelease
+        env:
+          ANDROID_HOME: /Users/agent/android-sdk
+          VERSION_CODE: ${{ steps.version.outputs.code }}
+
+      - name: Upload Debug APK
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk-${{ github.run_number }}
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 1
+
+      - name: Upload Release AAB
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-aab-${{ github.run_number }}
+          path: app/build/outputs/bundle/release/*.aab
+          retention-days: 1
+
+      - name: Cleanup
+        if: always()
+        run: |
+          rm -f app/release.keystore
+          rm -f local.properties
