@@ -1,5 +1,7 @@
 package seriouschoi.aircheck.core.domain.repository
 
+import seriouschoi.aircheck.core.domain.model.EventLocationMapping
+
 /**
  * 캘린더 일정(`eventId`) ↔ 사용자 지정 법정동(`bjdCode`) 매핑 저장소.
  *
@@ -24,13 +26,3 @@ interface EventLocationMappingRepository {
      */
     suspend fun deleteOlderThan(thresholdUtcMillis: Long): Int
 }
-
-/** 도메인 모델 (DB 엔티티의 복제) */
-data class EventLocationMapping(
-    val eventId: Long,
-    val bjdCode: String,
-    val bjdName: String,
-    val locationTextSnapshot: String?,
-    val eventEndUtcMillis: Long,
-    val updatedAtUtcMillis: Long,
-)
