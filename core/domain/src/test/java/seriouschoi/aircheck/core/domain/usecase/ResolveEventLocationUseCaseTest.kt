@@ -6,10 +6,10 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
+import seriouschoi.aircheck.core.domain.model.EventLocationMapping
 import seriouschoi.aircheck.core.domain.model.Region
 import seriouschoi.aircheck.core.domain.model.RegionSearchResult
 import seriouschoi.aircheck.core.domain.model.ResolvedEventLocation
-import seriouschoi.aircheck.core.domain.repository.EventLocationMapping
 import seriouschoi.aircheck.core.domain.repository.EventLocationMappingRepository
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.repository.RegionRepository

@@ -2,7 +2,7 @@ package seriouschoi.aircheck.core.data.repository
 
 import seriouschoi.aircheck.core.data.db.EventLocationMappingDao
 import seriouschoi.aircheck.core.data.db.EventLocationMappingEntity
-import seriouschoi.aircheck.core.domain.repository.EventLocationMapping
+import seriouschoi.aircheck.core.domain.model.EventLocationMapping
 import seriouschoi.aircheck.core.domain.repository.EventLocationMappingRepository
 import javax.inject.Inject
 import javax.inject.Singleton
