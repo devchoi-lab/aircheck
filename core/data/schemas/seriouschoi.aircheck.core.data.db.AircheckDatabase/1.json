@@ -1,0 +1,60 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "e38fc3c4dd5f6182113b56ca662b9efa",
+    "entities": [
+      {
+        "tableName": "event_location_mapping",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`eventId` INTEGER NOT NULL, `bjdCode` TEXT NOT NULL, `bjdName` TEXT NOT NULL, `locationTextSnapshot` TEXT, `eventEndUtcMillis` INTEGER NOT NULL, `updatedAtUtcMillis` INTEGER NOT NULL, PRIMARY KEY(`eventId`))",
+        "fields": [
+          {
+            "fieldPath": "eventId",
+            "columnName": "eventId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bjdCode",
+            "columnName": "bjdCode",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bjdName",
+            "columnName": "bjdName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "locationTextSnapshot",
+            "columnName": "locationTextSnapshot",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "eventEndUtcMillis",
+            "columnName": "eventEndUtcMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "updatedAtUtcMillis",
+            "columnName": "updatedAtUtcMillis",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "eventId"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e38fc3c4dd5f6182113b56ca662b9efa')"
+    ]
+  }
+}
