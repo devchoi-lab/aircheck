@@ -1,10 +1,10 @@
 package seriouschoi.aircheck.feature.weather.ui.calendar
 
 import seriouschoi.aircheck.core.domain.model.AqiLevel
+import seriouschoi.aircheck.core.domain.model.CalendarEvent
 import seriouschoi.aircheck.core.domain.model.Recommendation
 import seriouschoi.aircheck.core.domain.model.ResolvedEventLocation
 import java.time.LocalDate
-import java.time.LocalDateTime
 
 /**
  * Calendar 화면 MVI Contract
@@ -39,18 +39,11 @@ object CalendarContract {
     }
 }
 
-// ── 데이터 모델 ─────────────────────────────────────────────────────────
+// ── UI 모델 ─────────────────────────────────────────────────────────────
 
-data class CalendarEvent(
-    val id: Long,
-    val title: String,
-    val location: String?,
-    val startTime: LocalDateTime,
-    val endTime: LocalDateTime,
-    val isAllDay: Boolean,
-    val calendarName: String? = null,
-)
-
+/**
+ * 화면 렌더링용 모델 — 도메인 [CalendarEvent] 에 시간대별 날씨/추천/위치 라벨을 덧붙인 뷰 모델.
+ */
 data class CalendarEventWithWeather(
     val event: CalendarEvent,
     val minFeelsLike: Int?,

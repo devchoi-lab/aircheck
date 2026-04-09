@@ -22,11 +22,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import seriouschoi.aircheck.core.domain.model.AirQuality
 import seriouschoi.aircheck.core.domain.model.AqiLevel
+import seriouschoi.aircheck.core.domain.model.CalendarEvent
 import seriouschoi.aircheck.core.domain.model.HourlyForecast
 import seriouschoi.aircheck.core.domain.model.Recommendation
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.model.ResolvedEventLocation
 import seriouschoi.aircheck.core.domain.model.WeatherData
+import seriouschoi.aircheck.core.domain.repository.CalendarEventRepository
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.domain.usecase.ResolveEventLocationUseCase
@@ -36,7 +38,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val calendarRepository: CalendarRepository,
+    private val calendarEventRepository: CalendarEventRepository,
     private val locationProvider: LocationProvider,
     private val fetchWeatherUseCase: FetchWeatherUseCase,
     private val resolveEventLocationUseCase: ResolveEventLocationUseCase,
@@ -167,7 +169,7 @@ class CalendarViewModel @Inject constructor(
             }
 
             val events = withContext(Dispatchers.IO) {
-                calendarRepository.getTodayEvents()
+                calendarEventRepository.getTodayEvents()
             }
 
             // 1. 각 이벤트별로 표시할 위치를 결정한다.
