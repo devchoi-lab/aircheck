@@ -21,13 +21,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import seriouschoi.aircheck.core.domain.model.AirQuality
-import seriouschoi.aircheck.core.domain.model.AqiLevel
 import seriouschoi.aircheck.core.domain.model.CalendarEvent
-import seriouschoi.aircheck.core.domain.model.HourlyForecast
-import seriouschoi.aircheck.core.domain.model.Recommendation
-import seriouschoi.aircheck.core.domain.model.RecommendedClothing
 import seriouschoi.aircheck.core.domain.model.WeatherData
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
+import seriouschoi.aircheck.core.domain.usecase.ComputeCalendarEventWeatherInsightUseCase
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
 import seriouschoi.aircheck.core.domain.usecase.LoadTodayCalendarEventsWithWeatherUseCase
 import seriouschoi.aircheck.feature.weather.ui.calendar.CalendarContract as Contract
@@ -39,6 +36,7 @@ class CalendarViewModel @Inject constructor(
     private val locationProvider: LocationProvider,
     private val fetchWeatherUseCase: FetchWeatherUseCase,
     private val loadTodayCalendarEventsWithWeatherUseCase: LoadTodayCalendarEventsWithWeatherUseCase,
+    private val computeCalendarEventWeatherInsightUseCase: ComputeCalendarEventWeatherInsightUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(Contract.State())
@@ -173,19 +171,17 @@ class CalendarViewModel @Inject constructor(
             }
 
             val eventsWithWeather = snapshots.map { snapshot ->
-                val event = snapshot.event
-                val forecasts = findForecastsForEvent(event, snapshot.weatherData)
-                val maxPrecip = forecasts.maxByOrNull { it.precipitationProbability }
+                val insight = computeCalendarEventWeatherInsightUseCase(snapshot)
                 CalendarEventWithWeather(
-                    event = event,
-                    minFeelsLike = forecasts.minOfOrNull { it.feelsLike.toInt() },
-                    maxFeelsLike = forecasts.maxOfOrNull { it.feelsLike.toInt() },
-                    hasPrecipitation = forecasts.any { it.condition.isRainy() || it.condition.isSnowy() },
-                    maxPrecipitationProbability = maxPrecip?.precipitationProbability,
-                    maxPrecipitationHour = maxPrecip?.hour,
-                    recommendations = getRecommendationsForEvent(event, snapshot.weatherData, snapshot.airQuality),
-                    locationDisplayName = snapshot.resolvedLocation.bjdName,
-                    locationSource = snapshot.resolvedLocation.source,
+                    event = insight.event,
+                    minFeelsLike = insight.minFeelsLike,
+                    maxFeelsLike = insight.maxFeelsLike,
+                    hasPrecipitation = insight.hasPrecipitation,
+                    maxPrecipitationProbability = insight.maxPrecipitationProbability,
+                    maxPrecipitationHour = insight.maxPrecipitationHour,
+                    recommendations = insight.recommendations,
+                    locationDisplayName = insight.resolvedLocation.bjdName,
+                    locationSource = insight.resolvedLocation.source,
                 )
             }
 
@@ -199,76 +195,4 @@ class CalendarViewModel @Inject constructor(
         }
     }
 
-    private fun findForecastsForEvent(
-        event: CalendarEvent,
-        weatherData: WeatherData?,
-    ): List<HourlyForecast> {
-        val hourlyForecast = weatherData?.hourlyForecast ?: return emptyList()
-        if (hourlyForecast.isEmpty()) return emptyList()
-
-        val startHour = if (event.isAllDay) 0 else event.startTime.hour
-        val endHour = if (event.isAllDay) 24 else event.endTime.hour.coerceAtLeast(startHour + 1)
-
-        val forecasts = hourlyForecast.filter { forecast ->
-            val forecastHour = forecast.hour.replace("시", "").toIntOrNull() ?: 0
-            forecastHour in startHour until endHour
-        }
-
-        // 범위에 정확히 맞는 예보가 없으면 가장 가까운 1개
-        if (forecasts.isEmpty()) {
-            val targetHour = if (event.isAllDay) 12 else event.startTime.hour
-            return listOfNotNull(
-                hourlyForecast.minByOrNull { forecast ->
-                    val forecastHour = forecast.hour.replace("시", "").toIntOrNull() ?: 0
-                    kotlin.math.abs(forecastHour - targetHour)
-                }
-            )
-        }
-        return forecasts
-    }
-
-    /**
-     * 일정 시간대 기준 추천 아이템 계산
-     * - 의상: 해당 시간 체감온도 기준
-     * - 우산/눈: 해당 시간부터 일정 종료까지의 예보 기준
-     * - 마스크: 해당 일정 위치의 공기질 기준
-     */
-    private fun getRecommendationsForEvent(
-        event: CalendarEvent,
-        weatherData: WeatherData?,
-        airQuality: AirQuality?,
-    ): List<Recommendation> {
-        val eventForecasts = findForecastsForEvent(event, weatherData)
-        if (eventForecasts.isEmpty()) return emptyList()
-
-        return buildList {
-            // 1. 체감온도 기반 의상 (최저/최고 체감온도 각각)
-            val minFeelsLike = eventForecasts.minOf { it.feelsLike }
-            val maxFeelsLike = eventForecasts.maxOf { it.feelsLike }
-            val minClothing = RecommendedClothing.fromFeelsLike(minFeelsLike)
-            val maxClothing = RecommendedClothing.fromFeelsLike(maxFeelsLike)
-            add(Recommendation.Clothing(minClothing))
-            if (maxClothing != minClothing) {
-                add(Recommendation.Clothing(maxClothing))
-            }
-
-            // 2. 우산 (일정 시간대 비 예보)
-            eventForecasts
-                .filter { it.condition.isRainy() }
-                .maxOfOrNull { it.precipitationProbability }
-                ?.let { add(Recommendation.Umbrella(it)) }
-
-            // 3. 눈 (일정 시간대 눈 예보)
-            eventForecasts
-                .filter { it.condition.isSnowy() }
-                .sumOf { it.snowfall }
-                .takeIf { it > 0 }
-                ?.let { add(Recommendation.Snow(it)) }
-
-            // 4. 마스크 (공기질은 당일 전역)
-            airQuality?.worstLevel
-                ?.takeIf { it.ordinal >= AqiLevel.UNHEALTHY_SENSITIVE.ordinal && it != AqiLevel.UNKNOWN }
-                ?.let { add(Recommendation.Mask(it)) }
-        }
-    }
 }
