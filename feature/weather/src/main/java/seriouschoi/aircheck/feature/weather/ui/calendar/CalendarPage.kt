@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import seriouschoi.aircheck.core.domain.model.AqiLevel
+import seriouschoi.aircheck.core.domain.model.CalendarEvent
 import seriouschoi.aircheck.core.domain.model.Recommendation
 import seriouschoi.aircheck.core.domain.model.ResolvedEventLocation
 import seriouschoi.aircheck.core.resource.R as CoreR
@@ -296,10 +297,10 @@ private fun CalendarEventCard(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (!event.location.isNullOrBlank()) {
+                event.location?.takeIf { it.isNotBlank() }?.let { locationText ->
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = event.location,
+                        text = locationText,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.outline,
                         maxLines = 1,

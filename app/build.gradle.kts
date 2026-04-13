@@ -98,6 +98,7 @@ android {
 dependencies {
     implementation(project(":core:domain"))
     implementation(project(":core:data"))
+    implementation(project(":core:system-calendar"))
     implementation(project(":core:ui"))
     implementation(project(":core:firebase"))
     implementation(project(":feature:weather"))
