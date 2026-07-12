@@ -26,22 +26,19 @@ import seriouschoi.aircheck.core.domain.model.CalendarEvent
 import seriouschoi.aircheck.core.domain.model.HourlyForecast
 import seriouschoi.aircheck.core.domain.model.Recommendation
 import seriouschoi.aircheck.core.domain.model.RecommendedClothing
-import seriouschoi.aircheck.core.domain.model.ResolvedEventLocation
 import seriouschoi.aircheck.core.domain.model.WeatherData
-import seriouschoi.aircheck.core.domain.repository.CalendarEventRepository
 import seriouschoi.aircheck.core.domain.repository.LocationProvider
 import seriouschoi.aircheck.core.domain.usecase.FetchWeatherUseCase
-import seriouschoi.aircheck.core.domain.usecase.ResolveEventLocationUseCase
+import seriouschoi.aircheck.core.domain.usecase.LoadTodayCalendarEventsWithWeatherUseCase
 import seriouschoi.aircheck.feature.weather.ui.calendar.CalendarContract as Contract
 import javax.inject.Inject
 
 @HiltViewModel
 class CalendarViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val calendarEventRepository: CalendarEventRepository,
     private val locationProvider: LocationProvider,
     private val fetchWeatherUseCase: FetchWeatherUseCase,
-    private val resolveEventLocationUseCase: ResolveEventLocationUseCase,
+    private val loadTodayCalendarEventsWithWeatherUseCase: LoadTodayCalendarEventsWithWeatherUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(Contract.State())
@@ -168,43 +165,16 @@ class CalendarViewModel @Inject constructor(
                 _state.update { it.copy(isLoading = true) }
             }
 
-            val events = withContext(Dispatchers.IO) {
-                calendarEventRepository.getTodayEvents()
+            // 도메인 use case 가 (이벤트 + 결정된 위치 + 위치별 날씨/공기질) 묶음을 모두 만들어 준다.
+            // ViewModel 은 그 묶음을 받아 시간대별 forecast / 추천 아이템 / UI 라벨을 계산해
+            // 화면 모델로 변환한다 — 이 변환 부분은 후속 phase 에서 도메인으로 추가 이동된다.
+            val snapshots = withContext(Dispatchers.IO) {
+                loadTodayCalendarEventsWithWeatherUseCase()
             }
 
-            // 1. 각 이벤트별로 표시할 위치를 결정한다.
-            val resolvedByEventId: Map<Long, ResolvedEventLocation> = withContext(Dispatchers.IO) {
-                events.associate { event ->
-                    event.id to resolveEventLocationUseCase(event.id, event.location)
-                }
-            }
-
-            // 2. 중복 제거된 bjdCode 목록으로 날씨를 일괄 조회한다.
-            //    빈 코드(현재 위치도 못 얻은 경우)는 제외한다.
-            val distinctBjdCodes = resolvedByEventId.values
-                .map { it.bjdCode }
-                .filter { it.isNotEmpty() }
-                .distinct()
-
-            val weatherByBjdCode: Map<String, WeatherDataPair> = withContext(Dispatchers.IO) {
-                if (distinctBjdCodes.isEmpty()) {
-                    emptyMap()
-                } else {
-                    val outputs = fetchWeatherUseCase.fetchBatch(distinctBjdCodes)
-                    distinctBjdCodes.zip(outputs).associate { (code, output) ->
-                        code to WeatherDataPair(
-                            weather = output.result.weather.getOrNull(),
-                            airQuality = output.result.airQuality.getOrNull(),
-                        )
-                    }
-                }
-            }
-
-            // 3. 이벤트별로 (자기 위치의) 날씨/공기질을 사용해 카드 데이터를 만든다.
-            val eventsWithWeather = events.map { event ->
-                val resolved = resolvedByEventId.getValue(event.id)
-                val pair = weatherByBjdCode[resolved.bjdCode] ?: WeatherDataPair(null, null)
-                val forecasts = findForecastsForEvent(event, pair.weather)
+            val eventsWithWeather = snapshots.map { snapshot ->
+                val event = snapshot.event
+                val forecasts = findForecastsForEvent(event, snapshot.weatherData)
                 val maxPrecip = forecasts.maxByOrNull { it.precipitationProbability }
                 CalendarEventWithWeather(
                     event = event,
@@ -213,9 +183,9 @@ class CalendarViewModel @Inject constructor(
                     hasPrecipitation = forecasts.any { it.condition.isRainy() || it.condition.isSnowy() },
                     maxPrecipitationProbability = maxPrecip?.precipitationProbability,
                     maxPrecipitationHour = maxPrecip?.hour,
-                    recommendations = getRecommendationsForEvent(event, pair.weather, pair.airQuality),
-                    locationDisplayName = resolved.bjdName,
-                    locationSource = resolved.source,
+                    recommendations = getRecommendationsForEvent(event, snapshot.weatherData, snapshot.airQuality),
+                    locationDisplayName = snapshot.resolvedLocation.bjdName,
+                    locationSource = snapshot.resolvedLocation.source,
                 )
             }
 
@@ -228,12 +198,6 @@ class CalendarViewModel @Inject constructor(
             }
         }
     }
-
-    /** 한 이벤트의 (이벤트별 위치 기준) 날씨/공기질 페어. */
-    private data class WeatherDataPair(
-        val weather: WeatherData?,
-        val airQuality: AirQuality?,
-    )
 
     private fun findForecastsForEvent(
         event: CalendarEvent,
