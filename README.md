@@ -110,7 +110,7 @@
 | **Ads** | Google AdMob (배너 + 네이티브) |
 | **Security** | Firebase App Check |
 | **CI/CD** | GitHub Actions |
-| **Backend** | [aircheck-server](https://github.com/choidev2026/aircheck-server) |
+| **Backend** | [aircheck-server](https://github.com/devchoi-lab/aircheck-server) |
 
 ---
 
